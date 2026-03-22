@@ -1,0 +1,184 @@
+{
+  "__comment": "TODO: 모든 질문/옵션의 한국어 번역을 여기에 정의",
+
+  "siteType": {
+    "label": "어떤 유형의 웹사이트가 필요하신가요?",
+    "description": "가장 가까운 유형을 선택해주세요",
+    "options": {
+      "landing": "랜딩페이지",
+      "landingDesc": "1~3페이지의 프로모션/마케팅 페이지",
+      "brochure": "기업 소개 사이트",
+      "brochureDesc": "회사 소개, 서비스, 연락처 등 5~10페이지",
+      "ecommerce": "쇼핑몰",
+      "ecommerceDesc": "상품 판매, 결제, 주문관리 기능 포함",
+      "webapp": "웹 애플리케이션",
+      "webappDesc": "사용자 대시보드, 데이터 처리 등 복잡한 기능",
+      "blog": "블로그/미디어",
+      "blogDesc": "콘텐츠 발행, 카테고리, 검색 기능"
+    }
+  },
+
+  "projectName": {
+    "label": "프로젝트명을 입력해주세요",
+    "placeholder": "예: 우리회사 홈페이지 리뉴얼"
+  },
+
+  "targetAudience": {
+    "label": "타겟 고객은 누구인가요?",
+    "placeholder": "예: 20-30대 직장인, B2B 기업 고객"
+  },
+
+  "pageCount": {
+    "label": "예상 페이지 수는 몇 개인가요?",
+    "description": "대략적인 페이지 수를 선택해주세요"
+  },
+
+  "requiredPages": {
+    "label": "필요한 페이지를 선택해주세요",
+    "description": "해당하는 페이지를 모두 선택해주세요",
+    "options": {
+      "home": "홈",
+      "about": "회사 소개",
+      "services": "서비스/제품",
+      "portfolio": "포트폴리오",
+      "contact": "연락처/문의",
+      "blog": "블로그",
+      "productList": "상품 목록",
+      "productDetail": "상품 상세",
+      "cart": "장바구니",
+      "checkout": "결제",
+      "dashboard": "대시보드",
+      "faq": "FAQ",
+      "login": "로그인/회원가입"
+    }
+  },
+
+  "features": {
+    "label": "필요한 기능을 선택해주세요",
+    "description": "구현이 필요한 기능을 모두 선택해주세요",
+    "options": {
+      "contactForm": "문의 폼",
+      "search": "검색 기능",
+      "auth": "회원 인증 (로그인/가입)",
+      "payment": "결제 처리",
+      "adminPanel": "관리자 패널",
+      "fileUpload": "파일 업로드",
+      "chat": "채팅/메시징",
+      "socialIntegration": "소셜 미디어 연동",
+      "multiLanguage": "다국어 지원",
+      "analyticsDashboard": "분석 대시보드",
+      "booking": "예약/예매 시스템",
+      "mapIntegration": "지도 연동"
+    }
+  },
+
+  "ecommerceFeatures": {
+    "label": "이커머스 전용 기능을 선택해주세요",
+    "description": "쇼핑몰에 필요한 추가 기능을 선택해주세요",
+    "options": {
+      "productManagement": "상품 관리",
+      "inventory": "재고 관리",
+      "orderTracking": "주문 추적",
+      "couponSystem": "쿠폰/할인 시스템",
+      "reviewSystem": "리뷰/평점 시스템"
+    }
+  },
+
+  "designComplexity": {
+    "label": "디자인 수준을 선택해주세요",
+    "options": {
+      "template": "템플릿 기반",
+      "templateDesc": "기존 템플릿을 활용한 빠른 제작",
+      "custom": "커스텀 디자인",
+      "customDesc": "브랜드에 맞는 맞춤형 디자인",
+      "premium": "프리미엄 디자인",
+      "premiumDesc": "전문 디자이너의 고급 브랜딩 디자인"
+    }
+  },
+
+  "responsiveTargets": {
+    "label": "반응형 대상을 선택해주세요",
+    "options": {
+      "mobile": "모바일",
+      "tablet": "태블릿",
+      "desktop": "데스크톱"
+    }
+  },
+
+  "designStyle": {
+    "label": "원하는 디자인 스타일은?",
+    "options": {
+      "minimal": "미니멀/클린",
+      "corporate": "기업적/프로페셔널",
+      "creative": "크리에이티브/대담한",
+      "luxury": "럭셔리/우아한"
+    }
+  },
+
+  "contentProvision": {
+    "label": "콘텐츠는 어떻게 준비하시나요?",
+    "options": {
+      "clientProvides": "직접 제공",
+      "clientProvidesDesc": "텍스트, 이미지 등 모든 콘텐츠를 직접 준비",
+      "needCopywriting": "카피라이팅 필요",
+      "needCopywritingDesc": "전문 작가의 텍스트 작성 대행",
+      "needMediaProduction": "사진/영상 제작 필요",
+      "needMediaProductionDesc": "전문 촬영 및 영상 제작 포함"
+    }
+  },
+
+  "integrations": {
+    "label": "연동할 외부 서비스를 선택해주세요",
+    "options": {
+      "googleAnalytics": "Google Analytics",
+      "metaPixel": "Meta Pixel (Facebook)",
+      "kakaoPay": "카카오페이",
+      "tossPay": "토스페이먼츠",
+      "naverPay": "네이버페이",
+      "crmIntegration": "CRM 연동",
+      "externalApi": "외부 API 연동"
+    }
+  },
+
+  "hosting": {
+    "label": "호스팅은 어떻게 하시겠어요?",
+    "options": {
+      "agencyManaged": "대행사 관리",
+      "agencyManagedDesc": "호스팅, 유지보수 모두 위임",
+      "selfHosted": "자체 호스팅",
+      "selfHostedDesc": "자체 서버에서 직접 운영",
+      "cloud": "클라우드 (AWS/GCP)",
+      "cloudDesc": "클라우드 인프라 구축"
+    }
+  },
+
+  "timeline": {
+    "label": "희망 일정은 어떻게 되나요?",
+    "options": {
+      "flexible": "여유 (8주 이상)",
+      "flexibleDesc": "충분한 시간을 두고 진행",
+      "standard": "표준 (4~8주)",
+      "standardDesc": "일반적인 제작 일정",
+      "urgent": "긴급 (2~4주)",
+      "urgentDesc": "빠른 완료가 필요한 프로젝트",
+      "rush": "초긴급 (2주 이내)",
+      "rushDesc": "최우선 순위로 즉시 착수"
+    }
+  },
+
+  "budgetRange": {
+    "label": "예상 예산 범위가 있으신가요?",
+    "options": {
+      "under500": "500만원 미만",
+      "range500to1000": "500만 ~ 1,000만원",
+      "range1000to3000": "1,000만 ~ 3,000만원",
+      "over3000": "3,000만원 이상",
+      "notSure": "아직 모르겠어요"
+    }
+  },
+
+  "additionalNotes": {
+    "label": "추가로 전달할 내용이 있으신가요?",
+    "placeholder": "참고 사이트, 특별 요구사항 등을 자유롭게 작성해주세요"
+  }
+}

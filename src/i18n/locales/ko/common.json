@@ -1,0 +1,73 @@
+{
+  "__comment": "TODO: 모든 UI 텍스트의 한국어 번역을 여기에 정의",
+
+  "app": {
+    "title": "웹사이트 견적 생성기",
+    "subtitle": "맞춤형 웹사이트 요구사항 명세서와 예상 비용을 자동으로 생성합니다"
+  },
+
+  "nav": {
+    "home": "홈",
+    "newQuote": "새 견적",
+    "back": "이전",
+    "next": "다음",
+    "viewResult": "결과 보기",
+    "downloadPdf": "PDF 다운로드",
+    "startNew": "새 견적 시작",
+    "edit": "수정하기"
+  },
+
+  "landing": {
+    "heroTitle": "웹사이트 견적, 5분이면 충분합니다",
+    "heroSubtitle": "몇 가지 질문에 답하면 맞춤형 요구사항 명세서와 예상 비용을 즉시 받아보세요",
+    "cta": "무료 견적 시작하기",
+    "feature1Title": "간편한 질문",
+    "feature1Desc": "단계별 질문으로 요구사항을 체계적으로 정리합니다",
+    "feature2Title": "자동 문서 생성",
+    "feature2Desc": "전문적인 요구사항 명세서를 자동으로 생성합니다",
+    "feature3Title": "즉시 비용 확인",
+    "feature3Desc": "투명한 항목별 비용 분해표를 제공합니다"
+  },
+
+  "steps": {
+    "basics": "프로젝트 기본 정보",
+    "scale": "규모 및 페이지",
+    "features": "기능 요구사항",
+    "design": "디자인",
+    "integration": "콘텐츠 및 연동",
+    "timeline": "일정 및 예산"
+  },
+
+  "result": {
+    "title": "견적이 준비되었습니다!",
+    "costTitle": "예상 비용",
+    "docTitle": "요구사항 명세서",
+    "disclaimer": "본 견적은 자동 산출된 예상 범위이며, 실제 비용은 상세 상담 후 확정됩니다.",
+    "tabCost": "비용 요약",
+    "tabDocument": "명세서 미리보기"
+  },
+
+  "pricing": {
+    "tiers": {
+      "landing": "랜딩페이지",
+      "brochure": "기업 소개 사이트",
+      "ecommerce": "쇼핑몰",
+      "webapp": "웹 애플리케이션",
+      "blog": "블로그/미디어"
+    },
+    "categories": {
+      "base": "기본",
+      "scale": "규모",
+      "features": "기능",
+      "design": "디자인",
+      "content": "콘텐츠",
+      "integration": "연동",
+      "timeline": "일정"
+    }
+  },
+
+  "footer": {
+    "copyright": "© 2026 웹사이트 견적 생성기",
+    "disclaimer": "본 견적은 자동 생성된 예상 금액이며, 실제 비용은 상담 후 확정됩니다."
+  }
+}
