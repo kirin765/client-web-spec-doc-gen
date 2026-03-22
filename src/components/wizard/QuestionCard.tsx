@@ -30,20 +30,132 @@
 // =============================================================================
 
 import type { Question } from '@/types';
+import { useTranslation } from 'react-i18next';
+import { useQuoteStore } from '@/store/useQuoteStore';
+import { OptionCard } from './OptionCard';
+import { cn } from '@/lib/utils';
 
 interface QuestionCardProps {
   question: Question;
 }
 
-export function QuestionCard({ question: _question }: QuestionCardProps) {
-  // TODO: 구현
-  // - useQuoteStore에서 현재 답변값 읽기
-  // - question.type에 따라 분기 렌더링
-  // - useTranslation()으로 i18n 텍스트 변환
+export function QuestionCard({ question }: QuestionCardProps) {
+  const { t } = useTranslation('questions');
+  const { answers, setAnswer } = useQuoteStore();
+
+  const currentValue = answers[question.id];
+  const isRequired = question.validation?.required;
+
+  const renderSingleSelect = () => {
+    return (
+      <div className="space-y-3">
+        {question.options?.map((option) => (
+          <OptionCard
+            key={option.id}
+            option={option}
+            selected={currentValue === option.id}
+            onSelect={(optionId) => setAnswer(question.id, optionId)}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  const renderMultiSelect = () => {
+    const selectedIds = Array.isArray(currentValue) ? currentValue : [];
+    return (
+      <div className="space-y-3">
+        {question.options?.map((option) => (
+          <OptionCard
+            key={option.id}
+            option={option}
+            selected={selectedIds.includes(option.id)}
+            onSelect={(optionId) => {
+              if (selectedIds.includes(optionId)) {
+                setAnswer(question.id, selectedIds.filter((id) => id !== optionId));
+              } else {
+                setAnswer(question.id, [...selectedIds, optionId]);
+              }
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
+
+  const renderRangeSlider = () => {
+    const value = typeof currentValue === 'number' ? currentValue : question.validation?.min || 1;
+    const min = question.validation?.min || 1;
+    const max = question.validation?.max || 100;
+
+    return (
+      <div className="space-y-4">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => setAnswer(question.id, parseInt(e.target.value, 10))}
+          className="w-full"
+        />
+        <div className="flex justify-between text-sm text-gray-600">
+          <span>{min}</span>
+          <span className="font-semibold text-blue-600">{value}</span>
+          <span>{max}</span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderTextInput = () => {
+    const value = typeof currentValue === 'string' ? currentValue : '';
+    const isTextArea = question.id?.includes('notes') || question.id?.includes('description');
+
+    const baseProps = {
+      value,
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+        setAnswer(question.id, e.target.value),
+      placeholder: t(`${question.id}.placeholder`) || '',
+      className: cn(
+        'w-full rounded-lg border border-gray-300 px-4 py-2',
+        'focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20'
+      ),
+    };
+
+    return isTextArea ? (
+      <textarea {...baseProps} rows={4} />
+    ) : (
+      <input type="text" {...baseProps} />
+    );
+  };
+
+  const renderContent = () => {
+    switch (question.type) {
+      case 'single-select':
+        return renderSingleSelect();
+      case 'multi-select':
+        return renderMultiSelect();
+      case 'range-slider':
+        return renderRangeSlider();
+      case 'text-input':
+        return renderTextInput();
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div>
-      {/* TODO: 질문 제목 */}
-      {/* TODO: 질문 유형별 입력 UI */}
+    <div className="rounded-lg bg-white p-6 shadow-sm">
+      <div className="mb-4">
+        <label className="flex items-baseline gap-1">
+          <span className="text-lg font-semibold text-gray-900">{t(question.labelKey)}</span>
+          {isRequired && <span className="text-red-500">*</span>}
+        </label>
+        {question.descriptionKey && (
+          <p className="mt-2 text-sm text-gray-600">{t(question.descriptionKey)}</p>
+        )}
+      </div>
+      <div>{renderContent()}</div>
     </div>
   );
 }

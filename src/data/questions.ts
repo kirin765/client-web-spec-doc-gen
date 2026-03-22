@@ -27,11 +27,69 @@ export const questionCategories: QuestionCategory[] = [
     labelKey: 'steps.basics',
     icon: 'FileText',
     questions: [
-      // TODO: 사이트 유형 single-select
-      //   옵션: landing, brochure, ecommerce, webapp, blog
-      //   각 옵션의 pricingImpact.type = 'base' → baseTiers에서 해당 tier 선택
-      // TODO: 프로젝트명 text-input (required)
-      // TODO: 타겟 고객 text-input (optional)
+      {
+        id: 'siteType',
+        categoryId: 'basics',
+        type: 'single-select',
+        labelKey: 'questions.siteType.label',
+        descriptionKey: 'questions.siteType.description',
+        options: [
+          {
+            id: 'landing',
+            labelKey: 'questions.siteType.options.landing',
+            descriptionKey: 'questions.siteType.options.landingDesc',
+            icon: 'Zap',
+            pricingImpact: { type: 'base', value: 0, category: '기본' },
+          },
+          {
+            id: 'brochure',
+            labelKey: 'questions.siteType.options.brochure',
+            descriptionKey: 'questions.siteType.options.brochureDesc',
+            icon: 'FileText',
+            pricingImpact: { type: 'base', value: 1, category: '기본' },
+          },
+          {
+            id: 'ecommerce',
+            labelKey: 'questions.siteType.options.ecommerce',
+            descriptionKey: 'questions.siteType.options.ecommerceDesc',
+            icon: 'ShoppingCart',
+            pricingImpact: { type: 'base', value: 2, category: '기본' },
+          },
+          {
+            id: 'webapp',
+            labelKey: 'questions.siteType.options.webapp',
+            descriptionKey: 'questions.siteType.options.webappDesc',
+            icon: 'Cpu',
+            pricingImpact: { type: 'base', value: 3, category: '기본' },
+          },
+          {
+            id: 'blog',
+            labelKey: 'questions.siteType.options.blog',
+            descriptionKey: 'questions.siteType.options.blogDesc',
+            icon: 'BookOpen',
+            pricingImpact: { type: 'base', value: 4, category: '기본' },
+          },
+        ],
+        validation: { required: true },
+      },
+      {
+        id: 'projectName',
+        categoryId: 'basics',
+        type: 'text-input',
+        labelKey: 'questions.projectName.label',
+        descriptionKey: 'questions.projectName.description',
+        validation: { required: true },
+        pricingImpact: { type: 'add', value: 0, category: '기본' },
+      },
+      {
+        id: 'targetAudience',
+        categoryId: 'basics',
+        type: 'text-input',
+        labelKey: 'questions.targetAudience.label',
+        descriptionKey: 'questions.targetAudience.description',
+        validation: { required: false },
+        pricingImpact: { type: 'add', value: 0, category: '기본' },
+      },
     ],
   },
 
@@ -43,13 +101,90 @@ export const questionCategories: QuestionCategory[] = [
     labelKey: 'steps.scale',
     icon: 'Layers',
     questions: [
-      // TODO: 예상 페이지 수 range-slider (min: 1, max: 50)
-      //   pricingImpact: 기본 tier 페이지 수 초과분 × 페이지당 추가 비용
-      // TODO: 필요 페이지 multi-select
-      //   옵션: home, about, services, portfolio, contact, blog,
-      //         productList, productDetail, cart, checkout,
-      //         dashboard, faq, login
-      //   pricingImpact: 각 페이지 유형별 add 비용 없음 (페이지 수로 이미 반영)
+      {
+        id: 'expectedPages',
+        categoryId: 'scale',
+        type: 'range-slider',
+        labelKey: 'questions.expectedPages.label',
+        descriptionKey: 'questions.expectedPages.description',
+        validation: { required: true, min: 1, max: 50 },
+        pricingImpact: { type: 'add', value: 0, category: '규모' },
+      },
+      {
+        id: 'requiredPages',
+        categoryId: 'scale',
+        type: 'multi-select',
+        labelKey: 'questions.requiredPages.label',
+        descriptionKey: 'questions.requiredPages.description',
+        options: [
+          {
+            id: 'home',
+            labelKey: 'questions.requiredPages.options.home',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'about',
+            labelKey: 'questions.requiredPages.options.about',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'services',
+            labelKey: 'questions.requiredPages.options.services',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'portfolio',
+            labelKey: 'questions.requiredPages.options.portfolio',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'contact',
+            labelKey: 'questions.requiredPages.options.contact',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'blog',
+            labelKey: 'questions.requiredPages.options.blog',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'productList',
+            labelKey: 'questions.requiredPages.options.productList',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'productDetail',
+            labelKey: 'questions.requiredPages.options.productDetail',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'cart',
+            labelKey: 'questions.requiredPages.options.cart',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'checkout',
+            labelKey: 'questions.requiredPages.options.checkout',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'dashboard',
+            labelKey: 'questions.requiredPages.options.dashboard',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'faq',
+            labelKey: 'questions.requiredPages.options.faq',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+          {
+            id: 'login',
+            labelKey: 'questions.requiredPages.options.login',
+            pricingImpact: { type: 'add', value: 0, category: '규모' },
+          },
+        ],
+        validation: { required: false },
+      },
     ],
   },
 
@@ -61,28 +196,115 @@ export const questionCategories: QuestionCategory[] = [
     labelKey: 'steps.features',
     icon: 'Puzzle',
     questions: [
-      // TODO: 핵심 기능 multi-select
-      //   옵션 + 각각의 add 비용:
-      //   - contactForm: 0원 (기본 포함)
-      //   - search: 500,000 ~ 1,000,000
-      //   - auth: 1,000,000 ~ 2,000,000
-      //   - payment: 2,000,000 ~ 4,000,000
-      //   - adminPanel: 2,000,000 ~ 5,000,000
-      //   - fileUpload: 500,000 ~ 1,000,000
-      //   - chat: 1,500,000 ~ 3,000,000
-      //   - socialIntegration: 300,000 ~ 500,000
-      //   - multiLanguage: 1,000,000 ~ 2,000,000
-      //   - analyticsDashboard: 1,000,000 ~ 2,000,000
-      //   - booking: 2,000,000 ~ 4,000,000
-      //   - mapIntegration: 300,000 ~ 500,000
-
-      // TODO: 이커머스 전용 기능 multi-select (conditionalOn: siteType === 'ecommerce')
-      //   옵션:
-      //   - productManagement: 1,000,000 ~ 2,000,000
-      //   - inventory: 1,000,000 ~ 2,000,000
-      //   - orderTracking: 1,000,000 ~ 2,000,000
-      //   - couponSystem: 500,000 ~ 1,000,000
-      //   - reviewSystem: 500,000 ~ 1,000,000
+      {
+        id: 'coreFeatures',
+        categoryId: 'features',
+        type: 'multi-select',
+        labelKey: 'questions.coreFeatures.label',
+        descriptionKey: 'questions.coreFeatures.description',
+        options: [
+          {
+            id: 'contactForm',
+            labelKey: 'questions.coreFeatures.options.contactForm',
+            pricingImpact: { type: 'add', value: 0, category: '기능' },
+          },
+          {
+            id: 'search',
+            labelKey: 'questions.coreFeatures.options.search',
+            pricingImpact: { type: 'add', value: 500_000, category: '기능' },
+          },
+          {
+            id: 'auth',
+            labelKey: 'questions.coreFeatures.options.auth',
+            pricingImpact: { type: 'add', value: 1_000_000, category: '기능' },
+          },
+          {
+            id: 'payment',
+            labelKey: 'questions.coreFeatures.options.payment',
+            pricingImpact: { type: 'add', value: 2_000_000, category: '기능' },
+          },
+          {
+            id: 'adminPanel',
+            labelKey: 'questions.coreFeatures.options.adminPanel',
+            pricingImpact: { type: 'add', value: 2_000_000, category: '기능' },
+          },
+          {
+            id: 'fileUpload',
+            labelKey: 'questions.coreFeatures.options.fileUpload',
+            pricingImpact: { type: 'add', value: 500_000, category: '기능' },
+          },
+          {
+            id: 'chat',
+            labelKey: 'questions.coreFeatures.options.chat',
+            pricingImpact: { type: 'add', value: 1_500_000, category: '기능' },
+          },
+          {
+            id: 'socialIntegration',
+            labelKey: 'questions.coreFeatures.options.socialIntegration',
+            pricingImpact: { type: 'add', value: 300_000, category: '기능' },
+          },
+          {
+            id: 'multiLanguage',
+            labelKey: 'questions.coreFeatures.options.multiLanguage',
+            pricingImpact: { type: 'add', value: 1_000_000, category: '기능' },
+          },
+          {
+            id: 'analyticsDashboard',
+            labelKey: 'questions.coreFeatures.options.analyticsDashboard',
+            pricingImpact: { type: 'add', value: 1_000_000, category: '기능' },
+          },
+          {
+            id: 'booking',
+            labelKey: 'questions.coreFeatures.options.booking',
+            pricingImpact: { type: 'add', value: 2_000_000, category: '기능' },
+          },
+          {
+            id: 'mapIntegration',
+            labelKey: 'questions.coreFeatures.options.mapIntegration',
+            pricingImpact: { type: 'add', value: 300_000, category: '기능' },
+          },
+        ],
+        validation: { required: false },
+      },
+      {
+        id: 'ecommerceFeatures',
+        categoryId: 'features',
+        type: 'multi-select',
+        labelKey: 'questions.ecommerceFeatures.label',
+        descriptionKey: 'questions.ecommerceFeatures.description',
+        options: [
+          {
+            id: 'productManagement',
+            labelKey: 'questions.ecommerceFeatures.options.productManagement',
+            pricingImpact: { type: 'add', value: 1_000_000, category: '기능' },
+          },
+          {
+            id: 'inventory',
+            labelKey: 'questions.ecommerceFeatures.options.inventory',
+            pricingImpact: { type: 'add', value: 1_000_000, category: '기능' },
+          },
+          {
+            id: 'orderTracking',
+            labelKey: 'questions.ecommerceFeatures.options.orderTracking',
+            pricingImpact: { type: 'add', value: 1_000_000, category: '기능' },
+          },
+          {
+            id: 'couponSystem',
+            labelKey: 'questions.ecommerceFeatures.options.couponSystem',
+            pricingImpact: { type: 'add', value: 500_000, category: '기능' },
+          },
+          {
+            id: 'reviewSystem',
+            labelKey: 'questions.ecommerceFeatures.options.reviewSystem',
+            pricingImpact: { type: 'add', value: 500_000, category: '기능' },
+          },
+        ],
+        conditionalOn: {
+          questionId: 'siteType',
+          values: ['ecommerce'],
+        },
+        validation: { required: false },
+      },
     ],
   },
 
@@ -94,17 +316,99 @@ export const questionCategories: QuestionCategory[] = [
     labelKey: 'steps.design',
     icon: 'Palette',
     questions: [
-      // TODO: 디자인 복잡도 single-select
-      //   옵션 + pricingImpact.type = 'multiply':
-      //   - template: 1.0
-      //   - custom: 1.3
-      //   - premium: 1.6
-
-      // TODO: 반응형 대상 multi-select
-      //   옵션: mobile, tablet, desktop (비용 영향 없음, 명세서용)
-
-      // TODO: 디자인 스타일 single-select
-      //   옵션: minimal, corporate, creative, luxury (비용 영향 없음, 명세서용)
+      {
+        id: 'designComplexity',
+        categoryId: 'design',
+        type: 'single-select',
+        labelKey: 'questions.designComplexity.label',
+        descriptionKey: 'questions.designComplexity.description',
+        options: [
+          {
+            id: 'template',
+            labelKey: 'questions.designComplexity.options.template',
+            descriptionKey: 'questions.designComplexity.options.templateDesc',
+            icon: 'Square',
+            pricingImpact: { type: 'multiply', value: 1.0, category: '디자인' },
+          },
+          {
+            id: 'custom',
+            labelKey: 'questions.designComplexity.options.custom',
+            descriptionKey: 'questions.designComplexity.options.customDesc',
+            icon: 'Palette',
+            pricingImpact: { type: 'multiply', value: 1.3, category: '디자인' },
+          },
+          {
+            id: 'premium',
+            labelKey: 'questions.designComplexity.options.premium',
+            descriptionKey: 'questions.designComplexity.options.premiumDesc',
+            icon: 'Sparkles',
+            pricingImpact: { type: 'multiply', value: 1.6, category: '디자인' },
+          },
+        ],
+        validation: { required: true },
+      },
+      {
+        id: 'responsiveTargets',
+        categoryId: 'design',
+        type: 'multi-select',
+        labelKey: 'questions.responsiveTargets.label',
+        descriptionKey: 'questions.responsiveTargets.description',
+        options: [
+          {
+            id: 'mobile',
+            labelKey: 'questions.responsiveTargets.options.mobile',
+            icon: 'Smartphone',
+            pricingImpact: { type: 'add', value: 0, category: '디자인' },
+          },
+          {
+            id: 'tablet',
+            labelKey: 'questions.responsiveTargets.options.tablet',
+            icon: 'Tablet',
+            pricingImpact: { type: 'add', value: 0, category: '디자인' },
+          },
+          {
+            id: 'desktop',
+            labelKey: 'questions.responsiveTargets.options.desktop',
+            icon: 'Monitor',
+            pricingImpact: { type: 'add', value: 0, category: '디자인' },
+          },
+        ],
+        validation: { required: true },
+      },
+      {
+        id: 'designStyle',
+        categoryId: 'design',
+        type: 'single-select',
+        labelKey: 'questions.designStyle.label',
+        descriptionKey: 'questions.designStyle.description',
+        options: [
+          {
+            id: 'minimal',
+            labelKey: 'questions.designStyle.options.minimal',
+            descriptionKey: 'questions.designStyle.options.minimalDesc',
+            pricingImpact: { type: 'add', value: 0, category: '디자인' },
+          },
+          {
+            id: 'corporate',
+            labelKey: 'questions.designStyle.options.corporate',
+            descriptionKey: 'questions.designStyle.options.corporateDesc',
+            pricingImpact: { type: 'add', value: 0, category: '디자인' },
+          },
+          {
+            id: 'creative',
+            labelKey: 'questions.designStyle.options.creative',
+            descriptionKey: 'questions.designStyle.options.creativeDesc',
+            pricingImpact: { type: 'add', value: 0, category: '디자인' },
+          },
+          {
+            id: 'luxury',
+            labelKey: 'questions.designStyle.options.luxury',
+            descriptionKey: 'questions.designStyle.options.luxuryDesc',
+            pricingImpact: { type: 'add', value: 0, category: '디자인' },
+          },
+        ],
+        validation: { required: true },
+      },
     ],
   },
 
@@ -116,19 +420,107 @@ export const questionCategories: QuestionCategory[] = [
     labelKey: 'steps.integration',
     icon: 'Link',
     questions: [
-      // TODO: 콘텐츠 제공 방식 single-select
-      //   옵션:
-      //   - clientProvides: 0
-      //   - needCopywriting: 1,000,000 ~ 3,000,000 (add)
-      //   - needMediaProduction: 2,000,000 ~ 5,000,000 (add)
-
-      // TODO: 외부 서비스 연동 multi-select
-      //   옵션: googleAnalytics, metaPixel, kakaoPay, tossPay,
-      //         naverPay, crmIntegration, externalApi
-      //   각 300,000 ~ 500,000 (add)
-
-      // TODO: 호스팅 single-select
-      //   옵션: agencyManaged, selfHosted, cloud (비용 영향 없음, 명세서용)
+      {
+        id: 'contentDelivery',
+        categoryId: 'integration',
+        type: 'single-select',
+        labelKey: 'questions.contentDelivery.label',
+        descriptionKey: 'questions.contentDelivery.description',
+        options: [
+          {
+            id: 'clientProvides',
+            labelKey: 'questions.contentDelivery.options.clientProvides',
+            descriptionKey: 'questions.contentDelivery.options.clientProvidesDesc',
+            pricingImpact: { type: 'add', value: 0, category: '콘텐츠' },
+          },
+          {
+            id: 'needCopywriting',
+            labelKey: 'questions.contentDelivery.options.needCopywriting',
+            descriptionKey: 'questions.contentDelivery.options.needCopywritingDesc',
+            pricingImpact: { type: 'add', value: 1_000_000, category: '콘텐츠' },
+          },
+          {
+            id: 'needMediaProduction',
+            labelKey: 'questions.contentDelivery.options.needMediaProduction',
+            descriptionKey: 'questions.contentDelivery.options.needMediaProductionDesc',
+            pricingImpact: { type: 'add', value: 2_000_000, category: '콘텐츠' },
+          },
+        ],
+        validation: { required: true },
+      },
+      {
+        id: 'externalIntegrations',
+        categoryId: 'integration',
+        type: 'multi-select',
+        labelKey: 'questions.externalIntegrations.label',
+        descriptionKey: 'questions.externalIntegrations.description',
+        options: [
+          {
+            id: 'googleAnalytics',
+            labelKey: 'questions.externalIntegrations.options.googleAnalytics',
+            pricingImpact: { type: 'add', value: 300_000, category: '연동' },
+          },
+          {
+            id: 'metaPixel',
+            labelKey: 'questions.externalIntegrations.options.metaPixel',
+            pricingImpact: { type: 'add', value: 300_000, category: '연동' },
+          },
+          {
+            id: 'kakaoPay',
+            labelKey: 'questions.externalIntegrations.options.kakaoPay',
+            pricingImpact: { type: 'add', value: 300_000, category: '연동' },
+          },
+          {
+            id: 'tossPay',
+            labelKey: 'questions.externalIntegrations.options.tossPay',
+            pricingImpact: { type: 'add', value: 300_000, category: '연동' },
+          },
+          {
+            id: 'naverPay',
+            labelKey: 'questions.externalIntegrations.options.naverPay',
+            pricingImpact: { type: 'add', value: 300_000, category: '연동' },
+          },
+          {
+            id: 'crmIntegration',
+            labelKey: 'questions.externalIntegrations.options.crmIntegration',
+            pricingImpact: { type: 'add', value: 300_000, category: '연동' },
+          },
+          {
+            id: 'externalApi',
+            labelKey: 'questions.externalIntegrations.options.externalApi',
+            pricingImpact: { type: 'add', value: 300_000, category: '연동' },
+          },
+        ],
+        validation: { required: false },
+      },
+      {
+        id: 'hosting',
+        categoryId: 'integration',
+        type: 'single-select',
+        labelKey: 'questions.hosting.label',
+        descriptionKey: 'questions.hosting.description',
+        options: [
+          {
+            id: 'agencyManaged',
+            labelKey: 'questions.hosting.options.agencyManaged',
+            descriptionKey: 'questions.hosting.options.agencyManagedDesc',
+            pricingImpact: { type: 'add', value: 0, category: '호스팅' },
+          },
+          {
+            id: 'selfHosted',
+            labelKey: 'questions.hosting.options.selfHosted',
+            descriptionKey: 'questions.hosting.options.selfHostedDesc',
+            pricingImpact: { type: 'add', value: 0, category: '호스팅' },
+          },
+          {
+            id: 'cloud',
+            labelKey: 'questions.hosting.options.cloud',
+            descriptionKey: 'questions.hosting.options.cloudDesc',
+            pricingImpact: { type: 'add', value: 0, category: '호스팅' },
+          },
+        ],
+        validation: { required: true },
+      },
     ],
   },
 
@@ -140,17 +532,88 @@ export const questionCategories: QuestionCategory[] = [
     labelKey: 'steps.timeline',
     icon: 'Clock',
     questions: [
-      // TODO: 희망 일정 single-select
-      //   옵션 + pricingImpact.type = 'multiply':
-      //   - flexible: 1.0  (8주+)
-      //   - standard: 1.0  (4-8주)
-      //   - urgent: 1.3    (2-4주)
-      //   - rush: 1.6      (<2주)
-
-      // TODO: 예산 인지 범위 single-select (비용 영향 없음, 참고용)
-      //   옵션: under500, range500to1000, range1000to3000, over3000, notSure
-
-      // TODO: 추가 메모 text-input (optional)
+      {
+        id: 'desiredTimeline',
+        categoryId: 'timeline',
+        type: 'single-select',
+        labelKey: 'questions.desiredTimeline.label',
+        descriptionKey: 'questions.desiredTimeline.description',
+        options: [
+          {
+            id: 'flexible',
+            labelKey: 'questions.desiredTimeline.options.flexible',
+            descriptionKey: 'questions.desiredTimeline.options.flexibleDesc',
+            icon: 'Calendar',
+            pricingImpact: { type: 'multiply', value: 1.0, category: '일정' },
+          },
+          {
+            id: 'standard',
+            labelKey: 'questions.desiredTimeline.options.standard',
+            descriptionKey: 'questions.desiredTimeline.options.standardDesc',
+            icon: 'Calendar',
+            pricingImpact: { type: 'multiply', value: 1.0, category: '일정' },
+          },
+          {
+            id: 'urgent',
+            labelKey: 'questions.desiredTimeline.options.urgent',
+            descriptionKey: 'questions.desiredTimeline.options.urgentDesc',
+            icon: 'AlertCircle',
+            pricingImpact: { type: 'multiply', value: 1.3, category: '일정' },
+          },
+          {
+            id: 'rush',
+            labelKey: 'questions.desiredTimeline.options.rush',
+            descriptionKey: 'questions.desiredTimeline.options.rushDesc',
+            icon: 'Zap',
+            pricingImpact: { type: 'multiply', value: 1.6, category: '일정' },
+          },
+        ],
+        validation: { required: true },
+      },
+      {
+        id: 'budgetAwareness',
+        categoryId: 'timeline',
+        type: 'single-select',
+        labelKey: 'questions.budgetAwareness.label',
+        descriptionKey: 'questions.budgetAwareness.description',
+        options: [
+          {
+            id: 'under500',
+            labelKey: 'questions.budgetAwareness.options.under500',
+            pricingImpact: { type: 'add', value: 0, category: '예산' },
+          },
+          {
+            id: 'range500to1000',
+            labelKey: 'questions.budgetAwareness.options.range500to1000',
+            pricingImpact: { type: 'add', value: 0, category: '예산' },
+          },
+          {
+            id: 'range1000to3000',
+            labelKey: 'questions.budgetAwareness.options.range1000to3000',
+            pricingImpact: { type: 'add', value: 0, category: '예산' },
+          },
+          {
+            id: 'over3000',
+            labelKey: 'questions.budgetAwareness.options.over3000',
+            pricingImpact: { type: 'add', value: 0, category: '예산' },
+          },
+          {
+            id: 'notSure',
+            labelKey: 'questions.budgetAwareness.options.notSure',
+            pricingImpact: { type: 'add', value: 0, category: '예산' },
+          },
+        ],
+        validation: { required: true },
+      },
+      {
+        id: 'additionalNotes',
+        categoryId: 'timeline',
+        type: 'text-input',
+        labelKey: 'questions.additionalNotes.label',
+        descriptionKey: 'questions.additionalNotes.description',
+        validation: { required: false },
+        pricingImpact: { type: 'add', value: 0, category: '기타' },
+      },
     ],
   },
 ];

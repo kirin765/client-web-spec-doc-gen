@@ -45,6 +45,7 @@ export interface Question {
     questionId: string;
     values: string[];      // 이 값들 중 하나가 선택되었을 때만 표시
   };
+  pricingImpact?: PricingImpact; // 가격 영향도 (text-input, range-slider용)
 }
 
 /** 질문 카테고리 = 위저드의 한 스텝 */

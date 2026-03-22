@@ -18,75 +18,82 @@ import type { BaseTier } from '@/types';
 // 사이트 유형별 기본 단가
 // -----------------------------------------------------------------------------
 export const baseTiers: BaseTier[] = [
-  // TODO: 각 tier의 id는 questions.ts의 siteType 옵션 id와 매칭
-  // { id: 'landing',   labelKey: 'pricing.tiers.landing',   minCost: 1_500_000, maxCost: 3_000_000  }
-  // { id: 'brochure',  labelKey: 'pricing.tiers.brochure',  minCost: 3_000_000, maxCost: 8_000_000  }
-  // { id: 'ecommerce', labelKey: 'pricing.tiers.ecommerce', minCost: 8_000_000, maxCost: 20_000_000 }
-  // { id: 'webapp',    labelKey: 'pricing.tiers.webapp',     minCost: 10_000_000, maxCost: 30_000_000 }
-  // { id: 'blog',      labelKey: 'pricing.tiers.blog',       minCost: 2_000_000, maxCost: 5_000_000  }
+  { id: 'landing',   labelKey: 'pricing.tiers.landing',   minCost: 1_500_000, maxCost: 3_000_000  },
+  { id: 'brochure',  labelKey: 'pricing.tiers.brochure',  minCost: 3_000_000, maxCost: 8_000_000  },
+  { id: 'ecommerce', labelKey: 'pricing.tiers.ecommerce', minCost: 8_000_000, maxCost: 20_000_000 },
+  { id: 'webapp',    labelKey: 'pricing.tiers.webapp',    minCost: 10_000_000, maxCost: 30_000_000 },
+  { id: 'blog',      labelKey: 'pricing.tiers.blog',      minCost: 2_000_000, maxCost: 5_000_000  },
 ];
 
 // -----------------------------------------------------------------------------
 // 기능별 추가 비용: featureId → { min, max }
 // -----------------------------------------------------------------------------
 export const featureCosts: Record<string, { min: number; max: number }> = {
-  // TODO: questions.ts의 features 카테고리 옵션 id와 매칭
-  // contactForm: { min: 0, max: 0 },
-  // search: { min: 500_000, max: 1_000_000 },
-  // auth: { min: 1_000_000, max: 2_000_000 },
-  // payment: { min: 2_000_000, max: 4_000_000 },
-  // adminPanel: { min: 2_000_000, max: 5_000_000 },
-  // fileUpload: { min: 500_000, max: 1_000_000 },
-  // chat: { min: 1_500_000, max: 3_000_000 },
-  // socialIntegration: { min: 300_000, max: 500_000 },
-  // multiLanguage: { min: 1_000_000, max: 2_000_000 },
-  // analyticsDashboard: { min: 1_000_000, max: 2_000_000 },
-  // booking: { min: 2_000_000, max: 4_000_000 },
-  // mapIntegration: { min: 300_000, max: 500_000 },
-  // --- 이커머스 전용 ---
-  // productManagement: { min: 1_000_000, max: 2_000_000 },
-  // inventory: { min: 1_000_000, max: 2_000_000 },
-  // orderTracking: { min: 1_000_000, max: 2_000_000 },
-  // couponSystem: { min: 500_000, max: 1_000_000 },
-  // reviewSystem: { min: 500_000, max: 1_000_000 },
+  contactForm: { min: 0, max: 0 },
+  search: { min: 500_000, max: 1_000_000 },
+  auth: { min: 1_000_000, max: 2_000_000 },
+  payment: { min: 2_000_000, max: 4_000_000 },
+  adminPanel: { min: 2_000_000, max: 5_000_000 },
+  fileUpload: { min: 500_000, max: 1_000_000 },
+  chat: { min: 1_500_000, max: 3_000_000 },
+  socialIntegration: { min: 300_000, max: 500_000 },
+  multiLanguage: { min: 1_000_000, max: 2_000_000 },
+  analyticsDashboard: { min: 1_000_000, max: 2_000_000 },
+  booking: { min: 2_000_000, max: 4_000_000 },
+  mapIntegration: { min: 300_000, max: 500_000 },
+  productManagement: { min: 1_000_000, max: 2_000_000 },
+  inventory: { min: 1_000_000, max: 2_000_000 },
+  orderTracking: { min: 1_000_000, max: 2_000_000 },
+  couponSystem: { min: 500_000, max: 1_000_000 },
+  reviewSystem: { min: 500_000, max: 1_000_000 },
 };
 
 // -----------------------------------------------------------------------------
 // 디자인 복잡도 승수
 // -----------------------------------------------------------------------------
 export const designMultipliers: Record<string, number> = {
-  // TODO: template: 1.0, custom: 1.3, premium: 1.6
+  template: 1.0,
+  custom: 1.3,
+  premium: 1.6,
 };
 
 // -----------------------------------------------------------------------------
 // 일정 승수
 // -----------------------------------------------------------------------------
 export const timelineMultipliers: Record<string, number> = {
-  // TODO: flexible: 1.0, standard: 1.0, urgent: 1.3, rush: 1.6
+  flexible: 1.0,
+  standard: 1.0,
+  urgent: 1.3,
+  rush: 1.6,
 };
 
 // -----------------------------------------------------------------------------
 // 추가 페이지당 비용
 // -----------------------------------------------------------------------------
 export const perPageCost = {
-  // TODO: min: 200_000, max: 500_000
-  // 각 siteType 별 기본 페이지 수를 초과할 경우 적용
-  // defaultPages: { landing: 3, brochure: 7, ecommerce: 15, webapp: 10, blog: 5 }
+  min: 200_000,
+  max: 500_000,
+  defaultPages: { landing: 3, brochure: 7, ecommerce: 15, webapp: 10, blog: 5 },
 };
 
 // -----------------------------------------------------------------------------
 // 콘텐츠 제공 방식별 추가 비용
 // -----------------------------------------------------------------------------
 export const contentCosts: Record<string, { min: number; max: number }> = {
-  // TODO: clientProvides: { min: 0, max: 0 }
-  // needCopywriting: { min: 1_000_000, max: 3_000_000 }
-  // needMediaProduction: { min: 2_000_000, max: 5_000_000 }
+  clientProvides: { min: 0, max: 0 },
+  needCopywriting: { min: 1_000_000, max: 3_000_000 },
+  needMediaProduction: { min: 2_000_000, max: 5_000_000 },
 };
 
 // -----------------------------------------------------------------------------
 // 외부 연동 서비스별 비용
 // -----------------------------------------------------------------------------
 export const integrationCosts: Record<string, { min: number; max: number }> = {
-  // TODO: 각 서비스 300,000 ~ 500,000
-  // googleAnalytics, metaPixel, kakaoPay, tossPay, naverPay, crmIntegration, externalApi
+  googleAnalytics: { min: 300_000, max: 500_000 },
+  metaPixel: { min: 300_000, max: 500_000 },
+  kakaoPay: { min: 300_000, max: 500_000 },
+  tossPay: { min: 300_000, max: 500_000 },
+  naverPay: { min: 300_000, max: 500_000 },
+  crmIntegration: { min: 300_000, max: 500_000 },
+  externalApi: { min: 300_000, max: 500_000 },
 };

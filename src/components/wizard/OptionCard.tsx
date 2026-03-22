@@ -17,6 +17,10 @@
 // =============================================================================
 
 import type { QuestionOption } from '@/types';
+import { useTranslation } from 'react-i18next';
+import { CheckCircle2 } from 'lucide-react';
+import * as Icons from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface OptionCardProps {
   option: QuestionOption;
@@ -24,11 +28,36 @@ interface OptionCardProps {
   onSelect: (optionId: string) => void;
 }
 
-export function OptionCard({ option: _option, selected: _selected, onSelect: _onSelect }: OptionCardProps) {
-  // TODO: 구현
+export function OptionCard({ option, selected, onSelect }: OptionCardProps) {
+  const { t } = useTranslation('questions');
+
+  const IconComponent = option.icon ? (Icons[option.icon as keyof typeof Icons] as any) : null;
+
   return (
-    <div>
-      {/* TODO: 아이콘 + 레이블 + 설명 + 선택 표시 */}
-    </div>
+    <button
+      onClick={() => onSelect(option.id)}
+      role="option"
+      aria-selected={selected}
+      className={cn(
+        'rounded-lg border-2 p-4 text-left transition-all duration-200',
+        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+        selected
+          ? 'border-blue-500 bg-blue-50 shadow-md'
+          : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+      )}
+    >
+      <div className="flex gap-3">
+        <div className="flex-shrink-0">
+          {IconComponent && <IconComponent className="h-5 w-5 text-blue-600" />}
+        </div>
+        <div className="flex-1">
+          <div className="font-semibold text-gray-900">{t(option.labelKey)}</div>
+          {option.descriptionKey && (
+            <div className="mt-1 text-sm text-gray-600">{t(option.descriptionKey)}</div>
+          )}
+        </div>
+        {selected && <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-blue-600" />}
+      </div>
+    </button>
   );
 }

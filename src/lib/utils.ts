@@ -17,13 +17,16 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /** KRW 금액 포맷팅: 1500000 → "1,500,000원" */
-export function formatKRW(_amount: number): string {
-  // TODO: Intl.NumberFormat('ko-KR') 사용
-  return '';
+export function formatKRW(amount: number): string {
+  return new Intl.NumberFormat('ko-KR', {
+    style: 'currency',
+    currency: 'KRW',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 /** 비용 범위 포맷팅: "1,500,000원 ~ 3,000,000원" */
-export function formatRange(_min: number, _max: number): string {
-  // TODO: formatKRW(min) + ' ~ ' + formatKRW(max)
-  return '';
+export function formatRange(min: number, max: number): string {
+  return `${formatKRW(min)} ~ ${formatKRW(max)}`;
 }

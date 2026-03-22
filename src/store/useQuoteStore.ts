@@ -23,25 +23,27 @@
 
 import { create } from 'zustand';
 import type { QuoteStore } from '@/types';
+import { questionCategories } from '@/data/questions';
+
+const MAX_STEP = questionCategories.length - 1;
 
 export const useQuoteStore = create<QuoteStore>((set) => ({
-  // TODO: 초기 상태 및 액션 구현
   currentStep: 0,
   answers: {},
 
-  setCurrentStep: (_step) => {
-    // TODO: set({ currentStep: step })
+  setCurrentStep: (step) => {
+    set({ currentStep: Math.min(Math.max(step, 0), MAX_STEP) });
   },
   nextStep: () => {
-    // TODO: set((state) => ({ currentStep: Math.min(state.currentStep + 1, MAX_STEP) }))
+    set((state) => ({ currentStep: Math.min(state.currentStep + 1, MAX_STEP) }));
   },
   prevStep: () => {
-    // TODO: set((state) => ({ currentStep: Math.max(state.currentStep - 1, 0) }))
+    set((state) => ({ currentStep: Math.max(state.currentStep - 1, 0) }));
   },
-  setAnswer: (_questionId, _value) => {
-    // TODO: set((state) => ({ answers: { ...state.answers, [questionId]: value } }))
+  setAnswer: (questionId, value) => {
+    set((state) => ({ answers: { ...state.answers, [questionId]: value } }));
   },
   resetQuote: () => {
-    // TODO: set({ currentStep: 0, answers: {} })
+    set({ currentStep: 0, answers: {} });
   },
 }));

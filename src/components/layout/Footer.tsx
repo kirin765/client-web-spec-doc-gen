@@ -8,11 +8,19 @@
 // 3. 간결한 디자인, border-top으로 구분
 // =============================================================================
 
+import { useTranslation } from 'react-i18next';
+
 export function Footer() {
-  // TODO: 구현
+  const { t } = useTranslation('common');
+
   return (
-    <footer>
-      {/* TODO */}
+    <footer className="border-t bg-gray-50">
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        <div className="space-y-3 text-center">
+          <p className="text-sm text-gray-600">{t('footer.copyright')}</p>
+          <p className="text-xs text-gray-500">{t('footer.disclaimer')}</p>
+        </div>
+      </div>
     </footer>
   );
 }

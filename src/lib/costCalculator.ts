@@ -38,21 +38,141 @@
 // 10. CostEstimate 객체 조립하여 반환
 // =============================================================================
 
-import type { Answers, CostEstimate } from '@/types';
+import type { Answers, CostEstimate, CostBreakdownItem } from '@/types';
+import {
+  baseTiers,
+  featureCosts,
+  designMultipliers,
+  timelineMultipliers,
+  perPageCost,
+  contentCosts,
+  integrationCosts,
+} from '@/data/pricing';
 
-export function calculateCost(_answers: Answers): CostEstimate {
-  // TODO: 위 흐름대로 구현
-  // 참조할 데이터: baseTiers, featureCosts, designMultipliers,
-  //              timelineMultipliers, perPageCost, contentCosts, integrationCosts
-  //              (모두 @/data/pricing에서 import)
+export function calculateCost(answers: Answers): CostEstimate {
+  // 1. 사이트 유형에서 기본 단가 선택
+  const siteTypeId = answers.siteType as string;
+  const baseTierIndex = baseTiers.findIndex((t) => t.id === siteTypeId);
+  const baseTier = baseTierIndex >= 0 ? baseTiers[baseTierIndex] : baseTiers[0];
+
+  let subtotalMin = baseTier.minCost;
+  let subtotalMax = baseTier.maxCost;
+
+  const breakdown: CostBreakdownItem[] = [
+    {
+      category: '기본',
+      label: `${baseTier.labelKey}`,
+      minAmount: baseTier.minCost,
+      maxAmount: baseTier.maxCost,
+    },
+  ];
+
+  // 2. 추가 페이지 비용 계산
+  const expectedPages = answers.expectedPages as number | undefined;
+  const defaultPageCount = (perPageCost.defaultPages as Record<string, number>)[siteTypeId] || 5;
+  if (expectedPages && expectedPages > defaultPageCount) {
+    const excessPages = expectedPages - defaultPageCount;
+    const pageAddMin = excessPages * perPageCost.min;
+    const pageAddMax = excessPages * perPageCost.max;
+    subtotalMin += pageAddMin;
+    subtotalMax += pageAddMax;
+    breakdown.push({
+      category: '규모',
+      label: `추가 페이지 (${excessPages}개)`,
+      minAmount: pageAddMin,
+      maxAmount: pageAddMax,
+    });
+  }
+
+  // 3. 기능 추가 비용
+  const coreFeatures = answers.coreFeatures as string[] | undefined;
+  if (coreFeatures) {
+    for (const featureId of coreFeatures) {
+      const cost = featureCosts[featureId];
+      if (cost) {
+        subtotalMin += cost.min;
+        subtotalMax += cost.max;
+        breakdown.push({
+          category: '기능',
+          label: `questions.coreFeatures.options.${featureId}`,
+          minAmount: cost.min,
+          maxAmount: cost.max,
+        });
+      }
+    }
+  }
+
+  // 4. 이커머스 전용 기능 (조건부)
+  const ecommerceFeatures = answers.ecommerceFeatures as string[] | undefined;
+  if (ecommerceFeatures && siteTypeId === 'ecommerce') {
+    for (const featureId of ecommerceFeatures) {
+      const cost = featureCosts[featureId];
+      if (cost) {
+        subtotalMin += cost.min;
+        subtotalMax += cost.max;
+        breakdown.push({
+          category: '기능',
+          label: `questions.ecommerceFeatures.options.${featureId}`,
+          minAmount: cost.min,
+          maxAmount: cost.max,
+        });
+      }
+    }
+  }
+
+  // 5. 콘텐츠 제공 방식
+  const contentDelivery = answers.contentDelivery as string | undefined;
+  if (contentDelivery) {
+    const cost = contentCosts[contentDelivery];
+    if (cost) {
+      subtotalMin += cost.min;
+      subtotalMax += cost.max;
+      breakdown.push({
+        category: '콘텐츠',
+        label: `questions.contentDelivery.options.${contentDelivery}`,
+        minAmount: cost.min,
+        maxAmount: cost.max,
+      });
+    }
+  }
+
+  // 6. 외부 서비스 연동
+  const externalIntegrations = answers.externalIntegrations as string[] | undefined;
+  if (externalIntegrations) {
+    for (const integrationId of externalIntegrations) {
+      const cost = integrationCosts[integrationId];
+      if (cost) {
+        subtotalMin += cost.min;
+        subtotalMax += cost.max;
+        breakdown.push({
+          category: '연동',
+          label: `questions.externalIntegrations.options.${integrationId}`,
+          minAmount: cost.min,
+          maxAmount: cost.max,
+        });
+      }
+    }
+  }
+
+  // 7. 디자인 복잡도 승수
+  const designComplexity = answers.designComplexity as string | undefined;
+  const designMultiplier = designComplexity ? designMultipliers[designComplexity] ?? 1.0 : 1.0;
+
+  // 8. 일정 승수
+  const desiredTimeline = answers.desiredTimeline as string | undefined;
+  const timelineMultiplier = desiredTimeline ? timelineMultipliers[desiredTimeline] ?? 1.0 : 1.0;
+
+  // 9. 최종 계산: 승수 적용
+  const totalMin = Math.floor((subtotalMin * designMultiplier * timelineMultiplier) / 100_000) * 100_000;
+  const totalMax = Math.ceil((subtotalMax * designMultiplier * timelineMultiplier) / 100_000) * 100_000;
 
   return {
-    baseTier: { id: '', labelKey: '', minCost: 0, maxCost: 0 },
-    featureAdditions: [],
-    designMultiplier: 1,
-    timelineMultiplier: 1,
-    totalMin: 0,
-    totalMax: 0,
-    breakdown: [],
+    baseTier,
+    featureAdditions: breakdown.filter((b) => b.category === '기능'),
+    designMultiplier,
+    timelineMultiplier,
+    totalMin,
+    totalMax,
+    breakdown,
   };
 }
