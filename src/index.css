@@ -6,27 +6,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/*
- * TODO 구현 사항:
- * 1. @layer base에 기본 폰트, 색상, 배경 설정
- *    - body: font-family 'Pretendard' 또는 시스템 한글 폰트 스택
- *    - 기본 텍스트 색상: gray-900
- *    - 기본 배경: white
- *
- * 2. @layer components에 재사용 유틸리티 클래스
- *    - .btn-primary: 기본 버튼 스타일
- *    - .card: 카드 컴포넌트 기본 스타일
- *    - .section-title: 섹션 제목 스타일
- *
- * 3. 스텝 전환 애니메이션 키프레임
- *    - @keyframes fadeIn
- *    - @keyframes slideIn
- *
- * 4. 프린트 스타일 (@media print)
- *    - 헤더/푸터 숨김
- *    - 불필요한 UI 요소 숨김
- */
-
 @layer base {
   body {
     @apply text-gray-900 bg-white antialiased;

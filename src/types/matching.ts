@@ -1,6 +1,4 @@
-// =============================================================================
-// 개발자 매칭 타입 설계
-// =============================================================================
+// 개발자 매칭 타입: DeveloperProfile, DeveloperMatchingInput, DeveloperMatchReason, DeveloperMatchResult.
 
 /** 개발자/팀 프로필 */
 export interface DeveloperProfile {

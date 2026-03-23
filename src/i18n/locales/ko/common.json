@@ -44,7 +44,65 @@
     "docTitle": "요구사항 명세서",
     "disclaimer": "본 견적은 자동 산출된 예상 범위이며, 실제 비용은 상세 상담 후 확정됩니다.",
     "tabCost": "비용 요약",
-    "tabDocument": "명세서 미리보기"
+    "tabDocument": "명세서 미리보기",
+    "tabMatching": "개발자 매칭",
+    "pdfDownload": "PDF 다운로드",
+    "edit": "수정하기",
+    "newQuote": "새 견적 시작",
+    "designMultiplier": "디자인 복잡도",
+    "timelineMultiplier": "일정 승수",
+    "subtotal": "소계",
+    "totalCost": "최종 예상 비용",
+    "tableCategory": "카테고리",
+    "tableItem": "항목",
+    "tableCost": "예상 비용"
+  },
+
+  "wizard": {
+    "estimatedCost": "예상 비용",
+    "baseFee": "기본 요금",
+    "additionalItems": "추가 항목",
+    "multipliers": "승수",
+    "designMultiplier": "디자인",
+    "timelineMultiplier": "일정",
+    "finalEstimate": "최종 예상"
+  },
+
+  "landing": {
+    "heroTitle": "웹사이트 견적, 5분이면 충분합니다",
+    "heroSubtitle": "몇 가지 질문에 답하면 맞춤형 요구사항 명세서와 예상 비용을 즉시 받아보세요",
+    "cta": "무료 견적 시작하기",
+    "feature1Title": "간편한 질문",
+    "feature1Desc": "단계별 질문으로 요구사항을 체계적으로 정리합니다",
+    "feature2Title": "자동 문서 생성",
+    "feature2Desc": "전문적인 요구사항 명세서를 자동으로 생성합니다",
+    "feature3Title": "즉시 비용 확인",
+    "feature3Desc": "투명한 항목별 비용 분해표를 제공합니다",
+    "processTitle": "이렇게 진행됩니다",
+    "step1Title": "질문에 답하기",
+    "step1Desc": "6단계 위저드에서 프로젝트 정보를 입력합니다",
+    "step2Title": "명세서 확인",
+    "step2Desc": "자동 생성된 요구사항 명세서를 검토합니다",
+    "step3Title": "견적서 다운로드",
+    "step3Desc": "PDF로 저장하여 언제든 확인하고 공유합니다",
+    "ctaTitle": "지금 바로 시작하세요",
+    "ctaSubtitle": "5분이면 맞춤형 웹사이트 견적을 받을 수 있습니다"
+  },
+
+  "matching": {
+    "title": "프로젝트 조건에 맞는 추천 개발자",
+    "noResults": "현재 조건에 맞는 추천 개발자가 없습니다",
+    "noResultsDesc": "프로젝트 요구사항을 수정하여 다른 개발자를 찾아보세요",
+    "editButton": "수정하기",
+    "notice": "매칭 결과는 입력하신 프로젝트 조건을 기반으로 자동 산출된 추천입니다. 실제 개발자 역량 및 가용 여부는 직접 확인이 필요합니다.",
+    "specialties": "전문 분야",
+    "reasons": "추천 사유",
+    "responseTime": "대응 속도",
+    "budget": "예산",
+    "status": "상태",
+    "statusAvailable": "가능",
+    "statusBusy": "곧",
+    "statusLimited": "제한"
   },
 
   "pricing": {

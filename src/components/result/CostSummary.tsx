@@ -1,26 +1,4 @@
-// =============================================================================
-// CostSummary — 비용 요약 + 항목별 분해표
-// =============================================================================
-//
-// TODO 구현 사항:
-// 1. props로 CostEstimate를 받음
-//
-// 2. 상단: 총 비용 범위 대형 표시
-//    - "예상 비용" 제목
-//    - formatRange(totalMin, totalMax) → "8,500,000원 ~ 15,200,000원"
-//    - 강조 스타일 (text-3xl, font-bold, text-primary-600)
-//
-// 3. 중앙: 항목별 분해표 (테이블)
-//    - 카테고리 | 항목 | 예상 비용
-//    - breakdown 배열을 순회하며 행 생성
-//    - 카테고리별 소계 표시
-//    - 승수 행: 디자인 승수 (×1.3), 일정 승수 (×1.6) 등
-//
-// 4. 하단: 면책 조항
-//    - "본 견적은 자동 산출된 예상 범위이며, 실제 비용은 상세 상담 후 확정됩니다."
-//
-// 5. 스타일: Card 컴포넌트 내부, 깔끔한 테이블
-// =============================================================================
+// CostSummary — 비용 요약 + 항목별 분해표 + 면책 조항. i18n 키 사용.
 
 import type { CostEstimate } from '@/types';
 import { useTranslation } from 'react-i18next';
@@ -42,7 +20,7 @@ export function CostSummary({ estimate }: CostSummaryProps) {
           {formatRange(estimate.totalMin, estimate.totalMax)}
         </div>
         <div className="mt-2 text-sm text-blue-800">
-          디자인 복잡도: ×{estimate.designMultiplier} | 일정 승수: ×{estimate.timelineMultiplier}
+          {t('result.designMultiplier')}: ×{estimate.designMultiplier} | {t('result.timelineMultiplier')}: ×{estimate.timelineMultiplier}
         </div>
       </div>
 
@@ -52,13 +30,13 @@ export function CostSummary({ estimate }: CostSummaryProps) {
           <thead className="bg-gray-50">
             <tr>
               <th className="border-b px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                카테고리
+                {t('result.tableCategory')}
               </th>
               <th className="border-b px-4 py-3 text-left text-sm font-semibold text-gray-900">
-                항목
+                {t('result.tableItem')}
               </th>
               <th className="border-b px-4 py-3 text-right text-sm font-semibold text-gray-900">
-                예상 비용
+                {t('result.tableCost')}
               </th>
             </tr>
           </thead>
@@ -67,11 +45,9 @@ export function CostSummary({ estimate }: CostSummaryProps) {
               <tr key={idx} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-3 text-sm text-gray-600">{item.category}</td>
                 <td className="px-4 py-3 text-sm text-gray-900">
-                  {item.label.startsWith('questions.')
-                    ? t(item.label, { ns: 'questions' })
-                    : item.label.startsWith('pricing.')
-                      ? t(item.label, { ns: 'common' })
-                      : item.label}
+                  {item.label.startsWith('pricing.')
+                    ? t(item.label, { ns: 'common' })
+                    : item.label}
                 </td>
                 <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
                   {formatRange(item.minAmount, item.maxAmount)}
@@ -82,7 +58,7 @@ export function CostSummary({ estimate }: CostSummaryProps) {
             {/* 카테고리별 소계 */}
             <tr className="border-t-2 bg-gray-50 font-semibold">
               <td colSpan={2} className="px-4 py-3 text-sm text-gray-900">
-                소계
+                {t('result.subtotal')}
               </td>
               <td className="px-4 py-3 text-right text-sm text-gray-900">
                 {formatRange(
@@ -95,7 +71,7 @@ export function CostSummary({ estimate }: CostSummaryProps) {
             {/* 최종 합계 */}
             <tr className="bg-blue-50">
               <td colSpan={2} className="px-4 py-3 text-sm font-bold text-blue-900">
-                최종 예상 비용
+                {t('result.totalCost')}
               </td>
               <td className="px-4 py-3 text-right text-sm font-bold text-blue-600">
                 {formatRange(estimate.totalMin, estimate.totalMax)}

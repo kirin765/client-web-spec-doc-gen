@@ -1,16 +1,4 @@
-// =============================================================================
-// 가격 테이블 — 비용 산정에 사용되는 모든 상수
-// =============================================================================
-//
-// TODO 구현 사항:
-// 1. baseTiers: 사이트 유형별 기본 단가 (min/max KRW)
-// 2. featureCosts: 기능별 추가 비용 맵
-// 3. designMultipliers: 디자인 복잡도별 승수
-// 4. timelineMultipliers: 일정별 승수
-// 5. perPageCost: 추가 페이지당 비용
-// 6. contentCosts: 콘텐츠 제공 방식별 비용
-// 7. integrationCosts: 외부 연동 서비스별 비용
-// =============================================================================
+// 가격 테이블 — baseTiers, featureCosts, designMultipliers, timelineMultipliers, perPageCost, contentCosts, integrationCosts.
 
 import type { BaseTier } from '@/types';
 
