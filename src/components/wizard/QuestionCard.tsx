@@ -29,6 +29,7 @@
 // 4. 필수 여부 표시 (* 마크)
 // =============================================================================
 
+import { useEffect } from 'react';
 import type { Question } from '@/types';
 import { useTranslation } from 'react-i18next';
 import { useQuoteStore } from '@/store/useQuoteStore';
@@ -45,6 +46,13 @@ export function QuestionCard({ question }: QuestionCardProps) {
 
   const currentValue = answers[question.id];
   const isRequired = question.validation?.required;
+
+  // 범위 슬라이더의 초기값을 스토어에 저장
+  useEffect(() => {
+    if (question.type === 'range-slider' && currentValue === undefined) {
+      setAnswer(question.id, question.validation?.min || 1);
+    }
+  }, [question.id, question.type, question.validation?.min, currentValue, setAnswer]);
 
   const renderSingleSelect = () => {
     return (
@@ -84,9 +92,9 @@ export function QuestionCard({ question }: QuestionCardProps) {
   };
 
   const renderRangeSlider = () => {
-    const value = typeof currentValue === 'number' ? currentValue : question.validation?.min || 1;
     const min = question.validation?.min || 1;
     const max = question.validation?.max || 100;
+    const value = typeof currentValue === 'number' ? currentValue : min;
 
     return (
       <div className="space-y-4">

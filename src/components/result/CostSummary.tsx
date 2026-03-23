@@ -31,7 +31,7 @@ interface CostSummaryProps {
 }
 
 export function CostSummary({ estimate }: CostSummaryProps) {
-  const { t } = useTranslation('common');
+  const { t } = useTranslation(['common', 'questions']);
 
   return (
     <div className="space-y-6">
@@ -66,7 +66,13 @@ export function CostSummary({ estimate }: CostSummaryProps) {
             {estimate.breakdown.map((item, idx) => (
               <tr key={idx} className="border-b hover:bg-gray-50">
                 <td className="px-4 py-3 text-sm text-gray-600">{item.category}</td>
-                <td className="px-4 py-3 text-sm text-gray-900">{item.label}</td>
+                <td className="px-4 py-3 text-sm text-gray-900">
+                  {item.label.startsWith('questions.')
+                    ? t(item.label, { ns: 'questions' })
+                    : item.label.startsWith('pricing.')
+                      ? t(item.label, { ns: 'common' })
+                      : item.label}
+                </td>
                 <td className="px-4 py-3 text-right text-sm font-medium text-gray-900">
                   {formatRange(item.minAmount, item.maxAmount)}
                 </td>

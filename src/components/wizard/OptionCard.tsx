@@ -18,8 +18,39 @@
 
 import type { QuestionOption } from '@/types';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle2 } from 'lucide-react';
-import * as Icons from 'lucide-react';
+import {
+  CheckCircle2,
+  Zap,
+  FileText,
+  ShoppingCart,
+  Cpu,
+  BookOpen,
+  Square,
+  Palette,
+  Sparkles,
+  Smartphone,
+  Tablet,
+  Monitor,
+  Calendar,
+  AlertCircle,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+const optionIcons: Record<string, LucideIcon> = {
+  Zap,
+  FileText,
+  ShoppingCart,
+  Cpu,
+  BookOpen,
+  Square,
+  Palette,
+  Sparkles,
+  Smartphone,
+  Tablet,
+  Monitor,
+  Calendar,
+  AlertCircle,
+};
 import { cn } from '@/lib/utils';
 
 interface OptionCardProps {
@@ -31,7 +62,7 @@ interface OptionCardProps {
 export function OptionCard({ option, selected, onSelect }: OptionCardProps) {
   const { t } = useTranslation('questions');
 
-  const IconComponent = option.icon ? (Icons[option.icon as keyof typeof Icons] as any) : null;
+  const IconComponent = option.icon ? optionIcons[option.icon] : null;
 
   return (
     <button

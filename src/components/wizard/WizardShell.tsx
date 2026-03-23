@@ -30,8 +30,26 @@ import { calculateCost } from '@/lib/costCalculator';
 import { formatRange } from '@/lib/utils';
 import { StepRenderer } from './StepRenderer';
 import { StepNavigation } from './StepNavigation';
-import { CheckCircle2, Circle } from 'lucide-react';
-import * as Icons from 'lucide-react';
+import {
+  CheckCircle2,
+  Circle,
+  FileText,
+  Layers,
+  Puzzle,
+  Palette,
+  Link,
+  Clock,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+const categoryIcons: Record<string, LucideIcon> = {
+  FileText,
+  Layers,
+  Puzzle,
+  Palette,
+  Link,
+  Clock,
+};
 
 export function WizardShell() {
   const { t } = useTranslation(['common']);
@@ -58,7 +76,7 @@ export function WizardShell() {
         <div className="mx-auto max-w-6xl">
           <div className="grid grid-cols-6 gap-2">
             {questionCategories.map((category, idx) => {
-              const IconComponent = category.icon ? (Icons[category.icon as keyof typeof Icons] as any) : null;
+              const IconComponent = category.icon ? categoryIcons[category.icon] : null;
               const isComplete = isStepComplete(idx);
               const isActive = idx === currentStep;
 
@@ -66,8 +84,8 @@ export function WizardShell() {
                 <button
                   key={category.id}
                   onClick={() => {
-                    if (idx < currentStep) {
-                      // 이전 스텝으로 돌아가기 가능
+                    if (idx <= currentStep) {
+                      useQuoteStore.getState().setCurrentStep(idx);
                       window.scrollTo(0, 0);
                     }
                   }}

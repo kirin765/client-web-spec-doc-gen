@@ -12,7 +12,7 @@
 // 4. 404 페이지: / 로 리다이렉트
 // =============================================================================
 
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { LandingPage } from '@/pages/LandingPage';
@@ -29,6 +29,7 @@ export default function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/wizard" element={<WizardPage />} />
             <Route path="/result" element={<ResultPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
         <Footer />
