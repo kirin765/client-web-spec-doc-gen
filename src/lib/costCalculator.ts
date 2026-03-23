@@ -1,42 +1,6 @@
-// =============================================================================
-// 비용 계산기 — 순수 함수: answers → CostEstimate
-// =============================================================================
-//
-// TODO 구현 사항:
-// 이 파일의 핵심은 calculateCost() 순수 함수.
-// 입력: Answers (사용자 답변 맵)
-// 출력: CostEstimate (비용 범위 + 항목별 분해)
-//
-// 계산 흐름:
-// 1. answers.siteType으로 baseTiers에서 기본 단가 선택
-//    → breakdown에 "기본" 카테고리로 추가
-//
-// 2. answers.pageCount에서 해당 tier 기본 페이지 수 초과분 계산
-//    → 초과 페이지 × perPageCost를 breakdown "규모"에 추가
-//
-// 3. answers.features (string[])를 순회하며 featureCosts 합산
-//    → 각 기능을 breakdown "기능"에 추가
-//
-// 4. answers.ecommerceFeatures (조건부, string[]) 동일 처리
-//
-// 5. answers.contentProvision에서 contentCosts 추가
-//    → breakdown "콘텐츠"에 추가
-//
-// 6. answers.integrations (string[])를 순회하며 integrationCosts 합산
-//    → breakdown "연동"에 추가
-//
-// 7. answers.designComplexity로 designMultipliers에서 승수 결정
-//
-// 8. answers.timeline으로 timelineMultipliers에서 승수 결정
-//
-// 9. 최종 계산:
-//    subtotalMin = baseTier.minCost + sum(모든 add의 min)
-//    subtotalMax = baseTier.maxCost + sum(모든 add의 max)
-//    totalMin = floor(subtotalMin × designMultiplier × timelineMultiplier / 100_000) × 100_000
-//    totalMax = ceil(subtotalMax × designMultiplier × timelineMultiplier / 100_000) × 100_000
-//
-// 10. CostEstimate 객체 조립하여 반환
-// =============================================================================
+// costCalculator — 순수 함수: answers → CostEstimate.
+// baseTier 선택, 추가 페이지, 기능/콘텐츠/연동 비용 합산, 디자인·일정 승수 적용.
+// breakdown 라벨은 featureLabels/contentLabels/integrationLabels 맵으로 한글 직접 매핑.
 
 import type { Answers, CostEstimate, CostBreakdownItem } from '@/types';
 import {
@@ -48,6 +12,42 @@ import {
   contentCosts,
   integrationCosts,
 } from '@/data/pricing';
+
+const featureLabels: Record<string, string> = {
+  contactForm: '문의 폼',
+  search: '검색 기능',
+  auth: '회원 인증',
+  payment: '결제 기능',
+  adminPanel: '관리자 패널',
+  fileUpload: '파일 업로드',
+  chat: '실시간 채팅',
+  socialIntegration: '소셜 연동',
+  multiLanguage: '다국어 지원',
+  analyticsDashboard: '분석 대시보드',
+  booking: '예약 기능',
+  mapIntegration: '지도 연동',
+  productManagement: '상품 관리',
+  inventory: '재고 관리',
+  orderTracking: '주문 추적',
+  couponSystem: '쿠폰 시스템',
+  reviewSystem: '리뷰 시스템',
+};
+
+const contentLabels: Record<string, string> = {
+  clientProvides: '클라이언트 제공',
+  needCopywriting: '카피라이팅 필요',
+  needMediaProduction: '미디어 제작 필요',
+};
+
+const integrationLabels: Record<string, string> = {
+  googleAnalytics: 'Google Analytics',
+  metaPixel: 'Meta Pixel',
+  kakaoPay: '카카오페이',
+  tossPay: '토스페이',
+  naverPay: '네이버페이',
+  crmIntegration: 'CRM 연동',
+  externalApi: '외부 API',
+};
 
 export function calculateCost(answers: Answers): CostEstimate {
   // 1. 사이트 유형에서 기본 단가 선택
@@ -94,7 +94,7 @@ export function calculateCost(answers: Answers): CostEstimate {
         subtotalMax += cost.max;
         breakdown.push({
           category: '기능',
-          label: `questions.coreFeatures.options.${featureId}`,
+          label: featureLabels[featureId] || featureId,
           minAmount: cost.min,
           maxAmount: cost.max,
         });
@@ -112,7 +112,7 @@ export function calculateCost(answers: Answers): CostEstimate {
         subtotalMax += cost.max;
         breakdown.push({
           category: '기능',
-          label: `questions.ecommerceFeatures.options.${featureId}`,
+          label: featureLabels[featureId] || featureId,
           minAmount: cost.min,
           maxAmount: cost.max,
         });
@@ -129,7 +129,7 @@ export function calculateCost(answers: Answers): CostEstimate {
       subtotalMax += cost.max;
       breakdown.push({
         category: '콘텐츠',
-        label: `questions.contentDelivery.options.${contentDelivery}`,
+        label: contentLabels[contentDelivery] || contentDelivery,
         minAmount: cost.min,
         maxAmount: cost.max,
       });
@@ -146,7 +146,7 @@ export function calculateCost(answers: Answers): CostEstimate {
         subtotalMax += cost.max;
         breakdown.push({
           category: '연동',
-          label: `questions.externalIntegrations.options.${integrationId}`,
+          label: integrationLabels[integrationId] || integrationId,
           minAmount: cost.min,
           maxAmount: cost.max,
         });

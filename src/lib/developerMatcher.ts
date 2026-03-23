@@ -1,6 +1,4 @@
-// =============================================================================
-// 개발자 매칭 로직
-// =============================================================================
+// developerMatcher — 규칙 기반 개발자 매칭: buildMatchingInput, scoreDeveloper, matchDevelopers.
 
 import type { Answers, CostEstimate } from '@/types';
 import type { DeveloperProfile, DeveloperMatchingInput, DeveloperMatchReason, DeveloperMatchResult } from '@/types/matching';

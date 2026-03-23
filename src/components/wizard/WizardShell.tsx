@@ -1,28 +1,8 @@
-// =============================================================================
-// WizardShell — 위저드 전체 컨테이너
-// =============================================================================
-//
-// TODO 구현 사항:
-// 1. 상단 프로그레스 바
-//    - 6개 스텝 표시 (각 카테고리의 labelKey + icon)
-//    - 현재 스텝 하이라이트, 완료 스텝 체크마크
-//    - 클릭으로 이전 스텝 이동 가능 (미래 스텝은 불가)
-//
-// 2. 중앙 콘텐츠 영역
-//    - <StepRenderer />로 현재 스텝의 질문들을 렌더링
-//    - 스텝 전환 시 fade/slide 애니메이션 (CSS transition)
-//
-// 3. 하단 네비게이션
-//    - <StepNavigation />으로 이전/다음 버튼
-//
-// 4. 우측 사이드바 (데스크톱) / 하단 시트 (모바일)
-//    - 실시간 비용 미리보기
-//    - useQuoteStore의 answers를 costCalculator에 전달하여 계산
-//    - 금액 변동 시 하이라이트 애니메이션
-//
-// 5. 레이아웃: max-w-4xl 중앙 정렬, 패딩
-// =============================================================================
+// WizardShell — 위저드 전체 컨테이너.
+// 상단 프로그레스 바 (6스텝), 중앙 StepRenderer, 우측 실시간 비용 미리보기, 하단 StepNavigation.
+// calculateCost()를 useMemo로 메모이제이션.
 
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuoteStore } from '@/store/useQuoteStore';
 import { questionCategories } from '@/data/questions';
@@ -56,7 +36,7 @@ export function WizardShell() {
   const { currentStep, answers } = useQuoteStore();
 
   const currentCategory = questionCategories[currentStep];
-  const costEstimate = calculateCost(answers);
+  const costEstimate = useMemo(() => calculateCost(answers), [answers]);
 
   // 스텝 완료 여부 확인
   const isStepComplete = (step: number) => {
@@ -128,12 +108,12 @@ export function WizardShell() {
 
         {/* 우측: 비용 미리보기 (데스크톱) */}
         <div className="hidden w-80 border-l bg-white p-6 shadow-sm lg:block">
-          <h3 className="mb-4 text-lg font-bold text-gray-900">예상 비용</h3>
+          <h3 className="mb-4 text-lg font-bold text-gray-900">{t('wizard.estimatedCost')}</h3>
 
           <div className="space-y-4">
             {/* 기본 가격 */}
             <div className="rounded-lg bg-blue-50 p-3">
-              <div className="text-xs font-semibold text-gray-600 uppercase">기본 요금</div>
+              <div className="text-xs font-semibold text-gray-600 uppercase">{t('wizard.baseFee')}</div>
               <div className="mt-1 text-lg font-bold text-blue-600">
                 {formatRange(costEstimate.baseTier.minCost, costEstimate.baseTier.maxCost)}
               </div>
@@ -142,7 +122,7 @@ export function WizardShell() {
             {/* 추가 비용 항목 */}
             {costEstimate.breakdown.slice(1).length > 0 && (
               <div className="border-t pt-4">
-                <div className="text-xs font-semibold text-gray-600 uppercase">추가 항목</div>
+                <div className="text-xs font-semibold text-gray-600 uppercase">{t('wizard.additionalItems')}</div>
                 <div className="mt-2 space-y-2">
                   {costEstimate.breakdown.slice(1).map((item, idx) => (
                     <div key={idx} className="flex justify-between text-sm">
@@ -159,13 +139,13 @@ export function WizardShell() {
             {/* 승수 적용 */}
             {(costEstimate.designMultiplier > 1 || costEstimate.timelineMultiplier > 1) && (
               <div className="border-t pt-4">
-                <div className="text-xs font-semibold text-gray-600 uppercase">승수</div>
+                <div className="text-xs font-semibold text-gray-600 uppercase">{t('wizard.multipliers')}</div>
                 <div className="mt-2 space-y-1 text-sm">
                   {costEstimate.designMultiplier > 1 && (
-                    <div>디자인: ×{costEstimate.designMultiplier}</div>
+                    <div>{t('wizard.designMultiplier')}: ×{costEstimate.designMultiplier}</div>
                   )}
                   {costEstimate.timelineMultiplier > 1 && (
-                    <div>일정: ×{costEstimate.timelineMultiplier}</div>
+                    <div>{t('wizard.timelineMultiplier')}: ×{costEstimate.timelineMultiplier}</div>
                   )}
                 </div>
               </div>
@@ -173,7 +153,7 @@ export function WizardShell() {
 
             {/* 최종 예상 비용 */}
             <div className="border-t pt-4">
-              <div className="text-xs font-semibold text-gray-600 uppercase">최종 예상</div>
+              <div className="text-xs font-semibold text-gray-600 uppercase">{t('wizard.finalEstimate')}</div>
               <div className="mt-2 text-xl font-bold text-gray-900">
                 {formatRange(costEstimate.totalMin, costEstimate.totalMax)}
               </div>

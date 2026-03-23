@@ -1,0 +1,169 @@
+// Prisma 스키마 — 7개 모델 정의
+// User, MagicLinkToken, ProjectRequest, RequirementDocument, Developer, MatchResult, PricingRuleVersion
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  role            Role      @default(CLIENT)
+  name            String?
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  projectRequests ProjectRequest[]
+
+  @@map("users")
+}
+
+model MagicLinkToken {
+  email     String   @unique
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("magic_link_tokens")
+}
+
+enum Role {
+  CLIENT
+  DEVELOPER
+  ADMIN
+}
+
+model ProjectRequest {
+  id              String               @id @default(cuid())
+  userId          String?              @map("user_id")
+  status          ProjectStatus        @default(DRAFT)
+  projectName     String?              @map("project_name")
+  siteType        String?              @map("site_type")
+  rawAnswers      Json?                @map("raw_answers")
+  normalizedSpec  Json?                @map("normalized_spec")
+  costEstimate    Json?                @map("cost_estimate")
+  pricingVersion  String?              @map("pricing_version")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  submittedAt     DateTime?            @map("submitted_at")
+
+  user            User?                @relation(fields: [userId], references: [id])
+  documents       RequirementDocument[]
+  matchResults    MatchResult[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([siteType])
+  @@index([submittedAt])
+  @@map("project_requests")
+}
+
+enum ProjectStatus {
+  DRAFT
+  SUBMITTED
+  CALCULATING
+  GENERATING_DOCUMENT
+  MATCHING
+  COMPLETED
+  ARCHIVED
+}
+
+model RequirementDocument {
+  id                String         @id @default(cuid())
+  projectRequestId  String         @map("project_request_id")
+  version           Int            @default(1)
+  format            String         @default("json")
+  storageUrl        String?        @map("storage_url")
+  snapshotJson      Json           @map("snapshot_json")
+  generatedAt       DateTime       @default(now()) @map("generated_at")
+
+  projectRequest    ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
+
+  @@unique([projectRequestId, version, format])
+  @@map("requirement_documents")
+}
+
+model Developer {
+  id                          String             @id @default(cuid())
+  type                        DeveloperType      @default(FREELANCER)
+  displayName                 String             @map("display_name")
+  headline                    String             @default("")
+  introduction                String?
+  skills                      Json               @default("[]")
+  specialties                 Json               @default("[]")
+  supportedProjectTypes       Json               @default("[]") @map("supported_project_types")
+  supportedCoreFeatures       Json               @default("[]") @map("supported_core_features")
+  supportedEcommerceFeatures  Json               @default("[]") @map("supported_ecommerce_features")
+  supportedDesignStyles       Json               @default("[]") @map("supported_design_styles")
+  supportedDesignComplexities Json               @default("[]") @map("supported_design_complexities")
+  supportedTimelines          Json               @default("[]") @map("supported_timelines")
+  budgetMin                   Int                @default(0) @map("budget_min")
+  budgetMax                   Int                @default(0) @map("budget_max")
+  availabilityStatus          AvailabilityStatus @default(AVAILABLE) @map("availability_status")
+  avgResponseHours            Int                @default(24) @map("avg_response_hours")
+  portfolioLinks              Json               @default("[]") @map("portfolio_links")
+  regions                     Json               @default("[]")
+  languages                   Json               @default("[]")
+  active                      Boolean            @default(false)
+  createdAt                   DateTime           @default(now()) @map("created_at")
+  updatedAt                   DateTime           @updatedAt @map("updated_at")
+
+  matchResults                MatchResult[]
+
+  @@index([active, availabilityStatus])
+  @@index([budgetMin, budgetMax])
+  @@map("developers")
+}
+
+enum DeveloperType {
+  FREELANCER
+  AGENCY
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  BUSY
+  LIMITED
+}
+
+model MatchResult {
+  id                String         @id @default(cuid())
+  projectRequestId  String         @map("project_request_id")
+  developerId       String         @map("developer_id")
+  score             Float
+  reasons           Json           @default("[]")
+  status            MatchStatus    @default(SUGGESTED)
+  createdAt         DateTime       @default(now()) @map("created_at")
+
+  projectRequest    ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
+  developer         Developer      @relation(fields: [developerId], references: [id])
+
+  @@index([developerId])
+  @@unique([projectRequestId, developerId])
+  @@map("match_results")
+}
+
+enum MatchStatus {
+  SUGGESTED
+  CONTACTED
+  ACCEPTED
+  REJECTED
+}
+
+model PricingRuleVersion {
+  id            String   @id @default(cuid())
+  version       String   @unique
+  rules         Json
+  effectiveFrom DateTime @map("effective_from")
+  createdAt     DateTime @default(now()) @map("created_at")
+  createdBy     String?  @map("created_by")
+
+  @@index([effectiveFrom])
+  @@map("pricing_rule_versions")
+}
