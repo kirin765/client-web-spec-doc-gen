@@ -9,13 +9,34 @@ interface Window { count: number; start: number }
 const WINDOWS: Map<string, Window> = new Map();
 const LIMIT = 100; // 기본 허용 요청 수
 const WINDOW_MS = 60 * 1000; // 1분
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5분
 
 @Injectable()
 export class ThrottleGuard implements CanActivate {
+  constructor() {
+    // Periodic cleanup to avoid memory leak
+    setInterval(() => {
+      const now = Date.now();
+      for (const [k, w] of WINDOWS) {
+        if (now - w.start > WINDOW_MS * 2) {
+          WINDOWS.delete(k);
+        }
+      }
+    }, CLEANUP_INTERVAL_MS);
+  }
+
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest();
     const key = req.user?.id ? `user:${req.user.id}` : `ip:${req.ip || req.connection?.remoteAddress}`;
     const now = Date.now();
+
+    // Occasional cleanup on request path to keep map size bounded
+    if (Math.random() < 0.01) {
+      for (const [k, w] of WINDOWS) {
+        if (now - w.start > WINDOW_MS) WINDOWS.delete(k);
+      }
+    }
+
     const win = WINDOWS.get(key);
     if (!win) {
       WINDOWS.set(key, { count: 1, start: now });

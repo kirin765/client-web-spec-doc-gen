@@ -1,26 +1,19 @@
 // 개발자 서비스: DTO 기반 검증, 필터 화이트리스트 적용
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/db/prisma.service';
-
-interface CreateDeveloperDto {
-  displayName: string;
-  email: string;
-  skills?: string[];
-  hourlyRate?: number;
-  introduction?: string;
-}
-
-interface UpdateDeveloperDto {
-  displayName?: string;
-  skills?: string[];
-  hourlyRate?: number;
-  introduction?: string;
-}
+import {
+  normalizeEnumFromApi,
+  normalizeEnumToApi,
+} from '../../common/utils/enum-normalizer';
+import { CreateDeveloperDto } from './dto/create-developer.dto';
+import { UpdateDeveloperDto } from './dto/update-developer.dto';
 
 interface DeveloperSearchFilters {
   skills?: string[];
-  minRate?: number;
-  maxRate?: number;
+  supportedProjectTypes?: string[];
+  minBudget?: number;
+  maxBudget?: number;
+  availabilityStatus?: string;
 }
 
 @Injectable()
@@ -28,33 +21,86 @@ export class DevelopersService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateDeveloperDto) {
-    if (!dto.displayName || !dto.email) {
-      throw new BadRequestException('displayName and email are required');
-    }
-    return this.prisma.developer.create({
+    const developer = await this.prisma.developer.create({
       data: {
         displayName: dto.displayName,
-        email: dto.email,
-        skills: dto.skills || [],
-        hourlyRate: dto.hourlyRate || 0,
-        introduction: dto.introduction || '',
-        active: false, // Require admin approval
+        type: normalizeEnumFromApi(dto.type) as any,
+        headline: dto.headline,
+        introduction: dto.introduction,
+        skills: dto.skills,
+        specialties: dto.specialties ?? [],
+        supportedProjectTypes: dto.supportedProjectTypes,
+        supportedCoreFeatures: dto.supportedCoreFeatures ?? [],
+        supportedEcommerceFeatures: dto.supportedEcommerceFeatures ?? [],
+        supportedDesignStyles: dto.supportedDesignStyles ?? [],
+        supportedDesignComplexities: dto.supportedDesignComplexities ?? [],
+        supportedTimelines: dto.supportedTimelines ?? [],
+        budgetMin: dto.budgetMin,
+        budgetMax: dto.budgetMax,
+        availabilityStatus: normalizeEnumFromApi(
+          dto.availabilityStatus ?? 'available',
+        ) as any,
+        avgResponseHours: dto.avgResponseHours ?? 24,
+        portfolioLinks: dto.portfolioLinks ?? [],
+        regions: dto.regions ?? [],
+        languages: dto.languages ?? [],
+        active: false,
       },
     });
+
+    return this.mapDeveloper(developer);
   }
 
   async update(id: string, dto: UpdateDeveloperDto) {
-    // 허용 필드만 추출
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (dto.displayName !== undefined) updateData.displayName = dto.displayName;
+    if (dto.type !== undefined) {
+      updateData.type = normalizeEnumFromApi(dto.type) as any;
+    }
+    if (dto.headline !== undefined) updateData.headline = dto.headline;
     if (dto.skills !== undefined) updateData.skills = dto.skills;
-    if (dto.hourlyRate !== undefined) updateData.hourlyRate = dto.hourlyRate;
+    if (dto.specialties !== undefined) updateData.specialties = dto.specialties;
+    if (dto.supportedProjectTypes !== undefined) {
+      updateData.supportedProjectTypes = dto.supportedProjectTypes;
+    }
+    if (dto.supportedCoreFeatures !== undefined) {
+      updateData.supportedCoreFeatures = dto.supportedCoreFeatures;
+    }
+    if (dto.supportedEcommerceFeatures !== undefined) {
+      updateData.supportedEcommerceFeatures = dto.supportedEcommerceFeatures;
+    }
+    if (dto.supportedDesignStyles !== undefined) {
+      updateData.supportedDesignStyles = dto.supportedDesignStyles;
+    }
+    if (dto.supportedDesignComplexities !== undefined) {
+      updateData.supportedDesignComplexities = dto.supportedDesignComplexities;
+    }
+    if (dto.supportedTimelines !== undefined) {
+      updateData.supportedTimelines = dto.supportedTimelines;
+    }
+    if (dto.budgetMin !== undefined) updateData.budgetMin = dto.budgetMin;
+    if (dto.budgetMax !== undefined) updateData.budgetMax = dto.budgetMax;
+    if (dto.availabilityStatus !== undefined) {
+      updateData.availabilityStatus = normalizeEnumFromApi(
+        dto.availabilityStatus,
+      ) as any;
+    }
+    if (dto.avgResponseHours !== undefined) {
+      updateData.avgResponseHours = dto.avgResponseHours;
+    }
+    if (dto.portfolioLinks !== undefined) {
+      updateData.portfolioLinks = dto.portfolioLinks;
+    }
+    if (dto.regions !== undefined) updateData.regions = dto.regions;
+    if (dto.languages !== undefined) updateData.languages = dto.languages;
     if (dto.introduction !== undefined) updateData.introduction = dto.introduction;
 
-    return this.prisma.developer.update({
+    const developer = await this.prisma.developer.update({
       where: { id },
       data: updateData,
     });
+
+    return this.mapDeveloper(developer);
   }
 
   async getById(id: string) {
@@ -66,11 +112,11 @@ export class DevelopersService {
       throw new NotFoundException('Developer not found');
     }
 
-    return developer;
+    return this.mapDeveloper(developer);
   }
 
   async getActiveDevelopers() {
-    return this.prisma.developer.findMany({
+    const developers = await this.prisma.developer.findMany({
       where: {
         active: true,
         availabilityStatus: {
@@ -78,44 +124,80 @@ export class DevelopersService {
         },
       },
     });
+
+    return developers.map((developer) => this.mapDeveloper(developer));
   }
 
   async search(filters: DeveloperSearchFilters) {
-    const whereConditions: any = {
+    const whereConditions: Record<string, unknown> = {
       active: true,
     };
 
-    // 화이트리스트 필터만 적용
     if (filters.skills && Array.isArray(filters.skills) && filters.skills.length > 0) {
       whereConditions.skills = {
         hasSome: filters.skills,
       };
     }
 
-    if (typeof filters.minRate === 'number' && filters.minRate >= 0) {
-      whereConditions.hourlyRate = {
-        ...whereConditions.hourlyRate,
-        gte: filters.minRate,
+    if (
+      filters.supportedProjectTypes &&
+      Array.isArray(filters.supportedProjectTypes) &&
+      filters.supportedProjectTypes.length > 0
+    ) {
+      whereConditions.supportedProjectTypes = {
+        hasSome: filters.supportedProjectTypes,
       };
     }
 
-    if (typeof filters.maxRate === 'number' && filters.maxRate >= 0) {
-      whereConditions.hourlyRate = {
-        ...whereConditions.hourlyRate,
-        lte: filters.maxRate,
+    if (typeof filters.minBudget === 'number' && filters.minBudget >= 0) {
+      whereConditions.budgetMax = {
+        gte: filters.minBudget,
       };
     }
 
-    return this.prisma.developer.findMany({
+    if (typeof filters.maxBudget === 'number' && filters.maxBudget >= 0) {
+      whereConditions.budgetMin = {
+        lte: filters.maxBudget,
+      };
+    }
+
+    if (filters.availabilityStatus) {
+      whereConditions.availabilityStatus = normalizeEnumFromApi(
+        filters.availabilityStatus,
+      );
+    }
+
+    const developers = await this.prisma.developer.findMany({
       where: whereConditions,
     });
+
+    return developers.map((developer) => this.mapDeveloper(developer));
   }
 
   async updateAvailability(id: string, status: 'AVAILABLE' | 'BUSY' | 'LIMITED') {
-    return this.prisma.developer.update({
+    const developer = await this.prisma.developer.update({
       where: { id },
-      data: { availabilityStatus: status },
+      data: {
+        availabilityStatus: normalizeEnumFromApi(status.toLowerCase()) as any,
+      },
     });
+
+    return this.mapDeveloper(developer);
+  }
+
+  private mapDeveloper(developer: any) {
+    return {
+      ...developer,
+      type: normalizeEnumToApi(developer.type),
+      availabilityStatus: normalizeEnumToApi(developer.availabilityStatus),
+      createdAt:
+        developer.createdAt instanceof Date
+          ? developer.createdAt.toISOString()
+          : developer.createdAt,
+      updatedAt:
+        developer.updatedAt instanceof Date
+          ? developer.updatedAt.toISOString()
+          : developer.updatedAt,
+    };
   }
 }
-

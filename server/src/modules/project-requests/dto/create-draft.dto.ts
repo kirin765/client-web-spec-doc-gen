@@ -2,9 +2,10 @@ import { IsNotEmpty, IsString, IsEnum, IsOptional } from 'class-validator';
 
 export enum SiteTypeEnum {
   LANDING = 'landing',
+  BROCHURE = 'brochure',
   ECOMMERCE = 'ecommerce',
-  CORPORATE = 'corporate',
-  PORTAL = 'portal',
+  WEBAPP = 'webapp',
+  BLOG = 'blog',
 }
 
 export class CreateDraftDto {

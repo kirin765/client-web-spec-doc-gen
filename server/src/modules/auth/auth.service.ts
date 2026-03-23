@@ -2,8 +2,6 @@
 import {
   Injectable,
   UnauthorizedException,
-  BadRequestException,
-  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -13,8 +11,6 @@ import { randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new Logger(AuthService.name);
-
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -32,14 +28,13 @@ export class AuthService {
       create: { email, token, expiresAt },
     });
 
-    // 이메일 발송
-    try {
-      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
-      const verifyUrl = `${frontendUrl}/auth/verify?token=${token}`;
-      await this.notificationsService.sendMagicLinkEmail(email, token, verifyUrl);
-    } catch (error) {
-      this.logger.warn(`Failed to send magic link email to ${email}`, error);
-    }
+    const frontendUrl =
+      this.configService.get<string>('frontendUrl') ||
+      this.configService.get<string>('appUrl') ||
+      'http://localhost:5173';
+    const magicLink = `${frontendUrl}/auth/verify?token=${token}`;
+
+    await this.notificationsService.sendMagicLinkEmail(email, magicLink);
 
     return { sent: true };
   }

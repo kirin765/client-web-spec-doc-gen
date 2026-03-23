@@ -5,9 +5,11 @@ import { BullModule } from '@nestjs/bullmq';
 import { MatchingController } from './matching.controller';
 import { MatchingService } from './matching.service';
 import { DevelopersModule } from '../developers/developers.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     DevelopersModule,
     BullModule.registerQueue({ name: 'developer-matching' }),
   ],

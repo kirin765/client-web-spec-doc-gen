@@ -1,11 +1,11 @@
-import { IsString, IsEnum, IsArray, IsNumber, IsOptional, Min, Max, IsUrl } from 'class-validator';
+import { IsString, IsIn, IsArray, IsNumber, IsOptional, Min, IsUrl } from 'class-validator';
 import type { AvailabilityStatus, DeveloperType } from '../../../types/developer';
 
 export class CreateDeveloperDto {
   @IsString()
   displayName: string;
 
-  @IsEnum(['freelancer', 'agency'])
+  @IsIn(['freelancer', 'agency'])
   type: DeveloperType;
 
   @IsString()
@@ -57,7 +57,7 @@ export class CreateDeveloperDto {
   @Min(0)
   budgetMax: number;
 
-  @IsEnum(['available', 'busy', 'limited'])
+  @IsIn(['available', 'busy', 'limited'])
   @IsOptional()
   availabilityStatus?: AvailabilityStatus;
 

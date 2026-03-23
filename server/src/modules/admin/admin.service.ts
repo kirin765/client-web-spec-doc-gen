@@ -1,6 +1,17 @@
 // [C9] 수정 필요: getConversionStats()에서 소문자 키('submitted', 'draft')를 사용하나 Prisma groupBy는 대문자 enum 값('SUBMITTED', 'DRAFT')을 반환함. 대문자 키 사용 또는 enum 정규화 처리 필요.
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/db/prisma.service';
+import {
+  normalizeEnumFromApi,
+  normalizeEnumToApi,
+} from '../../common/utils/enum-normalizer';
+
+interface ProjectRequestFilters {
+  status?: string;
+  siteType?: string;
+  submittedFrom?: string;
+  submittedTo?: string;
+}
 
 @Injectable()
 export class AdminService {
@@ -30,25 +41,33 @@ export class AdminService {
     });
   }
 
-  async listProjectRequests(page: number = 1, limit: number = 10, filters?: any): Promise<any> {
+  async listProjectRequests(
+    page: number = 1,
+    limit: number = 10,
+    filters?: ProjectRequestFilters,
+  ): Promise<any> {
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (filters?.status) {
-      where.status = filters.status;
+      where.status = normalizeEnumFromApi(filters.status);
     }
     if (filters?.siteType) {
       where.siteType = filters.siteType;
     }
     if (filters?.submittedFrom) {
+      const submittedAt =
+        (where.submittedAt as Record<string, unknown> | undefined) ?? {};
       where.submittedAt = {
-        ...where.submittedAt,
+        ...submittedAt,
         gte: new Date(filters.submittedFrom),
       };
     }
     if (filters?.submittedTo) {
+      const submittedAt =
+        (where.submittedAt as Record<string, unknown> | undefined) ?? {};
       where.submittedAt = {
-        ...where.submittedAt,
+        ...submittedAt,
         lte: new Date(filters.submittedTo),
       };
     }
@@ -64,7 +83,13 @@ export class AdminService {
     ]);
 
     return {
-      data,
+      data: data.map((projectRequest) => ({
+        ...projectRequest,
+        status: normalizeEnumToApi(projectRequest.status),
+        createdAt: projectRequest.createdAt.toISOString(),
+        updatedAt: projectRequest.updatedAt.toISOString(),
+        submittedAt: projectRequest.submittedAt?.toISOString() ?? null,
+      })),
       pagination: {
         page,
         limit,
@@ -77,29 +102,34 @@ export class AdminService {
   async getConversionStats(): Promise<any> {
     const stats = await this.prisma.projectRequest.groupBy({
       by: ['status'],
-      _count: true,
+      _count: {
+        _all: true,
+      },
     });
 
-    const counts = stats.reduce(
-      (acc: any, item: any) => {
-        acc[item.status] = item._count;
+    const counts = stats.reduce<Record<string, number>>(
+      (acc, item) => {
+        acc[normalizeEnumToApi(item.status)] = item._count._all;
         return acc;
       },
       {},
     );
 
-    const total = Object.values(counts).reduce((a: number, b: any) => a + b, 0) as number;
+    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
 
     return {
       total,
       byStatus: counts,
       conversionRates: {
-        draftToSubmitted: this.calculateRate(counts['submitted'] || 0, counts['draft'] || 0),
+        draftToSubmitted: this.calculateRate(counts.submitted ?? 0, counts.draft ?? 0),
         submittedToMatching: this.calculateRate(
-          (counts['matching'] || 0) + (counts['completed'] || 0),
-          counts['submitted'] || 0,
+          (counts.matching ?? 0) + (counts.completed ?? 0),
+          counts.submitted ?? 0,
         ),
-        matchingToCompleted: this.calculateRate(counts['completed'] || 0, counts['matching'] || 0),
+        matchingToCompleted: this.calculateRate(
+          counts.completed ?? 0,
+          counts.matching ?? 0,
+        ),
       },
     };
   }

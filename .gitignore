@@ -3,3 +3,7 @@ dist
 dist-ssr
 *.local
 .DS_Store
+*.tsbuildinfo
+shared/src/**/*.js
+shared/src/**/*.js.map
+shared/src/**/*.d.ts
