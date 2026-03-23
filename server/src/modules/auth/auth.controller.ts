@@ -1,4 +1,5 @@
-// AuthController — POST /auth/login, POST /auth/verify, POST /auth/refresh, GET /auth/me 구현.
+// [수정필요 H8] login()과 verify() 엔드포인트에 @Public() 데코레이터가 없음.
+// 글로벌 JWT 가드가 적용되면 비인증 사용자가 로그인/검증할 수 없으므로 @Public() 추가 필요.
 import {
   Controller,
   Post,
@@ -10,11 +11,13 @@ import {
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { User } from './decorators/user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @Public()
   @Post('login')
   async login(@Body() body: { email: string }) {
     if (!body.email) {
@@ -23,6 +26,7 @@ export class AuthController {
     return this.authService.login(body.email);
   }
 
+  @Public()
   @Post('verify')
   async verify(@Body() body: { token: string }) {
     if (!body.token) {

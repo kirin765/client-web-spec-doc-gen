@@ -1,3 +1,12 @@
+// [수정 필요 - H4] APP_URL 환경 변수가 스키마에 누락됨
+// - NotificationsService에서 APP_URL을 사용하지만 configSchema에 정의되어 있지 않음
+// - APP_URL: z.string().url().optional() 추가 및 반환 객체에 appUrl 필드 추가 필요
+//
+// [수정 필요 - M17] SMTP 비밀번호 환경 변수명 불일치
+// - 이 파일과 .env.example에서는 SMTP_PASS를 사용
+// - email.processor.ts에서는 SMTP_PASSWORD를 사용하여 값을 읽지 못함
+// - SMTP_PASS 또는 SMTP_PASSWORD 중 하나로 통일해야 함
+
 import { z } from 'zod';
 
 export const configSchema = z.object({
@@ -18,6 +27,7 @@ export const configSchema = z.object({
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().email().optional(),
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+  APP_URL: z.string().url().optional(),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -54,5 +64,6 @@ export default () => {
       from: validated.SMTP_FROM,
     },
     frontendUrl: validated.FRONTEND_URL,
+    appUrl: validated.APP_URL,
   };
 };

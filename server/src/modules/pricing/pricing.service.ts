@@ -1,5 +1,10 @@
-// PricingService — 기본 가격 규칙, 비용 계산, 버전 캐싱 구현.
-import { Injectable, Logger } from '@nestjs/common';
+// [수정필요 H15] 생성자에서 async initializeDefaultRules()를 await 없이 호출함.
+//   OnModuleInit 인터페이스를 구현하고 초기화 로직을 onModuleInit()으로 이동해야 함.
+// [수정필요 M13] 기본 가격 규칙의 siteType ID(landing/ecommerce/corporate/portal)가
+//   클라이언트 siteType ID(landing/brochure/ecommerce/webapp/blog)와 불일치. 정렬 필요.
+// [수정필요 M14] 기본 가격 규칙의 feature ID(authentication/admin_cms/...)가
+//   클라이언트 feature ID(auth/adminPanel/...)와 불일치. 정렬 필요.
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/db/prisma.service';
 import { calculateCostFromRules } from '../../common/utils/cost-calculator';
@@ -48,7 +53,7 @@ const DEFAULT_PRICING_RULES: PricingRuleSet = {
 };
 
 @Injectable()
-export class PricingService {
+export class PricingService implements OnModuleInit {
   private readonly logger = new Logger(PricingService.name);
   private currentRulesCache: { rules: PricingRuleSet; version: string; expiresAt: number } | null = null;
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -56,8 +61,10 @@ export class PricingService {
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
-  ) {
-    this.initializeDefaultRules();
+  ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.initializeDefaultRules();
   }
 
   private async initializeDefaultRules(): Promise<void> {

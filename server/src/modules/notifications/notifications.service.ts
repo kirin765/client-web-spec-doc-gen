@@ -1,4 +1,4 @@
-// NotificationsService — 매직링크, 견적완료, 프로젝트알림, 연락요청, 상태변경 이메일 큐 등록 구현.
+// [H4] 수정 필요: `configService.get('APP_URL')`을 사용하고 있으나 configuration.ts에서는 `FRONTEND_URL` → `frontendUrl`로 정의됨. `configService.get('frontendUrl')`로 변경해야 함.
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
@@ -39,7 +39,7 @@ export class NotificationsService {
       throw new BadRequestException('Missing required parameters for quote completion email');
     }
 
-    const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+    const appUrl = this.configService.get<string>('appUrl', 'http://localhost:3000');
     const resultUrl = `${appUrl}/results/${projectRequestId}`;
 
     await this.emailQueue.add('quote-completed', {
@@ -61,7 +61,7 @@ export class NotificationsService {
       throw new BadRequestException('Missing required parameters for new project notification');
     }
 
-    const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+    const appUrl = this.configService.get<string>('appUrl', 'http://localhost:3000');
     const projectUrl = `${appUrl}/projects/${matchResult.projectRequestId}`;
 
     await this.emailQueue.add('new-project', {
@@ -111,7 +111,7 @@ export class NotificationsService {
       throw new BadRequestException('Missing required parameters for status change notification');
     }
 
-    const appUrl = this.configService.get<string>('APP_URL', 'http://localhost:3000');
+    const appUrl = this.configService.get<string>('appUrl', 'http://localhost:3000');
     const projectUrl = `${appUrl}/projects/${projectRequestId}`;
 
     await this.emailQueue.add('status-change', {

@@ -1,22 +1,33 @@
+// [수정 필요 - C5] NormalizedSpec 필드 참조가 모두 잘못되어 데이터를 읽지 못함
+// - normalizedSpec.siteType → normalizedSpec.projectType으로 변경
+// - normalizedSpec.timeline → normalizedSpec.delivery.urgency으로 변경
+// - normalizedSpec.design?.style → normalizedSpec.scope.designStyle으로 변경
+// - normalizedSpec.features → normalizedSpec.scope.featureSet으로 변경
+// - normalizedSpec.integrations → normalizedSpec.scope.integrations으로 변경
+// - normalizedSpec.description → normalizedSpec.targetAudience 또는 적절한 필드로 변경
+// - 파라미터 타입을 any에서 NormalizedSpec으로 변경하여 타입 안전성 확보
+
 import type { RequirementsDocument } from '../../types/requirements-document';
 import type { CostEstimate } from '../../types/cost-estimate';
+import type { NormalizedSpec } from '../../types/answers';
 
 const SITE_TYPE_LABELS: Record<string, string> = {
   landing: '랜딩페이지',
+  brochure: '브로슈어',
   ecommerce: '이커머스',
-  corporate: '기업 사이트',
-  portal: '포탈/커뮤니티',
+  webapp: '웹 애플리케이션',
+  blog: '블로그',
 };
 
 const FEATURE_DESCRIPTIONS: Record<string, string> = {
-  authentication: '사용자 인증 및 회원 관리',
-  admin_cms: '관리자 대시보드 및 콘텐츠 관리',
+  auth: '사용자 인증 및 회원 관리',
+  adminPanel: '관리자 대시보드 및 콘텐츠 관리',
   payment: '결제 시스템 통합',
   search: '고급 검색 기능',
   analytics: '분석 및 통계',
   notification: '알림 시스템',
   api: 'REST API 제공',
-  mobile_app: '모바일 앱 연동',
+  mobileApp: '모바일 앱 연동',
 };
 
 const TIMELINE_LABELS: Record<string, { min: number; max: number }> = {
@@ -33,15 +44,16 @@ const DESIGN_LABELS: Record<string, string> = {
 };
 
 export function generateRequirementsDocument(
-  normalizedSpec: any,
+  normalizedSpec: NormalizedSpec,
   costEstimate: CostEstimate,
   rawAnswers?: Record<string, any>,
 ): RequirementsDocument {
-  const siteType = normalizedSpec.siteType || 'landing';
-  const projectName = normalizedSpec.projectName || '(프로젝트명 미정)';
-  const timeline = normalizedSpec.timeline || 'medium';
-  const designStyle = normalizedSpec.design?.style || 'template';
-  const features = normalizedSpec.features || [];
+  const projectType = normalizedSpec.projectType || 'landing';
+  const projectName = rawAnswers?.projectName || '(프로젝트명 미정)';
+  const urgency = normalizedSpec.delivery.urgency || 'medium';
+  const designTier = normalizedSpec.scope.designTier || 'template';
+  const features = normalizedSpec.scope.featureSet || [];
+  const pageCount = normalizedSpec.scope.pageCount || 5;
 
   const pages = [
     {
@@ -50,7 +62,7 @@ export function generateRequirementsDocument(
     },
   ];
 
-  if (siteType === 'ecommerce') {
+  if (projectType === 'ecommerce') {
     pages.push(
       { name: '상품 목록', description: '모든 상품의 목록 표시 및 필터링' },
       { name: '상품 상세', description: '개별 상품의 상세 정보 및 리뷰' },
@@ -63,8 +75,8 @@ export function generateRequirementsDocument(
     description: FEATURE_DESCRIPTIONS[f] || f,
   }));
 
-  const integrations = normalizedSpec.integrations || [];
-  const estimatedWeeks = TIMELINE_LABELS[timeline] || TIMELINE_LABELS.medium;
+  const integrations = normalizedSpec.scope.integrations || [];
+  const estimatedWeeks = TIMELINE_LABELS[urgency] || TIMELINE_LABELS.medium;
 
   const document: RequirementsDocument = {
     generatedAt: new Date().toISOString(),
@@ -76,9 +88,9 @@ export function generateRequirementsDocument(
     },
 
     projectOverview: {
-      siteType: SITE_TYPE_LABELS[siteType] || siteType,
-      description: normalizedSpec.description || `${projectName} 개발 프로젝트`,
-      targetAudience: normalizedSpec.targetAudience || '(타겟 오디언스 미정)',
+      siteType: SITE_TYPE_LABELS[projectType] || projectType,
+      description: rawAnswers?.projectDescription || `${projectName} 개발 프로젝트`,
+      targetAudience: rawAnswers?.targetAudience || '(타겟 오디언스 미정)',
     },
 
     scopeOfWork: {
@@ -88,13 +100,13 @@ export function generateRequirementsDocument(
     },
 
     designRequirements: {
-      complexity: DESIGN_LABELS[designStyle] || designStyle,
-      style: normalizedSpec.design?.style || 'modern',
+      complexity: DESIGN_LABELS[designTier] || designTier,
+      style: normalizedSpec.scope.designStyle || 'modern',
       responsiveTargets: ['Desktop', 'Tablet', 'Mobile'],
     },
 
     timeline: {
-      urgency: timeline,
+      urgency,
       estimatedWeeks,
     },
 

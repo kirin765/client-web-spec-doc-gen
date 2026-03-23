@@ -1,0 +1,60 @@
+
+> @spec-gen/server@0.1.0 build
+> nest build
+
+[96msrc/common/db/prisma.service.ts[0m:[93m26[0m:[93m14[0m - [91merror[0m[90m TS2345: [0mArgument of type '"beforeExit"' is not assignable to parameter of type 'never'.
+
+[7m26[0m     this.$on('beforeExit', async () => {
+[7m  [0m [91m             ~~~~~~~~~~~~[0m
+[96msrc/modules/developers/developers.service.ts[0m:[93m37[0m:[93m9[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'email' does not exist in type '(Without<DeveloperCreateInput, DeveloperUncheckedCreateInput> & DeveloperUncheckedCreateInput) | (Without<...> & DeveloperCreateInput)'.
+
+[7m37[0m         email: dto.email,
+[7m  [0m [91m        ~~~~~[0m
+
+  [96mnode_modules/.prisma/client/index.d.ts[0m:[93m6424[0m:[93m5[0m
+    [7m6424[0m     data: XOR<DeveloperCreateInput, DeveloperUncheckedCreateInput>
+    [7m    [0m [96m    ~~~~[0m
+    The expected type comes from property 'data' which is declared here on type '{ select?: DeveloperSelect<DefaultArgs>; include?: DeveloperInclude<DefaultArgs>; data: (Without<DeveloperCreateInput, DeveloperUncheckedCreateInput> & DeveloperUncheckedCreateInput) | (Without<...> & DeveloperCreateInput); }'
+[96msrc/modules/documents/processors/pdf.processor.ts[0m:[93m21[0m:[93m3[0m - [91merror[0m[90m TS2377: [0mConstructors for derived classes must contain a 'super' call.
+
+[7m21[0m   constructor(
+[7m  [0m [91m  ~~~~~~~~~~~[0m
+[96msrc/modules/matching/matching.service.ts[0m:[93m54[0m:[93m28[0m - [91merror[0m[90m TS2352: [0mConversion of type 'string | number | boolean | JsonObject | JsonArray' to type 'NormalizedSpec' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'JsonValue[]' is missing the following properties from type 'NormalizedSpec': projectType, scope, delivery
+
+[7m54[0m     const normalizedSpec = projectRequest.normalizedSpec as NormalizedSpec;
+[7m  [0m [91m                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/matching/matching.service.ts[0m:[93m63[0m:[93m57[0m - [91merror[0m[90m TS2352: [0mConversion of type '{ id: string; type: DeveloperType; displayName: string; headline: string; introduction: string; skills: JsonValue; specialties: JsonValue; supportedProjectTypes: JsonValue; ... 12 more ...; updatedAt: Date; }' to type 'DeveloperProfile' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: string; type: DeveloperType; displayName: string; headline: string; introduction: string; skills: JsonValue; specialties: JsonValue; supportedProjectTypes: JsonValue; ... 12 more ...; updatedAt: Date; }' is missing the following properties from type 'DeveloperProfile': supportedCoreFeatures, supportedEcommerceFeatures, supportedDesignStyles, supportedDesignComplexities
+
+[7m63[0m       const score = this.scoreDeveloper(normalizedSpec, developer as DeveloperProfile);
+[7m  [0m [91m                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/matching/matching.service.ts[0m:[93m66[0m:[93m61[0m - [91merror[0m[90m TS2352: [0mConversion of type '{ id: string; type: DeveloperType; displayName: string; headline: string; introduction: string; skills: JsonValue; specialties: JsonValue; supportedProjectTypes: JsonValue; ... 12 more ...; updatedAt: Date; }' to type 'DeveloperProfile' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: string; type: DeveloperType; displayName: string; headline: string; introduction: string; skills: JsonValue; specialties: JsonValue; supportedProjectTypes: JsonValue; ... 12 more ...; updatedAt: Date; }' is missing the following properties from type 'DeveloperProfile': supportedCoreFeatures, supportedEcommerceFeatures, supportedDesignStyles, supportedDesignComplexities
+
+[7m66[0m         const reasons = this.extractReasons(normalizedSpec, developer as DeveloperProfile, {
+[7m  [0m [91m                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/matching/matching.service.ts[0m:[93m266[0m:[93m15[0m - [91merror[0m[90m TS2322: [0mType '"contacted" | "accepted" | "rejected"' is not assignable to type 'MatchStatus | EnumMatchStatusFieldUpdateOperationsInput'.
+  Type '"contacted"' is not assignable to type 'MatchStatus | EnumMatchStatusFieldUpdateOperationsInput'. Did you mean '"CONTACTED"'?
+
+[7m266[0m       data: { status },
+[7m   [0m [91m              ~~~~~~[0m
+
+  [96mnode_modules/.prisma/client/index.d.ts[0m:[93m9826[0m:[93m5[0m
+    [7m9826[0m     status?: EnumMatchStatusFieldUpdateOperationsInput | $Enums.MatchStatus
+    [7m    [0m [96m    ~~~~~~[0m
+    The expected type comes from property 'status' which is declared here on type '(Without<MatchResultUpdateInput, MatchResultUncheckedUpdateInput> & MatchResultUncheckedUpdateInput) | (Without<...> & MatchResultUpdateInput)'
+[96msrc/modules/project-requests/project-requests.service.ts[0m:[93m113[0m:[93m9[0m - [91merror[0m[90m TS2322: [0mType 'NormalizedSpec' is not assignable to type 'InputJsonValue | NullableJsonNullValueInput'.
+  Type 'NormalizedSpec' is not assignable to type 'InputJsonObject'.
+    Index signature for type 'string' is missing in type 'NormalizedSpec'.
+
+[7m113[0m         normalizedSpec,
+[7m   [0m [91m        ~~~~~~~~~~~~~~[0m
+
+  [96mnode_modules/.prisma/client/index.d.ts[0m:[93m9495[0m:[93m5[0m
+    [7m9495[0m     normalizedSpec?: NullableJsonNullValueInput | InputJsonValue
+    [7m    [0m [96m    ~~~~~~~~~~~~~~[0m
+    The expected type comes from property 'normalizedSpec' which is declared here on type '(Without<ProjectRequestUpdateInput, ProjectRequestUncheckedUpdateInput> & ProjectRequestUncheckedUpdateInput) | (Without<...> & ProjectRequestUpdateInput)'
+
+Found 8 error(s).
+

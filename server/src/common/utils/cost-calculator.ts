@@ -1,3 +1,11 @@
+// [수정 필요 - C4] NormalizedSpec 필드 참조가 모두 잘못되어 데이터를 읽지 못함
+// - normalizedSpec.siteType → normalizedSpec.projectType으로 변경
+// - normalizedSpec.features → normalizedSpec.scope.featureSet으로 변경
+// - normalizedSpec.design?.style → normalizedSpec.scope.designStyle으로 변경
+// - normalizedSpec.timeline → normalizedSpec.delivery.urgency으로 변경
+// - normalizedSpec.integrations → normalizedSpec.scope.integrations으로 변경
+// - 파라미터 타입을 any에서 NormalizedSpec으로 변경하여 타입 안전성 확보
+
 import type { CostEstimate, CostBreakdownItem, BaseTier } from '../../types/cost-estimate';
 import type { PricingRuleSet } from '../../types/pricing-rule';
 import type { NormalizedSpec } from '../../types/answers';

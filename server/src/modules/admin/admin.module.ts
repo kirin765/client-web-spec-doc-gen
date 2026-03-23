@@ -1,4 +1,4 @@
-// AdminModule — PricingModule 의존.
+// [L3] 수정 필요: PricingModule을 import하고 있으나 AdminService에서 PricingService를 사용하지 않음. import 제거 또는 가격 관리 기능 추가 필요.
 import { Module } from '@nestjs/common';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';

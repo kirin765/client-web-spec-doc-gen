@@ -1,4 +1,4 @@
-// AdminService — 개발자 활성화/비활성화, 요청 목록, 전환율 통계 구현.
+// [C9] 수정 필요: getConversionStats()에서 소문자 키('submitted', 'draft')를 사용하나 Prisma groupBy는 대문자 enum 값('SUBMITTED', 'DRAFT')을 반환함. 대문자 키 사용 또는 enum 정규화 처리 필요.
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/db/prisma.service';
 
