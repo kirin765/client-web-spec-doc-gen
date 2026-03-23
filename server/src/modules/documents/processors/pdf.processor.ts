@@ -1,17 +1,20 @@
-// [수정 필요 - C2] PdfProcessor가 WorkerHost를 상속하지 않음
-// - @Processor 데코레이터가 동작하려면 WorkerHost를 extends 해야 함 (EmailProcessor 참고)
-// - process 메서드도 올바르게 오버라이드해야 함
-//
-// [수정 필요 - H12] generatePdfContent()가 HTML Buffer를 반환하지만 실제 PDF가 아님
-// - 현재 HTML 문자열을 Buffer로 변환할 뿐, 실제 PDF 파일이 생성되지 않음
-// - Puppeteer, pdfkit 등 실제 PDF 생성 라이브러리를 사용하여 HTML → PDF 변환 필요
-// - S3에 업로드되는 파일이 PDF가 아닌 HTML이므로 클라이언트에서 열 수 없음
 import { Injectable, Logger } from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
+import * as fs from 'fs';
+import * as path from 'path';
+import PDFDocument from 'pdfkit';
 import { PrismaService } from '../../../common/db/prisma.service';
 import { StorageService } from '../../../common/storage/storage.service';
 import type { RequirementsDocument } from '../../../types/requirements-document';
+
+interface PdfJobData {
+  documentId: string;
+  projectRequestId: string;
+  documentVersion: number;
+}
+
+type PdfDocumentInstance = InstanceType<typeof PDFDocument>;
 
 @Processor('pdf-generation')
 @Injectable()
@@ -25,12 +28,11 @@ export class PdfProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job): Promise<void> {
+  async process(job: Job<PdfJobData>): Promise<void> {
     const { documentId, projectRequestId, documentVersion } = job.data;
     this.logger.log(`Processing PDF generation for document: ${documentId}`);
 
     try {
-      // Fetch the requirement document
       const document = await this.prisma.requirementDocument.findUnique({
         where: { id: documentId },
       });
@@ -39,23 +41,19 @@ export class PdfProcessor extends WorkerHost {
         throw new Error(`Document not found: ${documentId}`);
       }
 
-      const requirementDoc = document.snapshotJson as any as RequirementsDocument;
+      const requirementDoc = document.snapshotJson as unknown as RequirementsDocument;
+      const pdfContent = await this.generatePdfContent(requirementDoc);
 
-      // Generate PDF content (using HTML-based approach)
-      const pdfContent = this.generatePdfContent(requirementDoc);
-
-      // Upload to S3
       const key = `documents/${projectRequestId}/requirement-v${documentVersion}.pdf`;
       await this.storageService.uploadFile(key, pdfContent, 'application/pdf');
 
-      // Get signed URL
       const signedUrl = await this.storageService.getSignedUrl(key);
 
-      // Update document with storage URL
       await this.prisma.requirementDocument.update({
         where: { id: documentId },
         data: {
           storageUrl: signedUrl,
+          format: 'pdf',
         },
       });
 
@@ -66,134 +64,210 @@ export class PdfProcessor extends WorkerHost {
     }
   }
 
-  private generatePdfContent(doc: RequirementsDocument): Buffer {
-    // HTML-based PDF content generation.
-    // 실제 PDF 변환이 필요한 경우 Puppeteer, pdfkit 등 외부 라이브러리와 함께 사용:
-    // - Puppeteer: const browser = await puppeteer.launch(); const pdf = await page.pdf();
-    // - pdfkit: const doc = new PDFDocument(); doc.text(...); doc.pipe(...);
-    // 현재는 HTML Buffer를 반환하며, 별도의 PDF 변환 도구 설정 필요.
-    let html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 2cm; line-height: 1.6; color: #333; }
-    h1 { border-bottom: 2px solid #007bff; padding-bottom: 10px; margin-top: 30px; }
-    h2 { color: #0056b3; margin-top: 25px; margin-bottom: 10px; font-size: 18px; }
-    h3 { color: #495057; margin-top: 15px; font-size: 15px; }
-    .section { margin-bottom: 20px; }
-    .item { margin: 8px 0; }
-    .item-name { font-weight: bold; color: #0056b3; }
-    .item-desc { margin-left: 20px; color: #555; font-size: 14px; }
-    table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #f8f9fa; font-weight: bold; }
-    .cost-row { font-weight: bold; }
-    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
-  </style>
-</head>
-<body>
-  <h1>${this.escapeHtml(doc.clientInfo.projectName || 'Project')}</h1>
-  
-  <div class="section">
-    <h2>프로젝트 개요</h2>
-    <table>
-      <tr><th>항목</th><th>내용</th></tr>
-      <tr><td>사이트 유형</td><td>${this.escapeHtml(doc.projectOverview.siteType)}</td></tr>
-      <tr><td>설명</td><td>${this.escapeHtml(doc.projectOverview.description)}</td></tr>
-      <tr><td>타겟 오디언스</td><td>${this.escapeHtml(doc.projectOverview.targetAudience)}</td></tr>
-    </table>
-  </div>
+  private async generatePdfContent(doc: RequirementsDocument): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const pdf = new PDFDocument({
+        size: 'A4',
+        margin: 50,
+        info: {
+          Title: doc.clientInfo.projectName || 'Requirement Document',
+          Author: 'Spec Doc Generator',
+        },
+      });
+      const chunks: Buffer[] = [];
 
-  <div class="section">
-    <h2>범위</h2>
-    
-    <h3>페이지 (${doc.scopeOfWork.pages.length}개)</h3>
-    <div>${doc.scopeOfWork.pages.map((p: any) => `
-      <div class="item">
-        <div class="item-name">• ${this.escapeHtml(p.name)}</div>
-        <div class="item-desc">${this.escapeHtml(p.description)}</div>
-      </div>
-    `).join('')}</div>
+      pdf.on('data', (chunk) => {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      });
+      pdf.on('end', () => resolve(Buffer.concat(chunks)));
+      pdf.on('error', reject);
 
-    <h3>기능 (${doc.scopeOfWork.features.length}개)</h3>
-    <div>${doc.scopeOfWork.features.map((f: any) => `
-      <div class="item">
-        <div class="item-name">• ${this.escapeHtml(f.name)}</div>
-        <div class="item-desc">${this.escapeHtml(f.description)}</div>
-      </div>
-    `).join('')}</div>
+      const regularFontPath = this.resolveFontPath('NotoSansKR-Regular.ttf');
+      const boldFontPath = this.resolveFontPath('NotoSansKR-Bold.ttf');
+      const regularFontName = regularFontPath ? 'NotoSansKR' : 'Helvetica';
+      const boldFontName = boldFontPath ? 'NotoSansKRBold' : 'Helvetica-Bold';
 
-    ${doc.scopeOfWork.integrations.length > 0 ? `
-    <h3>통합</h3>
-    <div>${doc.scopeOfWork.integrations.map((i: any) => `
-      <div class="item">• ${this.escapeHtml(i)}</div>
-    `).join('')}</div>
-    ` : ''}
-  </div>
+      if (regularFontPath) {
+        pdf.registerFont(regularFontName, regularFontPath);
+      }
+      if (boldFontPath) {
+        pdf.registerFont(boldFontName, boldFontPath);
+      }
 
-  <div class="section">
-    <h2>디자인</h2>
-    <table>
-      <tr><th>항목</th><th>내용</th></tr>
-      <tr><td>복잡도</td><td>${this.escapeHtml(doc.designRequirements.complexity)}</td></tr>
-      <tr><td>스타일</td><td>${this.escapeHtml(doc.designRequirements.style)}</td></tr>
-      <tr><td>반응형 대상</td><td>${this.escapeHtml(doc.designRequirements.responsiveTargets.join(', '))}</td></tr>
-    </table>
-  </div>
+      pdf.font(boldFontName).fontSize(22).text(doc.clientInfo.projectName || 'Project');
+      pdf.moveDown(0.25);
+      pdf.font(regularFontName).fontSize(10).fillColor('#666').text(`생성일: ${new Date(doc.generatedAt).toLocaleString('ko-KR')}`);
+      this.writeDivider(pdf);
 
-  <div class="section">
-    <h2>일정</h2>
-    <table>
-      <tr><th>항목</th><th>내용</th></tr>
-      <tr><td>긴급도</td><td>${this.escapeHtml(doc.timeline.urgency)}</td></tr>
-      <tr><td>예상 기간</td><td>${doc.timeline.estimatedWeeks.min}주 ~ ${doc.timeline.estimatedWeeks.max}주</td></tr>
-    </table>
-  </div>
+      this.writeSectionTitle(pdf, '프로젝트 개요', boldFontName);
+      this.writeKeyValue(pdf, '사이트 유형', doc.projectOverview.siteType, regularFontName, boldFontName);
+      this.writeKeyValue(pdf, '설명', doc.projectOverview.description, regularFontName, boldFontName);
+      this.writeKeyValue(pdf, '타겟 오디언스', doc.projectOverview.targetAudience, regularFontName, boldFontName);
 
-  <div class="section">
-    <h2>비용 견적</h2>
-    <table>
-      <tr><th colspan="2">비용 계산</th></tr>
-      <tr><td>기본 비용</td><td>${this.formatCurrency(doc.costEstimate.baseTier.minCost)} ~ ${this.formatCurrency(doc.costEstimate.baseTier.maxCost)}</td></tr>
-      <tr><td>디자인 승수</td><td>${doc.costEstimate.designMultiplier}x</td></tr>
-      <tr><td>타임라인 승수</td><td>${doc.costEstimate.timelineMultiplier}x</td></tr>
-      <tr class="cost-row"><td>최종 비용</td><td>${this.formatCurrency(doc.costEstimate.totalMin)} ~ ${this.formatCurrency(doc.costEstimate.totalMax)}</td></tr>
-    </table>
-  </div>
+      this.writeSectionTitle(pdf, '작업 범위', boldFontName);
+      this.writeSubsectionTitle(pdf, `페이지 (${doc.scopeOfWork.pages.length}개)`, boldFontName);
+      this.writeBulletList(
+        pdf,
+        doc.scopeOfWork.pages.map((page) => `${page.name}: ${page.description}`),
+        regularFontName,
+      );
+      this.writeSubsectionTitle(pdf, `기능 (${doc.scopeOfWork.features.length}개)`, boldFontName);
+      this.writeBulletList(
+        pdf,
+        doc.scopeOfWork.features.map((feature) => `${feature.name}: ${feature.description}`),
+        regularFontName,
+      );
+      if (doc.scopeOfWork.integrations.length > 0) {
+        this.writeSubsectionTitle(pdf, '외부 연동', boldFontName);
+        this.writeBulletList(pdf, doc.scopeOfWork.integrations, regularFontName);
+      }
 
-  ${doc.additionalNotes ? `
-  <div class="section">
-    <h2>추가 사항</h2>
-    <p>${this.escapeHtml(doc.additionalNotes).replace(/\n/g, '<br>')}</p>
-  </div>
-  ` : ''}
+      this.writeSectionTitle(pdf, '디자인 요구사항', boldFontName);
+      this.writeKeyValue(pdf, '복잡도', doc.designRequirements.complexity, regularFontName, boldFontName);
+      this.writeKeyValue(pdf, '스타일', doc.designRequirements.style, regularFontName, boldFontName);
+      this.writeKeyValue(
+        pdf,
+        '반응형 대상',
+        doc.designRequirements.responsiveTargets.join(', '),
+        regularFontName,
+        boldFontName,
+      );
 
-  <div class="footer">
-    <p>이 문서는 자동 생성되었으며, 문서 작성 시간: ${new Date().toLocaleString('ko-KR')}</p>
-    <p>© 2024 프로젝트 문서 생성 시스템</p>
-  </div>
-</body>
-</html>
-    `;
+      this.writeSectionTitle(pdf, '일정', boldFontName);
+      this.writeKeyValue(pdf, '긴급도', doc.timeline.urgency, regularFontName, boldFontName);
+      this.writeKeyValue(
+        pdf,
+        '예상 기간',
+        `${doc.timeline.estimatedWeeks.min}주 ~ ${doc.timeline.estimatedWeeks.max}주`,
+        regularFontName,
+        boldFontName,
+      );
 
-    // Return HTML as Buffer (실제 PDF 변환은 외부 도구 필요)
-    return Buffer.from(html, 'utf-8');
+      this.writeSectionTitle(pdf, '비용 견적', boldFontName);
+      this.writeKeyValue(
+        pdf,
+        '기본 비용',
+        `${this.formatCurrency(doc.costEstimate.baseTier.minCost)} ~ ${this.formatCurrency(doc.costEstimate.baseTier.maxCost)}`,
+        regularFontName,
+        boldFontName,
+      );
+      this.writeKeyValue(
+        pdf,
+        '디자인 승수',
+        `${doc.costEstimate.designMultiplier}x`,
+        regularFontName,
+        boldFontName,
+      );
+      this.writeKeyValue(
+        pdf,
+        '타임라인 승수',
+        `${doc.costEstimate.timelineMultiplier}x`,
+        regularFontName,
+        boldFontName,
+      );
+      this.writeKeyValue(
+        pdf,
+        '최종 비용',
+        `${this.formatCurrency(doc.costEstimate.totalMin)} ~ ${this.formatCurrency(doc.costEstimate.totalMax)}`,
+        regularFontName,
+        boldFontName,
+      );
+
+      if (doc.additionalNotes) {
+        this.writeSectionTitle(pdf, '추가 사항', boldFontName);
+        pdf.font(regularFontName).fontSize(10).fillColor('#222').text(doc.additionalNotes);
+      }
+
+      pdf.moveDown(1.5);
+      this.writeDivider(pdf);
+      pdf
+        .font(regularFontName)
+        .fontSize(9)
+        .fillColor('#666')
+        .text(`© ${new Date().getFullYear()} 프로젝트 문서 생성 시스템`);
+
+      pdf.end();
+    });
   }
 
-  private escapeHtml(text: string): string {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
-    };
-    return text.replace(/[&<>"']/g, (m) => map[m]);
+  private resolveFontPath(fileName: string): string | null {
+    const candidates = [
+      path.resolve(process.cwd(), 'public/fonts', fileName),
+      path.resolve(process.cwd(), '../public/fonts', fileName),
+      path.resolve(__dirname, '../../../../../public/fonts', fileName),
+      path.resolve(__dirname, '../../../../../../public/fonts', fileName),
+    ];
+
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  private writeDivider(pdf: PdfDocumentInstance) {
+    pdf.moveDown(0.5);
+    pdf
+      .strokeColor('#d1d5db')
+      .lineWidth(1)
+      .moveTo(pdf.page.margins.left, pdf.y)
+      .lineTo(pdf.page.width - pdf.page.margins.right, pdf.y)
+      .stroke();
+    pdf.moveDown(0.75);
+  }
+
+  private writeSectionTitle(
+    pdf: PdfDocumentInstance,
+    title: string,
+    boldFontName: string,
+  ) {
+    pdf.font(boldFontName).fontSize(16).fillColor('#111').text(title);
+    pdf.moveDown(0.3);
+  }
+
+  private writeSubsectionTitle(
+    pdf: PdfDocumentInstance,
+    title: string,
+    boldFontName: string,
+  ) {
+    pdf.font(boldFontName).fontSize(12).fillColor('#222').text(title);
+    pdf.moveDown(0.2);
+  }
+
+  private writeKeyValue(
+    pdf: PdfDocumentInstance,
+    label: string,
+    value: string,
+    regularFontName: string,
+    boldFontName: string,
+  ) {
+    pdf.font(boldFontName).fontSize(10).fillColor('#111').text(`${label}: `, {
+      continued: true,
+    });
+    pdf.font(regularFontName).fontSize(10).fillColor('#222').text(value || '-');
+    pdf.moveDown(0.1);
+  }
+
+  private writeBulletList(
+    pdf: PdfDocumentInstance,
+    items: string[],
+    regularFontName: string,
+  ) {
+    if (items.length === 0) {
+      pdf.font(regularFontName).fontSize(10).fillColor('#222').text('• 없음');
+      pdf.moveDown(0.2);
+      return;
+    }
+
+    items.forEach((item) => {
+      pdf.font(regularFontName).fontSize(10).fillColor('#222').text(`• ${item}`);
+    });
+    pdf.moveDown(0.2);
   }
 
   private formatCurrency(amount: number): string {
-    return amount.toLocaleString('ko-KR') + ' KRW';
+    return `${amount.toLocaleString('ko-KR')} KRW`;
   }
 }

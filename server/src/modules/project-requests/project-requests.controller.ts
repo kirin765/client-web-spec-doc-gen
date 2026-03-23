@@ -13,6 +13,7 @@ import {
 import { ProjectRequestsService } from './project-requests.service';
 import { CreateDraftDto, UpdateAnswersDto, SubmitProjectRequestDto } from './dto';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../../modules/auth/guards/optional-jwt-auth.guard';
 import { User } from '../../modules/auth/decorators/user.decorator';
 
 @Controller('project-requests')
@@ -20,6 +21,7 @@ export class ProjectRequestsController {
   constructor(private projectRequestsService: ProjectRequestsService) {}
 
   @Post()
+  @UseGuards(OptionalJwtAuthGuard)
   async createDraft(
     @Body() createDraftDto: CreateDraftDto,
     @User() user?: any,

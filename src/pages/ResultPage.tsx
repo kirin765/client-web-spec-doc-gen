@@ -8,13 +8,16 @@ import { useQuoteStore } from '@/store/useQuoteStore';
 import { calculateCost } from '@/lib/costCalculator';
 import { generateDocument } from '@/lib/documentGenerator';
 import { buildMatchingInput, matchDevelopers } from '@/lib/developerMatcher';
-import { downloadPdf } from '@/components/result/PdfDocument';
+import { downloadPdf } from '@/lib/downloadPdf';
 import { CostSummary } from '@/components/result/CostSummary';
 import { RequirementsPreview } from '@/components/result/RequirementsPreview';
 import { DeveloperMatchSection } from '@/components/result/DeveloperMatchSection';
 import { developerProfiles } from '@/data/developerProfiles';
 import { FileDown, Plus, Edit } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { Answers } from '@/types';
+
+const EMPTY_ANSWERS: Answers = {};
 
 export function ResultPage() {
   const navigate = useNavigate();
@@ -31,14 +34,26 @@ export function ResultPage() {
     document.title = '웹사이트 견적 생성기 - 결과';
   }, [answers, navigate]);
 
-  if (!answers || Object.keys(answers).length === 0) {
+  const hasAnswers = Boolean(answers && Object.keys(answers).length > 0);
+  const effectiveAnswers = useMemo<Answers>(
+    () => (hasAnswers ? answers : EMPTY_ANSWERS),
+    [answers, hasAnswers],
+  );
+
+  const costEstimate = useMemo(() => calculateCost(effectiveAnswers), [effectiveAnswers]);
+  const reqDocument = useMemo(
+    () => generateDocument(effectiveAnswers, costEstimate),
+    [effectiveAnswers, costEstimate],
+  );
+  const matchingInput = useMemo(
+    () => buildMatchingInput(effectiveAnswers, costEstimate),
+    [effectiveAnswers, costEstimate],
+  );
+  const matchResults = useMemo(() => matchDevelopers(matchingInput, developerProfiles), [matchingInput]);
+
+  if (!hasAnswers) {
     return null;
   }
-
-  const costEstimate = useMemo(() => calculateCost(answers), [answers]);
-  const reqDocument = useMemo(() => generateDocument(answers, costEstimate), [answers, costEstimate]);
-  const matchingInput = useMemo(() => buildMatchingInput(answers, costEstimate), [answers, costEstimate]);
-  const matchResults = useMemo(() => matchDevelopers(matchingInput, developerProfiles), [matchingInput]);
 
   const handleNewQuote = () => {
     resetQuote();

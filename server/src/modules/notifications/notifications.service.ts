@@ -3,11 +3,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
-import type { MatchResult } from '../../types/matching';
-
-interface EmailTemplateData {
-  [key: string]: any;
-}
+import type { MatchReason } from '../../types/matching';
 
 @Injectable()
 export class NotificationsService {
@@ -16,12 +12,10 @@ export class NotificationsService {
     @InjectQueue('email-notification') private emailQueue: Queue,
   ) {}
 
-  async sendMagicLinkEmail(email: string, token: string, callbackUrl: string): Promise<void> {
-    if (!email || !token || !callbackUrl) {
+  async sendMagicLinkEmail(email: string, magicLink: string): Promise<void> {
+    if (!email || !magicLink) {
       throw new BadRequestException('Missing required parameters for magic link email');
     }
-
-    const magicLink = `${callbackUrl}?token=${token}`;
 
     await this.emailQueue.add('magic-link', {
       type: 'magic-link',
@@ -29,7 +23,7 @@ export class NotificationsService {
       subject: '매직 링크로 로그인하세요',
       templateData: {
         magicLink,
-        expiresInHours: 24,
+        expiresInMinutes: 15,
       },
     });
   }
@@ -39,8 +33,7 @@ export class NotificationsService {
       throw new BadRequestException('Missing required parameters for quote completion email');
     }
 
-    const appUrl = this.configService.get<string>('appUrl', 'http://localhost:3000');
-    const resultUrl = `${appUrl}/results/${projectRequestId}`;
+    const resultUrl = `${this.getFrontendUrl()}/results/${projectRequestId}`;
 
     await this.emailQueue.add('quote-completed', {
       type: 'quote-completed',
@@ -55,14 +48,19 @@ export class NotificationsService {
 
   async sendNewProjectNotification(
     developerEmail: string,
-    matchResult: MatchResult & { projectName?: string; projectSiteType?: string },
+    matchResult: {
+      projectRequestId: string;
+      score: number;
+      reasons: MatchReason[];
+      projectName?: string;
+      projectSiteType?: string;
+    },
   ): Promise<void> {
     if (!developerEmail || !matchResult) {
       throw new BadRequestException('Missing required parameters for new project notification');
     }
 
-    const appUrl = this.configService.get<string>('appUrl', 'http://localhost:3000');
-    const projectUrl = `${appUrl}/projects/${matchResult.projectRequestId}`;
+    const projectUrl = `${this.getFrontendUrl()}/projects/${matchResult.projectRequestId}`;
 
     await this.emailQueue.add('new-project', {
       type: 'new-project',
@@ -111,8 +109,7 @@ export class NotificationsService {
       throw new BadRequestException('Missing required parameters for status change notification');
     }
 
-    const appUrl = this.configService.get<string>('appUrl', 'http://localhost:3000');
-    const projectUrl = `${appUrl}/projects/${projectRequestId}`;
+    const projectUrl = `${this.getFrontendUrl()}/projects/${projectRequestId}`;
 
     await this.emailQueue.add('status-change', {
       type: 'status-change',
@@ -124,5 +121,13 @@ export class NotificationsService {
         projectUrl,
       },
     });
+  }
+
+  private getFrontendUrl(): string {
+    return (
+      this.configService.get<string>('frontendUrl') ||
+      this.configService.get<string>('appUrl') ||
+      'http://localhost:5173'
+    );
   }
 }

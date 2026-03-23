@@ -42,7 +42,7 @@ function scoreDeveloper(input: DeveloperMatchingInput, developer: DeveloperProfi
   };
 
   // 사이트 유형 적합도 (30점)
-  if (developer.primarySiteTypes.includes(input.siteType)) {
+  if (developer.supportedProjectTypes.includes(input.siteType)) {
     breakdown.siteType = 30;
   } else {
     breakdown.siteType = 0;
@@ -70,7 +70,8 @@ function scoreDeveloper(input: DeveloperMatchingInput, developer: DeveloperProfi
 
   // 예산 적합도 (10점)
   const budgetMatch =
-    input.budgetRange.min <= developer.budgetRange.max && input.budgetRange.max >= developer.budgetRange.min;
+    input.budgetRange.min <= developer.budgetMax &&
+    input.budgetRange.max >= developer.budgetMin;
   breakdown.budget = budgetMatch ? 10 : 0;
 
   // 디자인 적합도 (10점)
@@ -188,11 +189,11 @@ export function matchDevelopers(input: DeveloperMatchingInput, developers: Devel
         summary: reasons.length > 0 ? reasons[0].description : '일반적인 프로젝트 경험이 있습니다.',
       };
     })
-    // 정렬: score 내림차순 → matchedFeatureCount 내림차순 → responseTimeHours 오름차순
+    // 정렬: score 내림차순 → matchedFeatureCount 내림차순 → avgResponseHours 오름차순
     .sort((a, b) => {
       if (a.score !== b.score) return b.score - a.score;
       if (a.matchedFeatureCount !== b.matchedFeatureCount) return b.matchedFeatureCount - a.matchedFeatureCount;
-      return a.developer.responseTimeHours - b.developer.responseTimeHours;
+      return a.developer.avgResponseHours - b.developer.avgResponseHours;
     });
 
   return results;

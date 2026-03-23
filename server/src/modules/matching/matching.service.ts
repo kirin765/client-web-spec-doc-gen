@@ -6,7 +6,11 @@
 // [수정필요 M2] C8과 동일한 enum 대소문자 문제.
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/db/prisma.service';
-import type { NormalizedSpec } from '../../common/utils/normalizer';
+import type { NormalizedSpec } from '../../types/answers';
+import {
+  normalizeEnumFromApi,
+  normalizeEnumToApi,
+} from '../../common/utils/enum-normalizer';
 
 interface DeveloperProfile {
   id: string;
@@ -31,6 +35,14 @@ interface MatchReason {
   description: string;
 }
 
+interface MatchRecord {
+  projectRequestId: string;
+  developerId: string;
+  score: number;
+  reasons: MatchReason[];
+  status: 'SUGGESTED';
+}
+
 @Injectable()
 export class MatchingService {
   private readonly MIN_MATCH_SCORE = 30;
@@ -51,21 +63,31 @@ export class MatchingService {
       throw new BadRequestException('Project has no normalized spec for matching');
     }
 
-    const normalizedSpec = projectRequest.normalizedSpec as NormalizedSpec;
+    await this.prisma.projectRequest.update({
+      where: { id: projectRequestId },
+      data: { status: 'MATCHING' },
+    });
+
+    const normalizedSpec = projectRequest.normalizedSpec as unknown as NormalizedSpec;
 
     const developers = await this.prisma.developer.findMany({
       where: { active: true },
     });
 
-    const matchResults: any[] = [];
+    const matchResults: MatchRecord[] = [];
 
     for (const developer of developers) {
-      const score = this.scoreDeveloper(normalizedSpec, developer as DeveloperProfile);
+      const { score, breakdown } = this.scoreDeveloper(
+        normalizedSpec,
+        developer as unknown as DeveloperProfile,
+      );
 
       if (score >= this.MIN_MATCH_SCORE) {
-        const reasons = this.extractReasons(normalizedSpec, developer as DeveloperProfile, {
-          score,
-        });
+        const reasons = this.extractReasons(
+          normalizedSpec,
+          developer as unknown as DeveloperProfile,
+          breakdown,
+        );
 
         matchResults.push({
           projectRequestId,
@@ -83,7 +105,7 @@ export class MatchingService {
     const savedMatches = await Promise.all(
       topMatches.map((match) =>
         this.prisma.matchResult.create({
-          data: match,
+          data: match as any,
         }),
       ),
     );
@@ -93,12 +115,12 @@ export class MatchingService {
       data: { status: 'COMPLETED' },
     });
 
-    return savedMatches;
+    return savedMatches.map((match) => this.mapMatchResult(match));
   }
 
-  scoreDeveloper(normalizedSpec: NormalizedSpec, developer: DeveloperProfile): number {
+  scoreDeveloper(normalizedSpec: NormalizedSpec, developer: DeveloperProfile): { score: number; breakdown: Record<string, number> } {
     let score = 0;
-    const breakdown: any = {};
+    const breakdown: Record<string, number> = {};
 
     // projectType 일치: +30점
     if (developer.supportedProjectTypes && normalizedSpec.projectType) {
@@ -156,13 +178,13 @@ export class MatchingService {
       breakdown.complexity = 10;
     }
 
-    return score;
+    return { score, breakdown };
   }
 
   extractReasons(
     normalizedSpec: NormalizedSpec,
     developer: DeveloperProfile,
-    breakdown: any,
+    breakdown: Record<string, number>,
   ): MatchReason[] {
     const reasons: MatchReason[] = [];
 
@@ -247,7 +269,7 @@ export class MatchingService {
       throw new NotFoundException(`No matches found for project ${projectRequestId}`);
     }
 
-    return matches;
+    return matches.map((match) => this.mapMatchResult(match));
   }
 
   async updateMatchStatus(matchId: string, status: 'contacted' | 'accepted' | 'rejected'): Promise<any> {
@@ -261,9 +283,36 @@ export class MatchingService {
       throw new BadRequestException(`Invalid status: ${status}`);
     }
 
-    return this.prisma.matchResult.update({
+    const prismaStatus = normalizeEnumFromApi(status);
+
+    const updated = await this.prisma.matchResult.update({
       where: { id: matchId },
-      data: { status },
+      data: { status: prismaStatus as any },
     });
+
+    return this.mapMatchResult(updated);
+  }
+
+  private mapMatchResult(match: any) {
+    return {
+      ...match,
+      status: normalizeEnumToApi(match.status),
+      createdAt: match.createdAt instanceof Date ? match.createdAt.toISOString() : match.createdAt,
+      developer: match.developer
+        ? {
+            ...match.developer,
+            type: normalizeEnumToApi(match.developer.type),
+            availabilityStatus: normalizeEnumToApi(match.developer.availabilityStatus),
+            createdAt:
+              match.developer.createdAt instanceof Date
+                ? match.developer.createdAt.toISOString()
+                : match.developer.createdAt,
+            updatedAt:
+              match.developer.updatedAt instanceof Date
+                ? match.developer.updatedAt.toISOString()
+                : match.developer.updatedAt,
+          }
+        : undefined,
+    };
   }
 }

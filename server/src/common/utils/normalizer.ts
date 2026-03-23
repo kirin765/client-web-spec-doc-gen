@@ -1,30 +1,11 @@
-// [수정 필요 - M6] NormalizedSpec 인터페이스가 이 파일과 shared/src/types/answers.ts에 중복 정의됨
-// - 이 파일의 NormalizedSpec 인터페이스를 삭제하고 shared 패키지에서 import하여 사용해야 함
-// - import type { NormalizedSpec } from '@shared/types/answers' 형태로 변경
-// - 두 곳에서 별도로 관리하면 필드 불일치가 발생할 수 있어 단일 소스로 통합 필요
+import type { NormalizedSpec } from '@shared/types/answers';
 
-export interface NormalizedSpec {
-  projectType: string;
-  projectName?: string;
-  targetAudience?: string;
-  scope: {
-    pageCount: number;
-    featureSet: string[];
-    ecommerceFeatureSet: string[];
-    designTier: string;
-    designStyle?: string;
-    integrations: string[];
-    contentProvision?: string;
-  };
-  delivery: {
-    timelineWeeks: { min: number; max: number };
-    urgency: string;
-  };
-  budget?: {
-    min: number;
-    max: number;
-  };
-}
+const TIMELINE_DEFAULTS: Record<string, { min: number; max: number }> = {
+  flexible: { min: 8, max: 16 },
+  standard: { min: 4, max: 8 },
+  urgent: { min: 2, max: 4 },
+  rush: { min: 1, max: 2 },
+};
 
 function toStringArray(value: unknown): string[] {
   if (!value) return [];
@@ -33,29 +14,70 @@ function toStringArray(value: unknown): string[] {
   return [String(value)];
 }
 
+function toNumber(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : undefined;
+  }
+  return undefined;
+}
+
+function toBudgetRecord(
+  value: unknown,
+): { min?: number; max?: number } {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+
+  const budget = value as { min?: unknown; max?: unknown };
+
+  return {
+    min: toNumber(budget.min),
+    max: toNumber(budget.max),
+  };
+}
+
 export function normalizeAnswers(rawAnswers: Record<string, unknown>): NormalizedSpec {
-  const projectType = String(rawAnswers.projectType ?? rawAnswers.type ?? 'web');
+  const projectType = String(
+    rawAnswers.projectType ?? rawAnswers.siteType ?? rawAnswers.type ?? 'landing',
+  );
   const projectName = rawAnswers.projectName ? String(rawAnswers.projectName) : undefined;
   const targetAudience = rawAnswers.targetAudience ? String(rawAnswers.targetAudience) : undefined;
 
-  const pageCount = Number(rawAnswers.pageCount ?? rawAnswers.pages ?? 1) || 1;
-  const featureSet = toStringArray(rawAnswers.features ?? rawAnswers.featureSet);
+  const pageCount =
+    toNumber(rawAnswers.pageCount ?? rawAnswers.expectedPages ?? rawAnswers.pages) || 1;
+  const featureSet = toStringArray(
+    rawAnswers.features ?? rawAnswers.featureSet ?? rawAnswers.coreFeatures,
+  );
   const ecommerceFeatureSet = toStringArray(rawAnswers.ecommerceFeatures ?? rawAnswers.ecommerceFeatureSet);
-  const designTier = String(rawAnswers.designTier ?? 'standard');
+  const designTier = String(rawAnswers.designTier ?? rawAnswers.designComplexity ?? 'template');
   const designStyle = rawAnswers.designStyle ? String(rawAnswers.designStyle) : undefined;
-  const integrations = toStringArray(rawAnswers.integrations);
-  const contentProvision = rawAnswers.contentProvision ? String(rawAnswers.contentProvision) : undefined;
+  const integrations = toStringArray(rawAnswers.integrations ?? rawAnswers.externalIntegrations);
+  const contentProvision = rawAnswers.contentProvision
+    ? String(rawAnswers.contentProvision)
+    : rawAnswers.contentDelivery
+      ? String(rawAnswers.contentDelivery)
+      : undefined;
 
-  const timelineMin = Number(rawAnswers.timelineMin ?? rawAnswers.timelineWeeksMin) || undefined;
-  const timelineMax = Number(rawAnswers.timelineMax ?? rawAnswers.timelineWeeksMax) || undefined;
-  const timelineWeeks = timelineMin && timelineMax
-    ? { min: Math.min(timelineMin, timelineMax), max: Math.max(timelineMin, timelineMax) }
-    : { min: timelineMin ?? (Number(rawAnswers.timelineWeeks) || 4), max: timelineMax ?? (Number(rawAnswers.timelineWeeks) || 8) };
+  const urgency = String(rawAnswers.urgency ?? rawAnswers.desiredTimeline ?? 'standard');
+  const fallbackTimeline = TIMELINE_DEFAULTS[urgency] || TIMELINE_DEFAULTS.standard;
+  const timelineMin = toNumber(rawAnswers.timelineMin ?? rawAnswers.timelineWeeksMin);
+  const timelineMax = toNumber(rawAnswers.timelineMax ?? rawAnswers.timelineWeeksMax);
+  const timelineWeeks =
+    timelineMin != null && timelineMax != null
+      ? {
+          min: Math.min(timelineMin, timelineMax),
+          max: Math.max(timelineMin, timelineMax),
+        }
+      : {
+          min: timelineMin ?? toNumber(rawAnswers.timelineWeeks) ?? fallbackTimeline.min,
+          max: timelineMax ?? toNumber(rawAnswers.timelineWeeks) ?? fallbackTimeline.max,
+        };
 
-  const urgency = String(rawAnswers.urgency ?? 'normal');
-
-  const budgetMin = rawAnswers.budgetMin ? Number(rawAnswers.budgetMin) : rawAnswers.budget ? Number((rawAnswers.budget as any).min) : undefined;
-  const budgetMax = rawAnswers.budgetMax ? Number(rawAnswers.budgetMax) : rawAnswers.budget ? Number((rawAnswers.budget as any).max) : undefined;
+  const nestedBudget = toBudgetRecord(rawAnswers.budget);
+  const budgetMin = toNumber(rawAnswers.budgetMin) ?? nestedBudget.min;
+  const budgetMax = toNumber(rawAnswers.budgetMax) ?? nestedBudget.max;
   const budget = (budgetMin || budgetMax) ? { min: budgetMin ?? 0, max: budgetMax ?? (budgetMin ?? 0) } : undefined;
 
   return {

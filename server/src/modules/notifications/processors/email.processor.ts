@@ -1,8 +1,9 @@
 // [H3] 수정 필요: process.env로 직접 SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL을 참조하고 있음 — ConfigService를 주입하여 NestJS DI 패턴으로 변경해야 함.
 // [M17] 수정 필요: 환경변수명 SMTP_PASSWORD가 configuration.ts의 SMTP_PASS와 불일치. 통일 필요.
-import { Logger } from '@nestjs/common';
+import { Logger, Injectable } from '@nestjs/common';
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
+import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 
 interface EmailJob {
@@ -13,21 +14,24 @@ interface EmailJob {
 }
 
 @Processor('email-notification')
+@Injectable()
 export class EmailProcessor extends WorkerHost {
   private readonly logger = new Logger(EmailProcessor.name);
   private transporter: nodemailer.Transporter;
 
-  constructor() {
+  constructor(private configService: ConfigService) {
     super();
     this.initializeTransporter();
   }
 
   private initializeTransporter() {
-    const smtpHost = process.env.SMTP_HOST || 'localhost';
-    const smtpPort = parseInt(process.env.SMTP_PORT || '587', 10);
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPassword = process.env.SMTP_PASS;
-    const smtpFromEmail = process.env.SMTP_FROM_EMAIL || 'noreply@example.com';
+    const smtpConfig = (this.configService.get('smtp') as any) || {};
+    const smtpHost = smtpConfig.host || 'localhost';
+    const smtpPort = smtpConfig.port || 587;
+    const smtpUser = smtpConfig.user;
+    // Support both pass and password env names for backward compatibility
+    const smtpPassword = smtpConfig.pass || smtpConfig.password || undefined;
+    const smtpFromEmail = smtpConfig.from || 'noreply@example.com';
 
     this.transporter = nodemailer.createTransport({
       host: smtpHost,
@@ -35,6 +39,9 @@ export class EmailProcessor extends WorkerHost {
       secure: smtpPort === 465,
       auth: smtpUser && smtpPassword ? { user: smtpUser, pass: smtpPassword } : undefined,
     });
+
+    // Log transporter readiness in development
+    this.logger.log(`Email transporter configured (host=${smtpHost}, port=${smtpPort})`);
   }
 
   async process(job: Job<EmailJob>): Promise<void> {
@@ -45,8 +52,11 @@ export class EmailProcessor extends WorkerHost {
 
       const html = this.generateEmailHtml(type, templateData);
 
+      const smtpConfig = (this.configService.get('smtp') as any) || {};
+      const fromAddress = smtpConfig.from || 'noreply@example.com';
+
       const result = await this.transporter.sendMail({
-        from: process.env.SMTP_FROM_EMAIL || 'noreply@example.com',
+        from: fromAddress,
         to,
         subject,
         html,
@@ -87,7 +97,7 @@ export class EmailProcessor extends WorkerHost {
               로그인하기
             </a>
           </p>
-          <p style="color: #666; font-size: 12px;">이 링크는 ${data.expiresInHours}시간 후 만료됩니다.</p>
+          <p style="color: #666; font-size: 12px;">이 링크는 ${data.expiresInMinutes}분 후 만료됩니다.</p>
         </body>
       </html>
     `;

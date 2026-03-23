@@ -37,7 +37,7 @@ export class OwnershipGuard implements CanActivate {
         const maybeProjectRequest = await (this.prisma as any).projectRequest?.findUnique({ where: { id } });
         if (maybeProjectRequest && (maybeProjectRequest.ownerId === user.id || maybeProjectRequest.userId === user.id)) return true;
 
-        const maybeDocument = await (this.prisma as any).document?.findUnique({ where: { id } });
+        const maybeDocument = await (this.prisma as any).requirementDocument?.findUnique({ where: { id } });
         if (maybeDocument && (maybeDocument.ownerId === user.id || maybeDocument.userId === user.id)) return true;
       } catch (e) {
         // DB 모델이 없거나 조회 실패 시 여기로 옴 — 무시하고 아래에서 Forbidden 처리

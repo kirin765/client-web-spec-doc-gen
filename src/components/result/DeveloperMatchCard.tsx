@@ -18,7 +18,7 @@ export function DeveloperMatchCard({ result }: DeveloperMatchCardProps) {
       {/* 헤더 */}
       <div className="mb-4 flex items-start justify-between">
         <div>
-          <h3 className="text-lg font-bold text-gray-900">{developer.name}</h3>
+          <h3 className="text-lg font-bold text-gray-900">{developer.displayName}</h3>
           <p className="text-sm text-gray-600">{developer.headline}</p>
         </div>
         <div className="flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1">
@@ -66,7 +66,7 @@ export function DeveloperMatchCard({ result }: DeveloperMatchCardProps) {
               <Zap className="h-4 w-4 text-orange-500" />
               <p className="text-xs font-semibold text-gray-700">대응 속도</p>
             </div>
-            <p className="text-sm font-bold text-gray-900">{developer.responseTimeHours}시간</p>
+            <p className="text-sm font-bold text-gray-900">{developer.avgResponseHours}시간</p>
           </div>
 
           {/* 예산 범위 */}
@@ -76,7 +76,7 @@ export function DeveloperMatchCard({ result }: DeveloperMatchCardProps) {
               <p className="text-xs font-semibold text-gray-700">예산</p>
             </div>
             <p className="text-sm font-bold text-gray-900">
-              {formatKRW(developer.budgetRange.min / 1_000_000)}M~
+              {formatKRW(developer.budgetMin / 1_000_000)}M~
             </p>
           </div>
 

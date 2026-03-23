@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <p className="mt-2 text-sm text-red-700">
             잠시 후 다시 시도해주세요.
           </p>
-          {process.env.NODE_ENV === 'development' && this.state.error && (
+          {import.meta.env.DEV && this.state.error && (
             <pre className="mt-4 max-w-full overflow-auto rounded bg-red-100 p-2 text-xs text-red-800">
               {this.state.error.message}
             </pre>
