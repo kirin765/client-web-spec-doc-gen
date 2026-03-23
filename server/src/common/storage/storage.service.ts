@@ -1,3 +1,4 @@
+// S3 저장소 서비스: 서명 URL 기본 만료 시간을 1시간으로 단축
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -12,6 +13,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 export class StorageService {
   private s3Client: S3Client;
   private bucket: string;
+  private readonly defaultExpiresIn: number;
 
   constructor(private configService: ConfigService) {
     const region = this.configService.get<string>('aws.region') || 'us-east-1';
@@ -20,6 +22,9 @@ export class StorageService {
     const bucket = this.configService.get<string>('aws.s3Bucket');
 
     this.bucket = bucket || 'spec-gen-documents';
+    // 기본값: 1시간 (3600초), 환경 변수로 설정 가능
+    this.defaultExpiresIn =
+      this.configService.get<number>('aws.signedUrlExpiration') || 3600;
 
     if (accessKeyId && secretAccessKey) {
       this.s3Client = new S3Client({
@@ -52,14 +57,16 @@ export class StorageService {
 
   async getSignedUrl(
     key: string,
-    expiresIn: number = 604800, // 7 days in seconds
+    expiresIn?: number,
   ): Promise<string> {
     const command = new GetObjectCommand({
       Bucket: this.bucket,
       Key: key,
     });
 
-    return await getSignedUrl(this.s3Client, command, { expiresIn });
+    return await getSignedUrl(this.s3Client, command, {
+      expiresIn: expiresIn ?? this.defaultExpiresIn,
+    });
   }
 
   async deleteFile(key: string): Promise<void> {
@@ -71,3 +78,4 @@ export class StorageService {
     await this.s3Client.send(command);
   }
 }
+

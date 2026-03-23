@@ -1,4 +1,6 @@
-// ProjectRequestsService — createDraft, updateAnswers, submit, getById, list, getDetail 구현.
+// [수정필요 C7] submit()에서 costEstimate를 계산하지 않음. PricingService를 주입하고 저장 전 calculateCost() 호출 필요.
+// [수정필요 H14] rawAnswers 병합 시 Prisma JsonValue에 spread 연산자 사용 — 타입 단언(as Record) 필요.
+// [수정필요 M3] rawAnswers spread 타입 안전성 문제 — H14와 동일하게 타입 단언 적용 필요.
 import {
   Injectable,
   NotFoundException,
@@ -11,6 +13,7 @@ import { Queue } from 'bullmq';
 import { CreateDraftDto, UpdateAnswersDto, SubmitProjectRequestDto } from './dto';
 import { normalizeAnswers, validateNormalizedSpec } from '../../common/utils/normalizer';
 import { ConfigService } from '@nestjs/config';
+import { PricingService } from '../pricing/pricing.service';
 
 @Injectable()
 export class ProjectRequestsService {
@@ -20,6 +23,7 @@ export class ProjectRequestsService {
     @InjectQueue('pdf-generation') private pdfQueue: Queue,
     @InjectQueue('developer-matching') private matchingQueue: Queue,
     private configService: ConfigService,
+    private pricingService: PricingService,
   ) {}
 
   async createDraft(
@@ -86,6 +90,9 @@ export class ProjectRequestsService {
       );
     }
 
+    // Calculate cost estimate
+    const costEstimate = await this.pricingService.calculateCost(normalizedSpec);
+
     // Get current pricing version
     const pricingVersion = await this.prisma.pricingRuleVersion.findFirst({
       where: {
@@ -103,7 +110,8 @@ export class ProjectRequestsService {
       where: { id: projectRequestId },
       data: {
         rawAnswers: dto.rawAnswers,
-        normalizedSpec,
+        normalizedSpec: normalizedSpec as any,
+        costEstimate: costEstimate as any,
         status: 'SUBMITTED',
         submittedAt: new Date(),
         pricingVersion: pricingVersion?.version,

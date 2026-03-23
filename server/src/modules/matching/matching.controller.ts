@@ -1,4 +1,6 @@
-// MatchingController — 매칭 실행, 결과 조회, 상태 업데이트 구현.
+// [수정필요 H9] 인증 가드(@UseGuards(JwtAuthGuard))가 없음 — 누구나 매칭 실행, 결과 조회, 상태 변경 가능. 가드 추가 필요.
+// [수정필요 L8] @Controller()에 빈 prefix — 'project-requests/:id/match' 등의 라우트가 전역 네임스페이스를 오염시킴.
+//   @Controller('matching') 등 적절한 prefix 설정 필요.
 import { Controller, Post, Get, Param, Body } from '@nestjs/common';
 import { MatchingService } from './matching.service';
 

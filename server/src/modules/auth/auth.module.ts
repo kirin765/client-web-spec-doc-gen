@@ -1,4 +1,5 @@
-// AuthModule — JWT + Passport + MagicLinkToken 인증 모듈.
+// [수정필요 C6 연관] AuthService에서 NotificationsService를 주입할 수 있도록
+// NotificationsModule을 imports에 추가해야 함.
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';

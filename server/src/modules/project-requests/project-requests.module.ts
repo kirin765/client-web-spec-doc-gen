@@ -1,4 +1,5 @@
-// ProjectRequestsModule — BullMQ 큐 3개(email-notification, pdf-generation, developer-matching) 등록.
+// [수정필요 C7 연관] ProjectRequestsService에서 PricingService를 주입할 수 있도록
+// PricingModule을 imports에 추가해야 함.
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ProjectRequestsController } from './project-requests.controller';

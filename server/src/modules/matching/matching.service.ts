@@ -1,4 +1,9 @@
-// MatchingService — 규칙 기반 점수화(100점 만점), 사유 추출, DB 저장 구현.
+// [수정필요 C3] extractReasons()가 { score }를 받지만 실제로는 projectType, coreFeatures 등 키를 가진 breakdown 객체를 기대함.
+//   scoreDeveloper()가 breakdown을 반환하도록 하고, extractReasons()에 전달해야 함.
+// [수정필요 C8] updateMatchStatus()에서 소문자 status('contacted')를 저장하지만 Prisma enum은 대문자('CONTACTED')를 기대함.
+//   normalizeEnumFromApi() 또는 .toUpperCase() 적용 필요.
+// [수정필요 M1] matchResults: any[] — 적절한 타입 정의 필요.
+// [수정필요 M2] C8과 동일한 enum 대소문자 문제.
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../common/db/prisma.service';
 import type { NormalizedSpec } from '../../common/utils/normalizer';

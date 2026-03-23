@@ -1,4 +1,4 @@
-// DocumentsController — 문서 생성, 목록, 상세/다운로드 엔드포인트 구현.
+// [M5] 수정 필요: 라우트 `:projectRequestId/generate`가 `/documents` 프리픽스 아래에 있어 URL이 `/documents/:projectRequestId/generate`로 비직관적임. `/project-requests/:id/documents/generate` 구조로 재설계 검토 필요.
 import { Controller, Get, Post, Param, Query, UseGuards, Request, Logger } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
 import { JwtAuthGuard } from '../../modules/auth/guards/jwt-auth.guard';
