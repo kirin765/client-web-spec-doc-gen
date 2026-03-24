@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "prisma generate && nest build && npx prisma migrate dev --name add-proposals",
+    "build": "prisma generate && nest build",
     "start": "node dist/server/src/main.js",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
