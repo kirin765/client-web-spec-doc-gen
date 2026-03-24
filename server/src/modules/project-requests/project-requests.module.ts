@@ -8,6 +8,7 @@ import { PricingModule } from '../pricing/pricing.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { MatchingModule } from '../matching/matching.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { ProposalsModule } from '../proposals/proposals.module';
 import { QueueModule } from '../../common/queue/queue.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { QueueModule } from '../../common/queue/queue.module';
     PricingModule,
     DocumentsModule,
     MatchingModule,
+    ProposalsModule,
     NotificationsModule,
   ],
   controllers: [ProjectRequestsController],

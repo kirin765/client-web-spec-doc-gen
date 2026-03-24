@@ -45,6 +45,11 @@ export class DevelopersController {
     return this.developersService.getById(id);
   }
 
+  @Get(':id/matches')
+  async getMatches(@Param('id') id: string) {
+    return this.developersService.getMatches(id);
+  }
+
   @Patch(':id')
   async update(@Param('id') id: string, @Body() data: UpdateDeveloperDto) {
     return this.developersService.update(id, data);

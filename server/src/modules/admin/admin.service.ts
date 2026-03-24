@@ -1,6 +1,7 @@
 // [C9] 수정 필요: getConversionStats()에서 소문자 키('submitted', 'draft')를 사용하나 Prisma groupBy는 대문자 enum 값('SUBMITTED', 'DRAFT')을 반환함. 대문자 키 사용 또는 enum 정규화 처리 필요.
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/db/prisma.service';
+import { MatchingService } from '../matching/matching.service';
 import {
   normalizeEnumFromApi,
   normalizeEnumToApi,
@@ -15,7 +16,10 @@ interface ProjectRequestFilters {
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private matchingService: MatchingService,
+  ) {}
 
   async activateDeveloper(id: string): Promise<any> {
     const developer = await this.prisma.developer.findUnique({ where: { id } });
@@ -97,6 +101,54 @@ export class AdminService {
         pages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async listDevelopers(options: {
+    status?: 'pending' | 'active';
+    page?: number;
+    limit?: number;
+  }) {
+    const page = options.page && options.page > 0 ? options.page : 1;
+    const limit = options.limit && options.limit > 0 ? options.limit : 20;
+    const skip = (page - 1) * limit;
+
+    const where =
+      options.status === 'pending'
+        ? { active: false }
+        : options.status === 'active'
+          ? { active: true }
+          : {};
+
+    const [data, total] = await Promise.all([
+      this.prisma.developer.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.developer.count({ where }),
+    ]);
+
+    return {
+      data: data.map((developer) => ({
+        ...developer,
+        type: normalizeEnumToApi(developer.type),
+        availabilityStatus: normalizeEnumToApi(developer.availabilityStatus),
+        status: developer.active ? 'active' : 'pending',
+        createdAt: developer.createdAt.toISOString(),
+        updatedAt: developer.updatedAt.toISOString(),
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async runMatching(projectId: string) {
+    return this.matchingService.executeMatching(projectId);
   }
 
   async getConversionStats(): Promise<any> {

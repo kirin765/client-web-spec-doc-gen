@@ -1,6 +1,7 @@
 // DevelopersService — create, update, search, updateAvailability, getActiveDevelopers, getById 구현.
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/db/prisma.service';
+import { normalizeEnumToApi } from '../../common/utils/enum-normalizer';
 
 @Injectable()
 export class DevelopersService {
@@ -59,5 +60,40 @@ export class DevelopersService {
       where: { id },
       data: { availabilityStatus: status },
     });
+  }
+  
+  async getMatches(developerId: string) {
+    const developer = await this.prisma.developer.findUnique({
+      where: { id: developerId },
+    });
+
+    if (!developer) {
+      throw new NotFoundException('Developer not found');
+    }
+
+    const matches = await this.prisma.matchResult.findMany({
+      where: { developerId },
+      include: {
+        projectRequest: true,
+      },
+      orderBy: [{ score: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    return matches.map((match) => ({
+      id: match.id,
+      projectRequestId: match.projectRequestId,
+      score: match.score,
+      reasons: match.reasons,
+      status: normalizeEnumToApi(match.status),
+      createdAt: match.createdAt.toISOString(),
+      projectRequest: {
+        id: match.projectRequest.id,
+        projectName: match.projectRequest.projectName,
+        siteType: match.projectRequest.siteType,
+        status: normalizeEnumToApi(match.projectRequest.status),
+        costEstimate: match.projectRequest.costEstimate,
+        submittedAt: match.projectRequest.submittedAt?.toISOString() ?? null,
+      },
+    }));
   }
 }

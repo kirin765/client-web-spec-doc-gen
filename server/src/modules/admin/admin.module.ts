@@ -3,10 +3,11 @@ import { Module } from '@nestjs/common';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { AuthModule } from '../auth/auth.module';
+import { MatchingModule } from '../matching/matching.module';
 import { RolesGuard } from '../../common/guards/roles.guard';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, MatchingModule],
   controllers: [AdminController],
   providers: [AdminService, RolesGuard],
   exports: [AdminService],

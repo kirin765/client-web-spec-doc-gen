@@ -272,6 +272,41 @@ export class MatchingService {
     return matches.map((match) => this.mapMatchResult(match));
   }
 
+  async getMatchesByDeveloper(developerId: string): Promise<any> {
+    const developer = await this.prisma.developer.findUnique({
+      where: { id: developerId },
+    });
+
+    if (!developer) {
+      throw new NotFoundException(`Developer ${developerId} not found`);
+    }
+
+    const matches = await this.prisma.matchResult.findMany({
+      where: { developerId },
+      include: {
+        projectRequest: true,
+      },
+      orderBy: [{ score: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    return matches.map((match) => ({
+      id: match.id,
+      projectRequestId: match.projectRequestId,
+      developerId: match.developerId,
+      score: match.score,
+      reasons: match.reasons,
+      status: normalizeEnumToApi(match.status),
+      createdAt: match.createdAt.toISOString(),
+      projectRequest: {
+        id: match.projectRequest.id,
+        projectName: match.projectRequest.projectName,
+        siteType: match.projectRequest.siteType,
+        status: normalizeEnumToApi(match.projectRequest.status),
+        costEstimate: match.projectRequest.costEstimate,
+      },
+    }));
+  }
+
   async updateMatchStatus(matchId: string, status: 'contacted' | 'accepted' | 'rejected'): Promise<any> {
     const match = await this.prisma.matchResult.findUnique({ where: { id: matchId } });
 

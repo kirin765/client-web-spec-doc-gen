@@ -11,7 +11,6 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { CreateDraftDto, UpdateAnswersDto, SubmitProjectRequestDto } from './dto';
 import { normalizeAnswers, validateNormalizedSpec } from '../../common/utils/normalizer';
-import { ConfigService } from '@nestjs/config';
 
 function toPrismaJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -24,7 +23,6 @@ export class ProjectRequestsService {
     @InjectQueue('email-notification') private emailQueue: Queue,
     @InjectQueue('pdf-generation') private pdfQueue: Queue,
     @InjectQueue('developer-matching') private matchingQueue: Queue,
-    private configService: ConfigService,
   ) {}
 
   async createDraft(
@@ -46,7 +44,7 @@ export class ProjectRequestsService {
 
   async updateAnswers(
     projectRequestId: string,
-    userId: string,
+    userId: string | undefined,
     dto: UpdateAnswersDto,
   ): Promise<any> {
     const projectRequest = await this.getById(projectRequestId, userId);
@@ -72,7 +70,7 @@ export class ProjectRequestsService {
 
   async submit(
     projectRequestId: string,
-    userId: string,
+    userId: string | undefined,
     dto: SubmitProjectRequestDto,
   ): Promise<any> {
     const projectRequest = await this.getById(projectRequestId, userId);
@@ -176,7 +174,7 @@ export class ProjectRequestsService {
     };
   }
 
-  async getDetail(projectRequestId: string, userId: string): Promise<any> {
+  async getDetail(projectRequestId: string, userId?: string): Promise<any> {
     const projectRequest = await this.getById(projectRequestId, userId);
 
     const documents = await this.prisma.requirementDocument.findMany({
