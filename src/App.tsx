@@ -10,6 +10,7 @@ import { CustomerMatchesPage } from '@/pages/CustomerMatchesPage';
 import { CustomerProposalsPage } from '@/pages/CustomerProposalsPage';
 import { DeveloperWorkspacePage } from '@/pages/DeveloperWorkspacePage';
 import { AdminPage } from '@/pages/AdminPage';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
           </Routes>
         </main>
         <Footer />
+        <Analytics />
       </div>
     </BrowserRouter>
   );
