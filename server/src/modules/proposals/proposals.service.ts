@@ -136,6 +136,39 @@ export class ProposalsService {
     return this.mapProposal(updated);
   }
 
+  async markViewedByCustomer(id: string, userId: string) {
+    const proposal = await this.prisma.proposal.findUnique({
+      where: { id },
+      include: {
+        developer: true,
+        projectRequest: {
+          select: { userId: true },
+        },
+      },
+    });
+
+    if (!proposal) {
+      throw new NotFoundException('Proposal not found');
+    }
+
+    if (proposal.projectRequest.userId && proposal.projectRequest.userId !== userId) {
+      throw new BadRequestException('Unauthorized access to proposal');
+    }
+
+    const updated = await this.prisma.proposal.update({
+      where: { id },
+      data: {
+        status: proposal.status === 'SUBMITTED' ? 'VIEWED' : proposal.status,
+        viewedAt: proposal.viewedAt ?? new Date(),
+      },
+      include: {
+        developer: true,
+      },
+    });
+
+    return this.mapProposal(updated);
+  }
+
   async updateDecision(id: string, status: 'accepted' | 'rejected') {
     const proposal = await this.prisma.proposal.findUnique({
       where: { id },
@@ -144,6 +177,58 @@ export class ProposalsService {
 
     if (!proposal) {
       throw new NotFoundException('Proposal not found');
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const acceptedOrRejected = await tx.proposal.update({
+        where: { id },
+        data: {
+          status: normalizeEnumFromApi(status) as any,
+          decidedAt: new Date(),
+          viewedAt: proposal.viewedAt ?? new Date(),
+        },
+        include: {
+          developer: true,
+        },
+      });
+
+      if (status === 'accepted') {
+        await tx.proposal.updateMany({
+          where: {
+            projectRequestId: proposal.projectRequestId,
+            id: { not: proposal.id },
+            status: { in: ['SUBMITTED', 'VIEWED'] },
+          },
+          data: {
+            status: 'REJECTED',
+            decidedAt: new Date(),
+          },
+        });
+      }
+
+      return acceptedOrRejected;
+    });
+
+    return this.mapProposal(updated);
+  }
+
+  async updateDecisionByCustomer(id: string, status: 'accepted' | 'rejected', userId: string) {
+    const proposal = await this.prisma.proposal.findUnique({
+      where: { id },
+      include: {
+        developer: true,
+        projectRequest: {
+          select: { userId: true },
+        },
+      },
+    });
+
+    if (!proposal) {
+      throw new NotFoundException('Proposal not found');
+    }
+
+    if (proposal.projectRequest.userId && proposal.projectRequest.userId !== userId) {
+      throw new BadRequestException('Unauthorized access to proposal');
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {

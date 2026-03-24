@@ -4,7 +4,7 @@
 // - GET /admin/project-requests (필터 포함 목록)
 // - GET /admin/stats/conversion
 // 모든 라우트에 @UseGuards(JwtAuthGuard)와 @Roles('ADMIN') 적용 필수.
-import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles, RolesGuard } from '../../common/guards/roles.guard';
 import { AdminService } from './admin.service';
@@ -15,18 +15,13 @@ import { AdminService } from './admin.service';
 export class AdminController {
   constructor(private adminService: AdminService) {}
 
-  @Post('developers/:id/activate')
-  async activateDeveloper(@Param('id') id: string) {
+  @Patch('developers/:id/approve')
+  async approveDeveloper(@Param('id') id: string) {
     return this.adminService.activateDeveloper(id);
   }
 
-  @Post('developers/:id/deactivate')
-  async deactivateDeveloper(@Param('id') id: string) {
-    return this.adminService.deactivateDeveloper(id);
-  }
-
-  @Get('project-requests')
-  async listProjectRequests(
+  @Get('projects')
+  async listProjects(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('status') status?: string,
@@ -46,8 +41,22 @@ export class AdminController {
     );
   }
 
-  @Get('stats/conversion')
-  async getConversionStats() {
-    return this.adminService.getConversionStats();
+  @Get('developers')
+  async listDevelopers(
+    @Query('status') status?: 'pending' | 'active',
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.adminService.listDevelopers({
+      status,
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+    });
   }
+
+  @Post('matching/run/:projectId')
+  async runMatching(@Param('projectId') projectId: string) {
+    return this.adminService.runMatching(projectId);
+  }
+
 }
