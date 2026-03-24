@@ -5,12 +5,17 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../common/db/prisma.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { CreateDraftDto, UpdateAnswersDto, SubmitProjectRequestDto } from './dto';
 import { normalizeAnswers, validateNormalizedSpec } from '../../common/utils/normalizer';
 import { ConfigService } from '@nestjs/config';
+
+function toPrismaJson(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
 
 @Injectable()
 export class ProjectRequestsService {
@@ -102,8 +107,8 @@ export class ProjectRequestsService {
     const updated = await this.prisma.projectRequest.update({
       where: { id: projectRequestId },
       data: {
-        rawAnswers: dto.rawAnswers,
-        normalizedSpec,
+        rawAnswers: toPrismaJson(dto.rawAnswers),
+        normalizedSpec: toPrismaJson(normalizedSpec),
         status: 'SUBMITTED',
         submittedAt: new Date(),
         pricingVersion: pricingVersion?.version,
