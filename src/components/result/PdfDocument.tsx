@@ -74,14 +74,16 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   } as any,
   tableRow: {
-    margin: 'auto' as any,
+    width: '100%',
     flexDirection: 'row' as any,
+    alignItems: 'stretch',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
   },
   tableHeaderRow: {
-    margin: 'auto' as any,
+    width: '100%',
     flexDirection: 'row' as any,
+    alignItems: 'stretch',
     backgroundColor: '#f5f5f5',
     borderBottomWidth: 2,
     borderBottomColor: '#999',
@@ -89,14 +91,20 @@ const styles = StyleSheet.create({
   },
   tableCell: {
     flex: 1,
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     fontSize: 10,
+    lineHeight: 1.35,
+    minWidth: 0,
   },
   tableCellHeader: {
     flex: 1,
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     fontSize: 10,
     fontWeight: 700,
+    lineHeight: 1.35,
+    minWidth: 0,
   },
   costHighlight: {
     fontSize: 18,
@@ -106,14 +114,18 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row' as any,
+    alignItems: 'flex-start',
     marginBottom: 8,
   },
   label: {
     fontWeight: 700,
     flex: 0.3,
+    flexShrink: 0,
   },
   value: {
     flex: 0.7,
+    flexShrink: 1,
+    minWidth: 0,
   },
   disclaimer: {
     fontSize: 9,
