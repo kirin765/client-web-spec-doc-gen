@@ -14,6 +14,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   const port = configService.get<number>('port') || 3001;
+  const host = '0.0.0.0';
   const frontendUrl = configService.get<string>('frontendUrl') || 'http://localhost:5173';
 
   // Enable CORS
@@ -43,8 +44,8 @@ async function bootstrap() {
   const express = app.getHttpAdapter().getInstance();
   express.get('/health', (req: any, res: any) => res.json({ status: 'ok' }));
 
-  await app.listen(port);
-  console.log(`Server running on port ${port}`);
+  await app.listen(port, host);
+  console.log(`Server running on ${host}:${port}`);
 }
 
 bootstrap();
