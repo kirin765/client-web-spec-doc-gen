@@ -23,7 +23,7 @@ import { useQuoteStore } from '@/store/useQuoteStore';
 import { calculateCost } from '@/lib/costCalculator';
 import { generateDocument } from '@/lib/documentGenerator';
 import { buildMatchingInput, matchDevelopers } from '@/lib/developerMatcher';
-import { downloadPdf } from '@/components/result/PdfDocument';
+import { downloadPdf } from '@/lib/downloadPdf';
 import { CostSummary } from '@/components/result/CostSummary';
 import { RequirementsPreview } from '@/components/result/RequirementsPreview';
 import { DeveloperMatchSection } from '@/components/result/DeveloperMatchSection';
