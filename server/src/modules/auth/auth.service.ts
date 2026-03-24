@@ -1,12 +1,12 @@
-// AuthService: NotificationsService 주입, 이메일 발송 구현
+// AuthService — 매직링크 생성/검증, JWT 발급, 사용자 조회 구현.
 import {
   Injectable,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/db/prisma.service';
-import { NotificationsService } from '../notifications/notifications.service';
 import { randomBytes } from 'crypto';
 
 @Injectable()
@@ -15,26 +15,25 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private notificationsService: NotificationsService,
   ) {}
 
   async login(email: string): Promise<{ sent: boolean }> {
     const token = this.generateMagicLinkToken();
+    // Store token with expiry (15 minutes)
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
     await this.prisma.magicLinkToken.upsert({
       where: { email },
-      update: { token, expiresAt },
-      create: { email, token, expiresAt },
+      update: {
+        token,
+        expiresAt,
+      },
+      create: {
+        email,
+        token,
+        expiresAt,
+      },
     });
-
-    const frontendUrl =
-      this.configService.get<string>('frontendUrl') ||
-      this.configService.get<string>('appUrl') ||
-      'http://localhost:5173';
-    const magicLink = `${frontendUrl}/auth/verify?token=${token}`;
-
-    await this.notificationsService.sendMagicLinkEmail(email, magicLink);
 
     return { sent: true };
   }
@@ -48,22 +47,30 @@ export class AuthService {
       throw new UnauthorizedException('Invalid or expired token');
     }
 
-    const user = await this.prisma.user.upsert({
+    // Find or create user
+    let user = await this.prisma.user.findUnique({
       where: { email: magicLink.email },
-      update: {},
-      create: {
-        email: magicLink.email,
-        role: 'CLIENT',
-      },
     });
 
-    const jwt = this.createJwt(user.id, user.email, user.role);
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email: magicLink.email,
+          role: 'CLIENT',
+        },
+      });
+    }
 
+    // Delete used token
     await this.prisma.magicLinkToken.delete({
       where: { token },
     });
 
-    return { token: jwt, email: user.email };
+    const jwt = this.createJwt(user.id, user.email, user.role);
+    return {
+      token: jwt,
+      email: user.email,
+    };
   }
 
   async validateJwt(payload: any): Promise<any> {
@@ -75,12 +82,25 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    };
   }
 
   createJwt(userId: string, email: string, role: string = 'CLIENT'): string {
-    const payload = { sub: userId, email, role };
-    return this.jwtService.sign(payload);
+    const payload = {
+      sub: userId,
+      email,
+      role,
+    };
+
+    const expiresIn = this.configService.get<string>('jwt.expiresIn', '24h');
+
+    return this.jwtService.sign(payload, {
+      expiresIn,
+    });
   }
 
   generateMagicLinkToken(): string {
@@ -88,14 +108,8 @@ export class AuthService {
   }
 
   async getCurrentUser(userId: string) {
-    const user = await this.prisma.user.findUnique({
+    return this.prisma.user.findUnique({
       where: { id: userId },
     });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    return user;
   }
 }

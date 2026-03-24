@@ -1,6 +1,21 @@
-// ResultPage — 비용 견적 + 요구사항 문서 + 개발자 매칭 결과 페이지.
-// 3탭 구성(cost/document/matching), PDF 다운로드, 수정, 새 견적 액션.
-// useMemo로 costEstimate, reqDocument, matchResults 메모이제이션.
+// =============================================================================
+// ResultPage — 결과 페이지 (비용 견적 + 요구사항 문서 + 개발자 매칭)
+// =============================================================================
+// 페이지 기능:
+// 1. 페이지 진입 시 useQuoteStore에서 answers 읽기, 비어있으면 /wizard로 리다이렉트
+// 2. 상단: 완료 메시지 ("견적이 준비되었습니다!" + 프로젝트명)
+// 3. 탭 구성:
+//    - 비용 요약 탭: <CostSummary estimate={costEstimate} />
+//    - 요구사항 명세서 탭: <RequirementsPreview document={reqDocument} />
+//    - 개발자 매칭 탭: <DeveloperMatchSection results={matchResults} />
+// 4. 액션 버튼: PDF 다운로드 / 수정하기 / 새 견적 시작
+// 5. 레이아웃: max-w-5xl 중앙 정렬, Header + 콘텐츠 + Footer
+// 
+// 개발자 매칭 구현:
+// - matchingInput은 costEstimate 준비 후 buildMatchingInput()으로 생성
+// - matchResults는 matchDevelopers(matchingInput, developerProfiles)로 계산
+// - 결과는 ResultPage 탭에서만 노출, PDF/HTML 문서에는 미포함
+// =============================================================================
 
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -8,16 +23,13 @@ import { useQuoteStore } from '@/store/useQuoteStore';
 import { calculateCost } from '@/lib/costCalculator';
 import { generateDocument } from '@/lib/documentGenerator';
 import { buildMatchingInput, matchDevelopers } from '@/lib/developerMatcher';
-import { downloadPdf } from '@/lib/downloadPdf';
+import { downloadPdf } from '@/components/result/PdfDocument';
 import { CostSummary } from '@/components/result/CostSummary';
 import { RequirementsPreview } from '@/components/result/RequirementsPreview';
 import { DeveloperMatchSection } from '@/components/result/DeveloperMatchSection';
 import { developerProfiles } from '@/data/developerProfiles';
 import { FileDown, Plus, Edit } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Answers } from '@/types';
-
-const EMPTY_ANSWERS: Answers = {};
 
 export function ResultPage() {
   const navigate = useNavigate();
@@ -34,26 +46,14 @@ export function ResultPage() {
     document.title = '웹사이트 견적 생성기 - 결과';
   }, [answers, navigate]);
 
-  const hasAnswers = Boolean(answers && Object.keys(answers).length > 0);
-  const effectiveAnswers = useMemo<Answers>(
-    () => (hasAnswers ? answers : EMPTY_ANSWERS),
-    [answers, hasAnswers],
-  );
-
-  const costEstimate = useMemo(() => calculateCost(effectiveAnswers), [effectiveAnswers]);
-  const reqDocument = useMemo(
-    () => generateDocument(effectiveAnswers, costEstimate),
-    [effectiveAnswers, costEstimate],
-  );
-  const matchingInput = useMemo(
-    () => buildMatchingInput(effectiveAnswers, costEstimate),
-    [effectiveAnswers, costEstimate],
-  );
-  const matchResults = useMemo(() => matchDevelopers(matchingInput, developerProfiles), [matchingInput]);
-
-  if (!hasAnswers) {
+  if (!answers || Object.keys(answers).length === 0) {
     return null;
   }
+
+  const costEstimate = useMemo(() => calculateCost(answers), [answers]);
+  const reqDocument = useMemo(() => generateDocument(answers, costEstimate), [answers, costEstimate]);
+  const matchingInput = useMemo(() => buildMatchingInput(answers, costEstimate), [answers, costEstimate]);
+  const matchResults = useMemo(() => matchDevelopers(matchingInput, developerProfiles), [matchingInput]);
 
   const handleNewQuote = () => {
     resetQuote();

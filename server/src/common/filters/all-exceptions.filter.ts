@@ -1,4 +1,3 @@
-// 예외 필터: 프로덕션 환경에서는 민감 정보 숨김
 import {
   ExceptionFilter,
   Catch,
@@ -16,7 +15,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const isProduction = process.env.NODE_ENV === 'production';
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
@@ -31,19 +29,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = exception.message;
       }
     } else if (exception instanceof Error) {
-      // 프로덕션: 민감 정보 숨김
-      if (isProduction) {
-        message = 'Internal server error';
-      } else {
-        message = exception.message;
-      }
+      message = exception.message;
     }
 
-    // 모든 에러는 로그에 상세 기록
-    this.logger.error(
-      `[${status}] ${exception instanceof Error ? exception.message : String(exception)}`,
-      exception instanceof Error ? exception.stack : '',
-    );
+    this.logger.error(message, exception);
 
     response.status(status).json({
       statusCode: status,
@@ -52,5 +41,4 @@ export class AllExceptionsFilter implements ExceptionFilter {
     });
   }
 }
-
 

@@ -1,42 +1,27 @@
-// [수정필요 H15] 생성자에서 async initializeDefaultRules()를 await 없이 호출함.
-//   OnModuleInit 인터페이스를 구현하고 초기화 로직을 onModuleInit()으로 이동해야 함.
-// [수정필요 M13] 기본 가격 규칙의 siteType ID(landing/ecommerce/corporate/portal)가
-//   클라이언트 siteType ID(landing/brochure/ecommerce/webapp/blog)와 불일치. 정렬 필요.
-// [수정필요 M14] 기본 가격 규칙의 feature ID(authentication/admin_cms/...)가
-//   클라이언트 feature ID(auth/adminPanel/...)와 불일치. 정렬 필요.
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+// PricingService — 기본 가격 규칙, 비용 계산, 버전 캐싱 구현.
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/db/prisma.service';
 import { calculateCostFromRules } from '../../common/utils/cost-calculator';
 import type { CostEstimate } from '../../types/cost-estimate';
 import type { PricingRuleSet, PricingRuleVersion } from '../../types/pricing-rule';
-import type { NormalizedSpec } from '../../types/answers';
 
 const DEFAULT_PRICING_RULES: PricingRuleSet = {
   baseTiers: [
-    { id: 'landing', labelKey: 'pricing.tiers.landing', minCost: 1500000, maxCost: 3000000, defaultPageCount: 3 },
-    { id: 'brochure', labelKey: 'pricing.tiers.brochure', minCost: 3000000, maxCost: 8000000, defaultPageCount: 7 },
-    { id: 'ecommerce', labelKey: 'pricing.tiers.ecommerce', minCost: 8000000, maxCost: 20000000, defaultPageCount: 15 },
-    { id: 'webapp', labelKey: 'pricing.tiers.webapp', minCost: 10000000, maxCost: 30000000, defaultPageCount: 10 },
-    { id: 'blog', labelKey: 'pricing.tiers.blog', minCost: 2000000, maxCost: 5000000, defaultPageCount: 5 },
+    { id: 'landing', labelKey: 'landing', minCost: 500000, maxCost: 2000000, defaultPageCount: 5 },
+    { id: 'ecommerce', labelKey: 'ecommerce', minCost: 2000000, maxCost: 8000000, defaultPageCount: 10 },
+    { id: 'corporate', labelKey: 'corporate', minCost: 1500000, maxCost: 5000000, defaultPageCount: 10 },
+    { id: 'portal', labelKey: 'portal', minCost: 3000000, maxCost: 10000000, defaultPageCount: 15 },
   ],
   featureCosts: {
-    contactForm: { min: 0, max: 0 },
-    search: { min: 500000, max: 1000000 },
-    auth: { min: 1000000, max: 2000000 },
-    payment: { min: 2000000, max: 4000000 },
-    adminPanel: { min: 2000000, max: 5000000 },
-    fileUpload: { min: 500000, max: 1000000 },
-    chat: { min: 1500000, max: 3000000 },
-    socialIntegration: { min: 300000, max: 500000 },
-    multiLanguage: { min: 1000000, max: 2000000 },
-    analyticsDashboard: { min: 1000000, max: 2000000 },
-    booking: { min: 2000000, max: 4000000 },
-    mapIntegration: { min: 300000, max: 500000 },
-    productManagement: { min: 1000000, max: 2000000 },
-    inventory: { min: 1000000, max: 2000000 },
-    orderTracking: { min: 1000000, max: 2000000 },
-    couponSystem: { min: 500000, max: 1000000 },
-    reviewSystem: { min: 500000, max: 1000000 },
+    authentication: { min: 300000, max: 800000 },
+    admin_cms: { min: 500000, max: 1500000 },
+    payment: { min: 400000, max: 1200000 },
+    search: { min: 200000, max: 600000 },
+    analytics: { min: 100000, max: 400000 },
+    notification: { min: 200000, max: 600000 },
+    api: { min: 300000, max: 1000000 },
+    mobile_app: { min: 2000000, max: 5000000 },
   },
   designMultipliers: {
     template: 1.0,
@@ -44,40 +29,35 @@ const DEFAULT_PRICING_RULES: PricingRuleSet = {
     premium: 1.6,
   },
   timelineMultipliers: {
-    flexible: 1.0,
-    standard: 1.0,
-    urgent: 1.3,
-    rush: 1.6,
+    urgent: 1.5,
+    high: 1.2,
+    medium: 1.0,
+    low: 0.9,
   },
-  perPageCost: { min: 200000, max: 500000 },
+  perPageCost: { min: 50000, max: 200000 },
   contentCosts: {
-    clientProvides: { min: 0, max: 0 },
-    needCopywriting: { min: 1000000, max: 3000000 },
-    needMediaProduction: { min: 2000000, max: 5000000 },
+    basic: { min: 100000, max: 500000 },
+    advanced: { min: 500000, max: 2000000 },
   },
   integrationCosts: {
-    googleAnalytics: { min: 300000, max: 500000 },
-    metaPixel: { min: 300000, max: 500000 },
-    kakaoPay: { min: 300000, max: 500000 },
-    tossPay: { min: 300000, max: 500000 },
-    naverPay: { min: 300000, max: 500000 },
-    crmIntegration: { min: 300000, max: 500000 },
-    externalApi: { min: 300000, max: 500000 },
+    stripe: { min: 200000, max: 500000 },
+    sendgrid: { min: 100000, max: 300000 },
+    slack: { min: 100000, max: 300000 },
+    google_analytics: { min: 50000, max: 200000 },
   },
 };
 
 @Injectable()
-export class PricingService implements OnModuleInit {
+export class PricingService {
   private readonly logger = new Logger(PricingService.name);
   private currentRulesCache: { rules: PricingRuleSet; version: string; expiresAt: number } | null = null;
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   constructor(
     private prisma: PrismaService,
-  ) {}
-
-  async onModuleInit(): Promise<void> {
-    await this.initializeDefaultRules();
+    private configService: ConfigService,
+  ) {
+    this.initializeDefaultRules();
   }
 
   private async initializeDefaultRules(): Promise<void> {
@@ -99,7 +79,6 @@ export class PricingService implements OnModuleInit {
       }
     } catch (error) {
       this.logger.error('Failed to initialize pricing rules', error);
-      throw error;
     }
   }
 
@@ -191,7 +170,7 @@ export class PricingService implements OnModuleInit {
   }
 
   async calculateCost(
-    normalizedSpec: NormalizedSpec,
+    normalizedSpec: any,
     versionId?: string,
   ): Promise<CostEstimate & { pricingVersion: string }> {
     let rules: PricingRuleSet;

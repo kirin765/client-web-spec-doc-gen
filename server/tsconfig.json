@@ -9,7 +9,7 @@
     "target": "ES2022",
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "..",
+    "rootDir": "./src",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
@@ -25,7 +25,6 @@
     }
   },
   "include": [
-    "src",
-    "../shared/src"
+    "src"
   ]
 }

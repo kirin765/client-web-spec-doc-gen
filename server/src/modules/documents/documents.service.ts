@@ -1,5 +1,5 @@
-// [H5] 수정 필요: Line 110, 146에서 BadRequestException('Unauthorized access to document')을 던지고 있음 — 권한 없음은 ForbiddenException으로 변경해야 함.
-import { Injectable, Logger, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+// DocumentsService — JSON 문서 생성, PDF 큐 등록, 문서 조회 구현.
+import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import { PrismaService } from '../../common/db/prisma.service';
@@ -107,7 +107,7 @@ export class DocumentsService {
 
     // Auth check if userId provided
     if (userId && document.projectRequest.userId !== userId) {
-      throw new ForbiddenException('Unauthorized access to document');
+      throw new BadRequestException('Unauthorized access to document');
     }
 
     return {
@@ -143,7 +143,7 @@ export class DocumentsService {
 
     // Auth check
     if (userId && projectRequest.userId !== userId) {
-      throw new ForbiddenException('Unauthorized access to project');
+      throw new BadRequestException('Unauthorized access to project');
     }
 
     const documents = await this.prisma.requirementDocument.findMany({
