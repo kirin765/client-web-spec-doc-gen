@@ -1,22 +1,29 @@
-// PdfProcessor — BullMQ 워커. 문서 JSON → 텍스트 변환 후 S3 업로드 (실제 PDF 렌더링 미구현).
 import { Injectable, Logger } from '@nestjs/common';
-import { Processor } from '@nestjs/bullmq';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { PrismaService } from '../../../common/db/prisma.service';
 import { StorageService } from '../../../common/storage/storage.service';
 import type { RequirementsDocument } from '../../../types/requirements-document';
 
+interface PdfJobData {
+  documentId: string;
+  projectRequestId: string;
+  documentVersion: number;
+}
+
 @Processor('pdf-generation')
 @Injectable()
-export class PdfProcessor {
+export class PdfProcessor extends WorkerHost {
   private readonly logger = new Logger(PdfProcessor.name);
 
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
-  ) {}
+  ) {
+    super();
+  }
 
-  async process(job: Job): Promise<void> {
+  async process(job: Job<PdfJobData>): Promise<void> {
     const { documentId, projectRequestId, documentVersion } = job.data;
     this.logger.log(`Processing PDF generation for document: ${documentId}`);
 
