@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { loadPricingOverrides, savePricingOverrides, getPricingConfig } from '@/data/pricing';
 import { useMarketplaceStore } from '@/store/useMarketplaceStore';
 import { formatRange } from '@/lib/utils';
+import { Seo } from '@/components/seo/Seo';
 
 export function AdminPage() {
   const { projects, developers, approveDeveloper } = useMarketplaceStore();
@@ -46,6 +47,11 @@ export function AdminPage() {
 
   return (
     <div className="bg-gray-50 px-6 py-10">
+      <Seo
+        title="관리자 대시보드 | 웹사이트 견적 자동 생성기"
+        description="프로젝트 목록, 전문가 승인, 가격 룰을 관리하는 관리자 화면입니다."
+        noIndex
+      />
       <div className="mx-auto max-w-7xl space-y-8">
         <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
           <p className="text-sm font-semibold text-blue-600">관리자 대시보드</p>

@@ -27,6 +27,7 @@ import { downloadPdf } from '@/lib/downloadPdf';
 import { CostSummary } from '@/components/result/CostSummary';
 import { RequirementsPreview } from '@/components/result/RequirementsPreview';
 import { DeveloperMatchSection } from '@/components/result/DeveloperMatchSection';
+import { Seo } from '@/components/seo/Seo';
 import { developerProfiles } from '@/data/developerProfiles';
 import { FileDown, Plus, Edit } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -36,24 +37,24 @@ export function ResultPage() {
   const { answers, resetQuote } = useQuoteStore();
   const [activeTab, setActiveTab] = useState<'cost' | 'document' | 'matching'>('cost');
   const { t } = useTranslation('common');
-
-  // answers가 비어있으면 wizard로 리다이렉트
-  useEffect(() => {
-    if (!answers || Object.keys(answers).length === 0) {
-      navigate('/wizard');
-      return;
-    }
-    document.title = '웹사이트 견적 생성기 - 결과';
-  }, [answers, navigate]);
-
-  if (!answers || Object.keys(answers).length === 0) {
-    return null;
-  }
+  const hasAnswers = Boolean(answers && Object.keys(answers).length > 0);
 
   const costEstimate = useMemo(() => calculateCost(answers), [answers]);
   const reqDocument = useMemo(() => generateDocument(answers, costEstimate), [answers, costEstimate]);
   const matchingInput = useMemo(() => buildMatchingInput(answers, costEstimate), [answers, costEstimate]);
   const matchResults = useMemo(() => matchDevelopers(matchingInput, developerProfiles), [matchingInput]);
+
+  // answers가 비어있으면 wizard로 리다이렉트
+  useEffect(() => {
+    if (!hasAnswers) {
+      navigate('/wizard');
+      return;
+    }
+  }, [hasAnswers, navigate]);
+
+  if (!hasAnswers) {
+    return null;
+  }
 
   const handleNewQuote = () => {
     resetQuote();
@@ -66,6 +67,11 @@ export function ResultPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Seo
+        title={`결과 확인 | ${reqDocument.clientInfo.projectName || '프로젝트'} | 웹사이트 견적 자동 생성기`}
+        description="요구사항 문서, 예상 비용 범위, 개발자 매칭 결과를 한 화면에서 확인하고 PDF로 다운로드하세요."
+        noIndex
+      />
       {/* 완료 메시지 */}
       <section className="border-b bg-white px-6 py-12">
         <div className="mx-auto max-w-5xl">
