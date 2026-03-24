@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuoteStore } from '@/store/useQuoteStore';
 import { Zap, FileText, DollarSign, CheckCircle } from 'lucide-react';
+import { Seo } from '@/components/seo/Seo';
 
 export function LandingPage() {
   const { t } = useTranslation('common');
@@ -17,6 +18,10 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Seo
+        title="웹사이트 견적 자동 생성기 | 프로젝트 의뢰·비용 계산·전문가 매칭"
+        description="프로젝트 의뢰를 생성하고 요구사항 문서와 예상 비용을 확인한 뒤, 전문가 매칭과 제안 비교까지 빠르게 진행하세요."
+      />
       {/* 히어로 섹션 */}
       <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 px-6 py-20 sm:py-32">
         <div className="mx-auto max-w-4xl text-center">

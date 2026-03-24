@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, Briefcase, CheckCircle2, FileText } from 'lucide-react';
 import { useMarketplaceStore } from '@/store/useMarketplaceStore';
 import { formatRange } from '@/lib/utils';
+import { Seo } from '@/components/seo/Seo';
 
 export function CustomerMatchesPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -39,6 +40,11 @@ export function CustomerMatchesPage() {
 
   return (
     <div className="bg-gray-50 px-6 py-10">
+      <Seo
+        title={`${project.projectName} 매칭 결과 | 웹사이트 견적 자동 생성기`}
+        description="프로젝트에 가장 적합한 전문가 후보와 추천 이유, 예상 비용 범위를 확인하세요."
+        noIndex
+      />
       <div className="mx-auto max-w-6xl space-y-8">
         <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
           <div className="flex flex-wrap items-start justify-between gap-4">

@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { Eye, Hourglass, Link2, Trophy } from 'lucide-react';
 import { useMarketplaceStore } from '@/store/useMarketplaceStore';
 import { formatRange } from '@/lib/utils';
+import { Seo } from '@/components/seo/Seo';
 
 export function CustomerProposalsPage() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -34,6 +35,11 @@ export function CustomerProposalsPage() {
 
   return (
     <div className="bg-gray-50 px-6 py-10">
+      <Seo
+        title={`${project.projectName} 제안 비교 | 웹사이트 견적 자동 생성기`}
+        description="전문가가 제출한 가격 범위, 기간, 메시지, 포트폴리오를 비교해 최적의 제안을 선택하세요."
+        noIndex
+      />
       <div className="mx-auto max-w-6xl space-y-8">
         <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
           <p className="text-sm font-semibold text-blue-600">고객 제안 비교</p>

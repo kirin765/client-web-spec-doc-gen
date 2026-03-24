@@ -3,6 +3,7 @@ import { Send, UserRoundPlus } from 'lucide-react';
 import { useMarketplaceStore } from '@/store/useMarketplaceStore';
 import type { DeveloperDraftInput } from '@/types/marketplace';
 import { formatRange } from '@/lib/utils';
+import { Seo } from '@/components/seo/Seo';
 
 function splitCsv(value: string) {
   return value
@@ -88,6 +89,11 @@ export function DeveloperWorkspacePage() {
 
   return (
     <div className="bg-gray-50 px-6 py-10">
+      <Seo
+        title="전문가 워크스페이스 | 웹사이트 견적 자동 생성기"
+        description="전문가 프로필을 등록하고 매칭된 의뢰에 제안을 제출하세요."
+        noIndex
+      />
       <div className="mx-auto max-w-7xl space-y-8">
         <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
           <div className="flex flex-wrap items-center justify-between gap-4">
