@@ -2,6 +2,14 @@
 
 import type { BaseTier } from '@/types';
 
+export interface PricingOverrides {
+  baseTiers?: Record<string, { minCost: number; maxCost: number }>;
+  designMultipliers?: Record<string, number>;
+  timelineMultipliers?: Record<string, number>;
+}
+
+export const PRICING_OVERRIDES_KEY = 'marketplace-pricing-overrides';
+
 // -----------------------------------------------------------------------------
 // 사이트 유형별 기본 단가
 // -----------------------------------------------------------------------------
@@ -85,3 +93,52 @@ export const integrationCosts: Record<string, { min: number; max: number }> = {
   crmIntegration: { min: 300_000, max: 500_000 },
   externalApi: { min: 300_000, max: 500_000 },
 };
+
+export function loadPricingOverrides(): PricingOverrides {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  const raw = window.localStorage.getItem(PRICING_OVERRIDES_KEY);
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(raw) as PricingOverrides;
+  } catch {
+    return {};
+  }
+}
+
+export function savePricingOverrides(overrides: PricingOverrides) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.localStorage.setItem(PRICING_OVERRIDES_KEY, JSON.stringify(overrides));
+}
+
+export function getPricingConfig() {
+  const overrides = loadPricingOverrides();
+
+  return {
+    baseTiers: baseTiers.map((tier) => ({
+      ...tier,
+      minCost: overrides.baseTiers?.[tier.id]?.minCost ?? tier.minCost,
+      maxCost: overrides.baseTiers?.[tier.id]?.maxCost ?? tier.maxCost,
+    })),
+    featureCosts,
+    designMultipliers: {
+      ...designMultipliers,
+      ...overrides.designMultipliers,
+    },
+    timelineMultipliers: {
+      ...timelineMultipliers,
+      ...overrides.timelineMultipliers,
+    },
+    perPageCost,
+    contentCosts,
+    integrationCosts,
+  };
+}

@@ -28,13 +28,22 @@ export function Header() {
             <h1 className="inline text-lg font-bold text-gray-900 sm:hidden">견적생성</h1>
           </Link>
 
-          {/* 우측 버튼 */}
-          <button
-            onClick={handleNewQuote}
-            className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
-          >
-            {t('nav.newQuote')}
-          </button>
+          <div className="flex items-center gap-3">
+            <nav className="hidden items-center gap-4 text-sm font-medium text-gray-600 md:flex">
+              <Link to="/developers/workspace" className="hover:text-gray-900">
+                전문가
+              </Link>
+              <Link to="/admin" className="hover:text-gray-900">
+                관리자
+              </Link>
+            </nav>
+            <button
+              onClick={handleNewQuote}
+              className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              {t('nav.newQuote')}
+            </button>
+          </div>
         </div>
       </div>
     </header>

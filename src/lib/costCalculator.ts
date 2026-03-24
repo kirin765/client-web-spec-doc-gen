@@ -4,13 +4,7 @@
 
 import type { Answers, CostEstimate, CostBreakdownItem } from '@/types';
 import {
-  baseTiers,
-  featureCosts,
-  designMultipliers,
-  timelineMultipliers,
-  perPageCost,
-  contentCosts,
-  integrationCosts,
+  getPricingConfig,
 } from '@/data/pricing';
 
 const featureLabels: Record<string, string> = {
@@ -50,6 +44,16 @@ const integrationLabels: Record<string, string> = {
 };
 
 export function calculateCost(answers: Answers): CostEstimate {
+  const {
+    baseTiers,
+    featureCosts,
+    designMultipliers,
+    timelineMultipliers,
+    perPageCost,
+    contentCosts,
+    integrationCosts,
+  } = getPricingConfig();
+
   // 1. 사이트 유형에서 기본 단가 선택
   const siteTypeId = answers.siteType as string;
   const baseTierIndex = baseTiers.findIndex((t) => t.id === siteTypeId);

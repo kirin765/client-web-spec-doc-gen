@@ -11,6 +11,7 @@ import { MatchingModule } from './modules/matching/matching.module';
 import { DevelopersModule } from './modules/developers/developers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { ProposalsModule } from './modules/proposals/proposals.module';
 import configuration from './common/config/configuration';
 
 @Module({
@@ -28,6 +29,7 @@ import configuration from './common/config/configuration';
     DocumentsModule,
     MatchingModule,
     DevelopersModule,
+    ProposalsModule,
     NotificationsModule,
     AdminModule,
     StorageModule,
