@@ -1,6 +1,4 @@
-// [수정필요 C7] submit()에서 costEstimate를 계산하지 않음. PricingService를 주입하고 저장 전 calculateCost() 호출 필요.
-// [수정필요 H14] rawAnswers 병합 시 Prisma JsonValue에 spread 연산자 사용 — 타입 단언(as Record) 필요.
-// [수정필요 M3] rawAnswers spread 타입 안전성 문제 — H14와 동일하게 타입 단언 적용 필요.
+// ProjectRequestsService — createDraft, updateAnswers, submit, getById, list, getDetail 구현.
 import {
   Injectable,
   NotFoundException,
@@ -8,24 +6,20 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/db/prisma.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { CreateDraftDto, UpdateAnswersDto, SubmitProjectRequestDto } from './dto';
 import { normalizeAnswers, validateNormalizedSpec } from '../../common/utils/normalizer';
-import { PricingService } from '../pricing/pricing.service';
-import { DocumentsService } from '../documents/documents.service';
-import { MatchingService } from '../matching/matching.service';
-import { NotificationsService } from '../notifications/notifications.service';
-import { normalizeEnumToApi } from '../../common/utils/enum-normalizer';
-
-type JsonRecord = Record<string, unknown>;
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ProjectRequestsService {
   constructor(
     private prisma: PrismaService,
-    private pricingService: PricingService,
-    private documentsService: DocumentsService,
-    private matchingService: MatchingService,
-    private notificationsService: NotificationsService,
+    @InjectQueue('email-notification') private emailQueue: Queue,
+    @InjectQueue('pdf-generation') private pdfQueue: Queue,
+    @InjectQueue('developer-matching') private matchingQueue: Queue,
+    private configService: ConfigService,
   ) {}
 
   async createDraft(
@@ -42,7 +36,7 @@ export class ProjectRequestsService {
       },
     });
 
-    return this.mapProjectRequest(projectRequest);
+    return projectRequest;
   }
 
   async updateAnswers(
@@ -58,19 +52,17 @@ export class ProjectRequestsService {
       );
     }
 
-    const existingRawAnswers = this.asJsonRecord(projectRequest.rawAnswers);
-
     const updated = await this.prisma.projectRequest.update({
       where: { id: projectRequestId },
       data: {
         rawAnswers: {
-          ...existingRawAnswers,
+          ...projectRequest.rawAnswers,
           ...dto.rawAnswers,
         },
       },
     });
 
-    return this.mapProjectRequest(updated);
+    return updated;
   }
 
   async submit(
@@ -78,7 +70,7 @@ export class ProjectRequestsService {
     userId: string,
     dto: SubmitProjectRequestDto,
   ): Promise<any> {
-    const projectRequest = await this.getById(projectRequestId, userId, false);
+    const projectRequest = await this.getById(projectRequestId, userId);
 
     if (projectRequest.status !== 'DRAFT') {
       throw new BadRequestException('Only DRAFT projects can be submitted');
@@ -94,41 +86,47 @@ export class ProjectRequestsService {
       );
     }
 
-    // Calculate cost estimate
-    const costEstimate = await this.pricingService.calculateCost(normalizedSpec);
-
-    await this.prisma.projectRequest.update({
-      where: { id: projectRequestId },
-      data: {
-        rawAnswers: dto.rawAnswers,
-        normalizedSpec: normalizedSpec as any,
-        costEstimate: costEstimate as any,
-        siteType: normalizedSpec.projectType,
-        status: 'SUBMITTED',
-        submittedAt: new Date(),
-        pricingVersion: costEstimate.pricingVersion,
+    // Get current pricing version
+    const pricingVersion = await this.prisma.pricingRuleVersion.findFirst({
+      where: {
+        effectiveFrom: {
+          lte: new Date(),
+        },
+      },
+      orderBy: {
+        effectiveFrom: 'desc',
       },
     });
 
-    await this.documentsService.generateDocument(projectRequestId);
-    await this.matchingService.executeMatching(projectRequestId);
+    // Update status and prepare for queue jobs
+    const updated = await this.prisma.projectRequest.update({
+      where: { id: projectRequestId },
+      data: {
+        rawAnswers: dto.rawAnswers,
+        normalizedSpec,
+        status: 'SUBMITTED',
+        submittedAt: new Date(),
+        pricingVersion: pricingVersion?.version,
+      },
+    });
 
-    const notificationEmail = await this.resolveNotificationEmail(userId, dto.rawAnswers);
-    if (notificationEmail) {
-      await this.notificationsService.sendQuoteCompletedEmail(
-        notificationEmail,
-        projectRequestId,
-      );
-    }
+    await this.pdfQueue.add('generate-pdf', {
+      projectRequestId,
+    });
 
-    return this.getDetail(projectRequestId, userId);
+    await this.matchingQueue.add('execute-matching', {
+      projectRequestId,
+      normalizedSpec,
+    });
+
+    await this.emailQueue.add('quote-completed', {
+      projectRequestId,
+    });
+
+    return updated;
   }
 
-  async getById(
-    projectRequestId: string,
-    userId?: string,
-    mapResult = true,
-  ): Promise<any> {
+  async getById(projectRequestId: string, userId?: string): Promise<any> {
     const projectRequest = await this.prisma.projectRequest.findUnique({
       where: { id: projectRequestId },
     });
@@ -143,7 +141,7 @@ export class ProjectRequestsService {
       );
     }
 
-    return mapResult ? this.mapProjectRequest(projectRequest) : projectRequest;
+    return projectRequest;
   }
 
   async list(
@@ -166,7 +164,7 @@ export class ProjectRequestsService {
     ]);
 
     return {
-      data: data.map((projectRequest) => this.mapProjectRequest(projectRequest)),
+      data,
       total,
       pageSize,
       page,
@@ -174,7 +172,7 @@ export class ProjectRequestsService {
   }
 
   async getDetail(projectRequestId: string, userId: string): Promise<any> {
-    const projectRequest = await this.getById(projectRequestId, userId, false);
+    const projectRequest = await this.getById(projectRequestId, userId);
 
     const documents = await this.prisma.requirementDocument.findMany({
       where: { projectRequestId },
@@ -188,75 +186,9 @@ export class ProjectRequestsService {
     });
 
     return {
-      ...this.mapProjectRequest(projectRequest),
-      documents: documents.map((document) => ({
-        ...document,
-        generatedAt: document.generatedAt.toISOString(),
-      })),
-      matches: matches.map((match) => ({
-        ...match,
-        developerName: match.developer.displayName,
-        status: normalizeEnumToApi(match.status),
-        createdAt: this.toIsoString(match.createdAt),
-        developer: {
-          ...match.developer,
-          type: normalizeEnumToApi(match.developer.type),
-          availabilityStatus: normalizeEnumToApi(
-            match.developer.availabilityStatus,
-          ),
-          createdAt: this.toIsoString(match.developer.createdAt),
-          updatedAt: this.toIsoString(match.developer.updatedAt),
-        },
-      })),
-    };
-  }
-
-  private asJsonRecord(value: unknown): JsonRecord {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      return value as JsonRecord;
-    }
-
-    return {};
-  }
-
-  private mapProjectRequest(projectRequest: any) {
-    return {
       ...projectRequest,
-      status: normalizeEnumToApi(projectRequest.status),
-      createdAt: this.toIsoString(projectRequest.createdAt),
-      updatedAt: this.toIsoString(projectRequest.updatedAt),
-      submittedAt: this.toIsoString(projectRequest.submittedAt),
+      documents,
+      matches,
     };
-  }
-
-  private toIsoString(value: unknown): string | null {
-    if (!value) {
-      return null;
-    }
-
-    if (value instanceof Date) {
-      return value.toISOString();
-    }
-
-    return typeof value === 'string' ? value : null;
-  }
-
-  private async resolveNotificationEmail(
-    userId: string,
-    rawAnswers: JsonRecord,
-  ): Promise<string | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true },
-    });
-
-    if (user?.email) {
-      return user.email;
-    }
-
-    const contactEmail = rawAnswers.contactEmail;
-    return typeof contactEmail === 'string' && contactEmail.trim()
-      ? contactEmail
-      : null;
   }
 }
