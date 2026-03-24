@@ -7,4 +7,5 @@ export * from './types/requirements-document';
 export * from './types/project-request';
 export * from './types/developer';
 export * from './types/matching';
+export * from './types/proposal';
 export * from './types/pricing-rule';
