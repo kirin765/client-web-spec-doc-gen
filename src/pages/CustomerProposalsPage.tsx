@@ -54,10 +54,10 @@ export function CustomerProposalsPage() {
               매칭 결과로 돌아가기
             </Link>
             <Link
-              to="/developers/workspace"
+              to="/mypage"
               className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white"
             >
-              전문가가 제안하기
+              전문가 마이페이지
             </Link>
           </div>
         </section>

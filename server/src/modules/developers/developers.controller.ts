@@ -7,19 +7,17 @@ import {
   Param,
   Body,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { DevelopersService } from './developers.service';
 import { CreateDeveloperDto } from './dto/create-developer.dto';
 import { UpdateDeveloperDto } from './dto/update-developer.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { User } from '../auth/decorators/user.decorator';
 
 @Controller('developers')
 export class DevelopersController {
   constructor(private developersService: DevelopersService) {}
-
-  @Post()
-  async create(@Body() data: CreateDeveloperDto) {
-    return this.developersService.create(data);
-  }
 
   @Get()
   async search(
@@ -42,7 +40,7 @@ export class DevelopersController {
 
   @Get(':id')
   async getById(@Param('id') id: string) {
-    return this.developersService.getById(id);
+    return this.developersService.getPublicById(id);
   }
 
   @Get(':id/matches')
@@ -61,5 +59,23 @@ export class DevelopersController {
     @Body() body: { status: 'AVAILABLE' | 'BUSY' | 'LIMITED' },
   ) {
     return this.developersService.updateAvailability(id, body.status);
+  }
+
+  @Post('me/profile')
+  @UseGuards(JwtAuthGuard)
+  async upsertMyProfile(@User() user: any, @Body() data: CreateDeveloperDto) {
+    return this.developersService.upsertByUser(user.id, data);
+  }
+
+  @Patch('me/profile')
+  @UseGuards(JwtAuthGuard)
+  async patchMyProfile(@User() user: any, @Body() data: UpdateDeveloperDto) {
+    return this.developersService.patchByUser(user.id, data);
+  }
+
+  @Get('me/profile')
+  @UseGuards(JwtAuthGuard)
+  async getMyProfile(@User() user: any) {
+    return this.developersService.getByUserId(user.id);
   }
 }
