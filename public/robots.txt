@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /developers/workspace
+Disallow: /projects/
+Disallow: /wizard
+Disallow: /result
+
+Sitemap: http://localhost:5173/sitemap.xml
