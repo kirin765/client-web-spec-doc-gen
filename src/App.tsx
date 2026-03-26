@@ -10,6 +10,8 @@ import { CustomerMatchesPage } from '@/pages/CustomerMatchesPage';
 import { CustomerProposalsPage } from '@/pages/CustomerProposalsPage';
 import { DeveloperWorkspacePage } from '@/pages/DeveloperWorkspacePage';
 import { AdminPage } from '@/pages/AdminPage';
+import { ExpertDirectoryPage } from '@/pages/ExpertDirectoryPage';
+import { ExpertReceivedQuotesPage } from '@/pages/ExpertReceivedQuotesPage';
 import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
@@ -24,6 +26,8 @@ export default function App() {
             <Route path="/result" element={<ResultPage />} />
             <Route path="/projects/:projectId/matches" element={<CustomerMatchesPage />} />
             <Route path="/projects/:projectId/proposals" element={<CustomerProposalsPage />} />
+            <Route path="/experts" element={<ExpertDirectoryPage />} />
+            <Route path="/experts/:developerId/quotes" element={<ExpertReceivedQuotesPage />} />
             <Route path="/developers/workspace" element={<DeveloperWorkspacePage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
