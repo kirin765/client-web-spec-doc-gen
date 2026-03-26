@@ -30,6 +30,9 @@ export function Header() {
 
           <div className="flex items-center gap-3">
             <nav className="hidden items-center gap-4 text-sm font-medium text-gray-600 md:flex">
+              <Link to="/experts" className="hover:text-gray-900">
+                전문가 목록
+              </Link>
               <Link to="/developers/workspace" className="hover:text-gray-900">
                 전문가
               </Link>

@@ -82,11 +82,11 @@ export function CustomerMatchesPage() {
               <ArrowRight className="h-4 w-4" />
             </button>
             <Link
-              to="/developers/workspace"
+              to={`/experts?projectId=${project.id}`}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-5 py-3 font-semibold text-gray-700"
             >
               <Briefcase className="h-4 w-4" />
-              전문가 제안하러 가기
+              전문가 목록에서 견적 보내기
             </Link>
           </div>
         </section>
