@@ -8,9 +8,9 @@ const rootDir = path.resolve(__dirname, '..');
 const publicDir = path.join(rootDir, 'public');
 
 const env = globalThis.process?.env ?? {};
-const siteUrl = (env.SITE_URL || env.VITE_SITE_URL || 'http://localhost:5173').replace(/\/+$/, '');
+const siteUrl = (env.SITE_URL || env.VITE_SITE_URL || 'https://webbrief.co.kr').replace(/\/+$/, '');
 
-const routes = ['/'];
+const routes = ['/', '/experts'];
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${routes
