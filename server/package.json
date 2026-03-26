@@ -5,9 +5,9 @@
   "scripts": {
     "build": "prisma generate && nest build",
     "start": "node dist/server/src/main.js",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "npx prisma migrate deploy && node dist/server/src/main.js",
+    "start:dev": "nest start --watch --entryFile server/src/main",
+    "start:debug": "nest start --debug --watch --entryFile server/src/main",
+    "start:prod": "npx prisma db execute --schema prisma/schema.prisma --file scripts/repair-failed-migrations.sql && npx prisma migrate deploy && node dist/server/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "test:e2e": "jest --config ./test/jest-e2e.json --passWithNoTests",
