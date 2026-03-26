@@ -35,23 +35,34 @@ export class AuthController {
     return this.authService.verifyMagicLink(body.token);
   }
 
+  @Public()
+  @Post('google')
+  async google(@Body() body: { idToken?: string; credential?: string }): Promise<any> {
+    const googleToken = body.idToken ?? body.credential;
+    if (!googleToken) {
+      throw new BadRequestException('Google credential is required');
+    }
+    return this.authService.loginWithGoogle(googleToken);
+  }
+
   @Post('refresh')
   @UseGuards(JwtAuthGuard)
-  async refresh(@User() user: any) {
+  async refresh(@User() user: any): Promise<any> {
     const newToken = this.authService.createJwt(
       user.id,
       user.email,
       user.role,
     );
+    const sessionUser = await this.authService.getCurrentUser(user.id);
     return {
       token: newToken,
-      email: user.email,
+      user: sessionUser,
     };
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getCurrentUser(@User() user: any) {
+  async getCurrentUser(@User() user: any): Promise<any> {
     return this.authService.getCurrentUser(user.id);
   }
 }

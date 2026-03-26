@@ -12,6 +12,7 @@ import { DevelopersModule } from './modules/developers/developers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ProposalsModule } from './modules/proposals/proposals.module';
+import { QuoteSharesModule } from './modules/quote-shares/quote-shares.module';
 import configuration from './common/config/configuration';
 
 @Module({
@@ -30,6 +31,7 @@ import configuration from './common/config/configuration';
     MatchingModule,
     DevelopersModule,
     ProposalsModule,
+    QuoteSharesModule,
     NotificationsModule,
     AdminModule,
     StorageModule,

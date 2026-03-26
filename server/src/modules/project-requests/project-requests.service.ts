@@ -26,12 +26,12 @@ export class ProjectRequestsService {
   ) {}
 
   async createDraft(
-    userId: string | undefined,
+    userId: string,
     dto: CreateDraftDto,
   ): Promise<any> {
     const projectRequest = await this.prisma.projectRequest.create({
       data: {
-        userId: userId || null,
+        userId,
         projectName: dto.projectName,
         siteType: dto.siteType,
         status: 'DRAFT',
@@ -188,10 +188,32 @@ export class ProjectRequestsService {
       },
     });
 
+    const quoteShares = await this.prisma.quoteShare.findMany({
+      where: { projectRequestId },
+      select: {
+        status: true,
+      },
+    });
+
+    const quoteSharesSummary = quoteShares.reduce(
+      (acc, item) => {
+        if (item.status === 'SENT') {
+          acc.sent += 1;
+        } else if (item.status === 'APPROVED') {
+          acc.approved += 1;
+        } else {
+          acc.canceled += 1;
+        }
+        return acc;
+      },
+      { sent: 0, approved: 0, canceled: 0 },
+    );
+
     return {
       ...projectRequest,
       documents,
       matches,
+      quoteSharesSummary,
     };
   }
 }

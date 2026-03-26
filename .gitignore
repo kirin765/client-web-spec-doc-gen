@@ -7,3 +7,5 @@ dist-ssr
 shared/src/**/*.js
 shared/src/**/*.js.map
 shared/src/**/*.d.ts
+client_secret.*
+Screenshot.*

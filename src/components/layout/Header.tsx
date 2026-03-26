@@ -3,12 +3,15 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuoteStore } from '@/store/useQuoteStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { AuthControls } from '@/components/auth/AuthControls';
 import { Zap } from 'lucide-react';
 
 export function Header() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { resetQuote } = useQuoteStore();
+  const user = useAuthStore((state) => state.user);
 
   const handleNewQuote = () => {
     resetQuote();
@@ -33,12 +36,21 @@ export function Header() {
               <Link to="/experts" className="hover:text-gray-900">
                 전문가 목록
               </Link>
-              <Link to="/developers/workspace" className="hover:text-gray-900">
-                전문가
-              </Link>
-              <Link to="/admin" className="hover:text-gray-900">
-                관리자
-              </Link>
+              {user ? (
+                <Link to="/quotes" className="hover:text-gray-900">
+                  내 견적서
+                </Link>
+              ) : null}
+              {user ? (
+                <Link to="/mypage" className="hover:text-gray-900">
+                  마이페이지
+                </Link>
+              ) : null}
+              {user?.role === 'admin' ? (
+                <Link to="/admin" className="hover:text-gray-900">
+                  관리자
+                </Link>
+              ) : null}
             </nav>
             <button
               onClick={handleNewQuote}
@@ -46,6 +58,7 @@ export function Header() {
             >
               {t('nav.newQuote')}
             </button>
+            <AuthControls />
           </div>
         </div>
       </div>
