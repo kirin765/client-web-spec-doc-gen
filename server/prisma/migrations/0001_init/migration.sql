@@ -1,23 +1,46 @@
--- CreateEnum
-CREATE TYPE "Role" AS ENUM ('CLIENT', 'DEVELOPER', 'ADMIN');
+DO $$
+BEGIN
+  CREATE TYPE "Role" AS ENUM ('CLIENT', 'DEVELOPER', 'ADMIN');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateEnum
-CREATE TYPE "ProjectStatus" AS ENUM ('DRAFT', 'SUBMITTED', 'CALCULATING', 'GENERATING_DOCUMENT', 'MATCHING', 'COMPLETED', 'ARCHIVED');
+DO $$
+BEGIN
+  CREATE TYPE "ProjectStatus" AS ENUM ('DRAFT', 'SUBMITTED', 'CALCULATING', 'GENERATING_DOCUMENT', 'MATCHING', 'COMPLETED', 'ARCHIVED');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateEnum
-CREATE TYPE "DeveloperType" AS ENUM ('FREELANCER', 'AGENCY');
+DO $$
+BEGIN
+  CREATE TYPE "DeveloperType" AS ENUM ('FREELANCER', 'AGENCY');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateEnum
-CREATE TYPE "AvailabilityStatus" AS ENUM ('AVAILABLE', 'BUSY', 'LIMITED');
+DO $$
+BEGIN
+  CREATE TYPE "AvailabilityStatus" AS ENUM ('AVAILABLE', 'BUSY', 'LIMITED');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateEnum
-CREATE TYPE "MatchStatus" AS ENUM ('SUGGESTED', 'CONTACTED', 'ACCEPTED', 'REJECTED');
+DO $$
+BEGIN
+  CREATE TYPE "MatchStatus" AS ENUM ('SUGGESTED', 'CONTACTED', 'ACCEPTED', 'REJECTED');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateEnum
-CREATE TYPE "ProposalStatus" AS ENUM ('SUBMITTED', 'VIEWED', 'ACCEPTED', 'REJECTED');
+DO $$
+BEGIN
+  CREATE TYPE "ProposalStatus" AS ENUM ('SUBMITTED', 'VIEWED', 'ACCEPTED', 'REJECTED');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateTable
-CREATE TABLE "users" (
+CREATE TABLE IF NOT EXISTS "users" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'CLIENT',
@@ -29,16 +52,14 @@ CREATE TABLE "users" (
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "magic_link_tokens" (
+CREATE TABLE IF NOT EXISTS "magic_link_tokens" (
     "email" TEXT NOT NULL,
     "token" TEXT NOT NULL,
     "expires_at" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- CreateTable
-CREATE TABLE "project_requests" (
+CREATE TABLE IF NOT EXISTS "project_requests" (
     "id" TEXT NOT NULL,
     "user_id" TEXT,
     "status" "ProjectStatus" NOT NULL DEFAULT 'DRAFT',
@@ -55,8 +76,7 @@ CREATE TABLE "project_requests" (
     CONSTRAINT "project_requests_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "requirement_documents" (
+CREATE TABLE IF NOT EXISTS "requirement_documents" (
     "id" TEXT NOT NULL,
     "project_request_id" TEXT NOT NULL,
     "version" INTEGER NOT NULL DEFAULT 1,
@@ -68,8 +88,7 @@ CREATE TABLE "requirement_documents" (
     CONSTRAINT "requirement_documents_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "developers" (
+CREATE TABLE IF NOT EXISTS "developers" (
     "id" TEXT NOT NULL,
     "type" "DeveloperType" NOT NULL DEFAULT 'FREELANCER',
     "display_name" TEXT NOT NULL,
@@ -97,8 +116,7 @@ CREATE TABLE "developers" (
     CONSTRAINT "developers_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "match_results" (
+CREATE TABLE IF NOT EXISTS "match_results" (
     "id" TEXT NOT NULL,
     "project_request_id" TEXT NOT NULL,
     "developer_id" TEXT NOT NULL,
@@ -110,8 +128,7 @@ CREATE TABLE "match_results" (
     CONSTRAINT "match_results_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "proposals" (
+CREATE TABLE IF NOT EXISTS "proposals" (
     "id" TEXT NOT NULL,
     "project_request_id" TEXT NOT NULL,
     "developer_id" TEXT NOT NULL,
@@ -129,8 +146,7 @@ CREATE TABLE "proposals" (
     CONSTRAINT "proposals_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "pricing_rule_versions" (
+CREATE TABLE IF NOT EXISTS "pricing_rule_versions" (
     "id" TEXT NOT NULL,
     "version" TEXT NOT NULL,
     "rules" JSONB NOT NULL,
@@ -141,72 +157,74 @@ CREATE TABLE "pricing_rule_versions" (
     CONSTRAINT "pricing_rule_versions_pkey" PRIMARY KEY ("id")
 );
 
--- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_email_key" ON "users"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "magic_link_tokens_email_key" ON "magic_link_tokens"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "magic_link_tokens_token_key" ON "magic_link_tokens"("token");
+CREATE INDEX IF NOT EXISTS "project_requests_user_id_idx" ON "project_requests"("user_id");
+CREATE INDEX IF NOT EXISTS "project_requests_status_idx" ON "project_requests"("status");
+CREATE INDEX IF NOT EXISTS "project_requests_site_type_idx" ON "project_requests"("site_type");
+CREATE INDEX IF NOT EXISTS "project_requests_submitted_at_idx" ON "project_requests"("submitted_at");
+CREATE UNIQUE INDEX IF NOT EXISTS "requirement_documents_project_request_id_version_format_key" ON "requirement_documents"("project_request_id", "version", "format");
+CREATE INDEX IF NOT EXISTS "developers_active_availability_status_idx" ON "developers"("active", "availability_status");
+CREATE INDEX IF NOT EXISTS "developers_budget_min_budget_max_idx" ON "developers"("budget_min", "budget_max");
+CREATE INDEX IF NOT EXISTS "match_results_developer_id_idx" ON "match_results"("developer_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "match_results_project_request_id_developer_id_key" ON "match_results"("project_request_id", "developer_id");
+CREATE INDEX IF NOT EXISTS "proposals_project_request_id_status_idx" ON "proposals"("project_request_id", "status");
+CREATE INDEX IF NOT EXISTS "proposals_developer_id_status_idx" ON "proposals"("developer_id", "status");
+CREATE UNIQUE INDEX IF NOT EXISTS "proposals_project_request_id_developer_id_key" ON "proposals"("project_request_id", "developer_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "pricing_rule_versions_version_key" ON "pricing_rule_versions"("version");
+CREATE INDEX IF NOT EXISTS "pricing_rule_versions_effective_from_idx" ON "pricing_rule_versions"("effective_from");
 
--- CreateIndex
-CREATE UNIQUE INDEX "magic_link_tokens_email_key" ON "magic_link_tokens"("email");
+DO $$
+BEGIN
+  ALTER TABLE "project_requests"
+    ADD CONSTRAINT "project_requests_user_id_fkey"
+    FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateIndex
-CREATE UNIQUE INDEX "magic_link_tokens_token_key" ON "magic_link_tokens"("token");
+DO $$
+BEGIN
+  ALTER TABLE "requirement_documents"
+    ADD CONSTRAINT "requirement_documents_project_request_id_fkey"
+    FOREIGN KEY ("project_request_id") REFERENCES "project_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateIndex
-CREATE INDEX "project_requests_user_id_idx" ON "project_requests"("user_id");
+DO $$
+BEGIN
+  ALTER TABLE "match_results"
+    ADD CONSTRAINT "match_results_project_request_id_fkey"
+    FOREIGN KEY ("project_request_id") REFERENCES "project_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateIndex
-CREATE INDEX "project_requests_status_idx" ON "project_requests"("status");
+DO $$
+BEGIN
+  ALTER TABLE "match_results"
+    ADD CONSTRAINT "match_results_developer_id_fkey"
+    FOREIGN KEY ("developer_id") REFERENCES "developers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateIndex
-CREATE INDEX "project_requests_site_type_idx" ON "project_requests"("site_type");
+DO $$
+BEGIN
+  ALTER TABLE "proposals"
+    ADD CONSTRAINT "proposals_project_request_id_fkey"
+    FOREIGN KEY ("project_request_id") REFERENCES "project_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateIndex
-CREATE INDEX "project_requests_submitted_at_idx" ON "project_requests"("submitted_at");
-
--- CreateIndex
-CREATE UNIQUE INDEX "requirement_documents_project_request_id_version_format_key" ON "requirement_documents"("project_request_id", "version", "format");
-
--- CreateIndex
-CREATE INDEX "developers_active_availability_status_idx" ON "developers"("active", "availability_status");
-
--- CreateIndex
-CREATE INDEX "developers_budget_min_budget_max_idx" ON "developers"("budget_min", "budget_max");
-
--- CreateIndex
-CREATE INDEX "match_results_developer_id_idx" ON "match_results"("developer_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "match_results_project_request_id_developer_id_key" ON "match_results"("project_request_id", "developer_id");
-
--- CreateIndex
-CREATE INDEX "proposals_project_request_id_status_idx" ON "proposals"("project_request_id", "status");
-
--- CreateIndex
-CREATE INDEX "proposals_developer_id_status_idx" ON "proposals"("developer_id", "status");
-
--- CreateIndex
-CREATE UNIQUE INDEX "proposals_project_request_id_developer_id_key" ON "proposals"("project_request_id", "developer_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "pricing_rule_versions_version_key" ON "pricing_rule_versions"("version");
-
--- CreateIndex
-CREATE INDEX "pricing_rule_versions_effective_from_idx" ON "pricing_rule_versions"("effective_from");
-
--- AddForeignKey
-ALTER TABLE "project_requests" ADD CONSTRAINT "project_requests_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "requirement_documents" ADD CONSTRAINT "requirement_documents_project_request_id_fkey" FOREIGN KEY ("project_request_id") REFERENCES "project_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "match_results" ADD CONSTRAINT "match_results_project_request_id_fkey" FOREIGN KEY ("project_request_id") REFERENCES "project_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "match_results" ADD CONSTRAINT "match_results_developer_id_fkey" FOREIGN KEY ("developer_id") REFERENCES "developers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "proposals" ADD CONSTRAINT "proposals_project_request_id_fkey" FOREIGN KEY ("project_request_id") REFERENCES "project_requests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "proposals" ADD CONSTRAINT "proposals_developer_id_fkey" FOREIGN KEY ("developer_id") REFERENCES "developers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
+DO $$
+BEGIN
+  ALTER TABLE "proposals"
+    ADD CONSTRAINT "proposals_developer_id_fkey"
+    FOREIGN KEY ("developer_id") REFERENCES "developers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
