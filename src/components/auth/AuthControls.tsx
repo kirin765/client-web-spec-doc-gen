@@ -1,30 +1,10 @@
 import { GoogleLogin } from '@react-oauth/google';
-import { LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export function AuthControls() {
-  const user = useAuthStore((state) => state.user);
   const isAuthenticating = useAuthStore((state) => state.isAuthenticating);
   const errorMessage = useAuthStore((state) => state.errorMessage);
   const loginWithGoogleToken = useAuthStore((state) => state.loginWithGoogleToken);
-  const clearSession = useAuthStore((state) => state.clearSession);
-
-  if (user) {
-    return (
-      <div className="flex items-center gap-3">
-        <span className="hidden rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700 md:inline">
-          {user.email}
-        </span>
-        <button
-          onClick={clearSession}
-          className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700"
-        >
-          <LogOut className="h-4 w-4" />
-          로그아웃
-        </button>
-      </div>
-    );
-  }
 
   if (!import.meta.env.VITE_GOOGLE_CLIENT_ID) {
     return (
