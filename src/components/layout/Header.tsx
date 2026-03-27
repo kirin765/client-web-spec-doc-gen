@@ -1,7 +1,7 @@
 // Header — 구글 계정 메뉴 스타일의 상단 바.
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 export function Header() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
+  const location = useLocation();
   const { resetQuote } = useQuoteStore();
   const user = useAuthStore((state) => state.user);
   const activeMode = useAuthStore((state) => state.activeMode);
@@ -29,6 +30,13 @@ export function Header() {
   const isExpertMode = activeMode === 'expert';
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const redirectTo =
+    typeof location.state === 'object' &&
+    location.state !== null &&
+    'from' in location.state &&
+    typeof (location.state as { from?: unknown }).from === 'string'
+      ? (location.state as { from: string }).from
+      : '/mypage';
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -202,7 +210,7 @@ export function Header() {
                 ) : null}
               </div>
             ) : (
-              <AuthControls />
+              <AuthControls redirectTo={redirectTo} />
             )}
           </div>
         </div>
