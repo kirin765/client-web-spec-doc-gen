@@ -7,6 +7,7 @@ import type {
   ExpertFaqItem,
   ExpertPortfolioItem,
   ProjectRequestListResponse,
+  ProjectRequestDetail,
   QuoteShareItem,
   RegionSummary,
   ReviewItem,
@@ -276,6 +277,12 @@ export function submitProjectRequest(
 
 export function listMyProjectRequests(token: string) {
   return request<ProjectRequestListResponse>('/project-requests?pageSize=100&page=1', {
+    token,
+  });
+}
+
+export function getMyProjectRequestDetail(token: string, projectRequestId: string) {
+  return request<ProjectRequestDetail>(`/project-requests/${projectRequestId}`, {
     token,
   });
 }
