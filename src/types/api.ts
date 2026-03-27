@@ -1,3 +1,5 @@
+import type { CostEstimate } from '@/types';
+
 export type UserMode = 'customer' | 'expert';
 
 export interface RegionSummary {
@@ -90,6 +92,42 @@ export interface ProjectRequestSummary {
   createdAt: string;
   updatedAt: string;
   submittedAt?: string | null;
+}
+
+export interface ProjectRequestDocumentSummary {
+  id: string;
+  version: number;
+  format: string;
+  storageUrl: string | null;
+  generatedAt: string;
+}
+
+export interface ProjectRequestMatchSummary {
+  id: string;
+  score: number;
+  status: string;
+  developer: {
+    id: string;
+    displayName: string;
+    headline: string;
+    type: 'freelancer' | 'agency';
+    availabilityStatus: 'available' | 'busy' | 'limited';
+  } | null;
+}
+
+export interface ProjectRequestDetail extends ProjectRequestSummary {
+  rawAnswers: Record<string, unknown>;
+  normalizedSpec: Record<string, unknown> | null;
+  costEstimate: CostEstimate | null;
+  pricingVersion: string | null;
+  documents: ProjectRequestDocumentSummary[];
+  matches: ProjectRequestMatchSummary[];
+  quoteSharesSummary: {
+    sent: number;
+    inProgress: number;
+    completed: number;
+    canceled: number;
+  };
 }
 
 export interface ProjectRequestListResponse {

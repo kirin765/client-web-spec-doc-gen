@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
+  ChevronRight,
   ImagePlus,
   Mail,
   Pencil,
@@ -24,6 +25,7 @@ import {
   createReview,
   getMyCustomerProfile,
   getMyDeveloperProfile,
+  getMyProjectRequestDetail,
   getQuoteShareDetail,
   listInboxQuoteShares,
   listMyFaqs,
@@ -43,11 +45,17 @@ import type {
   CustomerProfileApi,
   ExpertFaqItem,
   ExpertPortfolioItem,
+  ProjectRequestDetail,
   QuoteShareItem,
   ReviewItem,
   SignedImage,
   UpsertDeveloperProfilePayload,
 } from '@/types/api';
+import { formatRange } from '@/lib/utils';
+
+type SelectedDetail =
+  | { kind: 'project'; data: ProjectRequestDetail }
+  | { kind: 'quote'; data: QuoteShareItem };
 
 function splitCsv(value: string) {
   return value
@@ -81,6 +89,27 @@ function getQuoteStatusLabel(status: QuoteShareItem['status']) {
       return '고객 취소';
     case 'canceled_by_developer':
       return '전문가 취소';
+    default:
+      return status;
+  }
+}
+
+function getProjectStatusLabel(status: string) {
+  switch (status) {
+    case 'DRAFT':
+      return '임시 저장';
+    case 'SUBMITTED':
+      return '제출됨';
+    case 'CALCULATING':
+      return '비용 계산 중';
+    case 'GENERATING_DOCUMENT':
+      return '문서 생성 중';
+    case 'MATCHING':
+      return '전문가 매칭 중';
+    case 'COMPLETED':
+      return '완료';
+    case 'ARCHIVED':
+      return '보관됨';
     default:
       return status;
   }
@@ -178,7 +207,9 @@ export function MyPage() {
   const [faqs, setFaqs] = useState<ExpertFaqItem[]>([]);
   const [portfolios, setPortfolios] = useState<ExpertPortfolioItem[]>([]);
   const [receivedReviews, setReceivedReviews] = useState<ReviewItem[]>([]);
-  const [selectedDetail, setSelectedDetail] = useState<QuoteShareItem | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<SelectedDetail | null>(null);
+  const [selectedDetailLoading, setSelectedDetailLoading] = useState(false);
+  const [selectedDetailError, setSelectedDetailError] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingCustomer, setIsSavingCustomer] = useState(false);
@@ -321,12 +352,33 @@ export function MyPage() {
   const handleViewDetail = async (quoteShareId: string) => {
     if (!token) return;
 
-    setErrorMessage(null);
+    setSelectedDetailLoading(true);
+    setSelectedDetailError(null);
+    setSelectedDetail(null);
     try {
       const detail = await getQuoteShareDetail(token, quoteShareId);
-      setSelectedDetail(detail);
+      setSelectedDetail({ kind: 'quote', data: detail });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '상세 정보를 불러오지 못했습니다.');
+      setSelectedDetailError(error instanceof Error ? error.message : '상세 정보를 불러오지 못했습니다.');
+    } finally {
+      setSelectedDetailLoading(false);
+    }
+  };
+
+  const handleViewProjectDetail = async (projectRequestId: string) => {
+    if (!token) return;
+
+    setSelectedDetailLoading(true);
+    setSelectedDetailError(null);
+    setSelectedDetail(null);
+
+    try {
+      const detail = await getMyProjectRequestDetail(token, projectRequestId);
+      setSelectedDetail({ kind: 'project', data: detail });
+    } catch (error) {
+      setSelectedDetailError(error instanceof Error ? error.message : '상세 정보를 불러오지 못했습니다.');
+    } finally {
+      setSelectedDetailLoading(false);
     }
   };
 
@@ -483,6 +535,160 @@ export function MyPage() {
     }
   };
 
+  const renderSelectedDetailPanel = () => {
+    if (selectedDetailLoading) {
+      return (
+        <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+          상세를 불러오는 중...
+        </section>
+      );
+    }
+
+    if (selectedDetailError) {
+      return (
+        <section className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-rose-700">
+          {selectedDetailError}
+        </section>
+      );
+    }
+
+    if (!selectedDetail) {
+      return null;
+    }
+
+    if (selectedDetail.kind === 'project') {
+      const project = selectedDetail.data;
+
+      return (
+        <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">견적 상세</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                {project.projectName || '이름 없는 견적서'} · 생성 {formatDate(project.createdAt)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedDetail(null)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700"
+            >
+              닫기
+            </button>
+          </div>
+
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <section className="rounded-xl border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-900">프로젝트 정보</h3>
+              <div className="mt-3 space-y-2 text-sm text-gray-700">
+                <p>상태: {getProjectStatusLabel(project.status)}</p>
+                <p>사이트 유형: {project.siteType || '-'}</p>
+                <p>연락방법: {project.contactMethod || '-'}</p>
+                <p>제출 시각: {formatDate(project.submittedAt)}</p>
+                <p>가격 정책 버전: {project.pricingVersion || '-'}</p>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-900">예상 비용</h3>
+              {project.costEstimate ? (
+                <div className="mt-3 space-y-2 text-sm text-gray-700">
+                  <p className="text-lg font-bold text-blue-600">
+                    {formatRange(project.costEstimate.totalMin, project.costEstimate.totalMax)}
+                  </p>
+                  <p>기본 티어: {project.costEstimate.baseTier.id}</p>
+                  <p>디자인 승수: ×{project.costEstimate.designMultiplier}</p>
+                  <p>일정 승수: ×{project.costEstimate.timelineMultiplier}</p>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-gray-500">비용 정보가 아직 없습니다.</p>
+              )}
+            </section>
+
+            <section className="rounded-xl border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-900">문서 및 매칭</h3>
+              <div className="mt-3 space-y-2 text-sm text-gray-700">
+                <p>생성된 문서: {project.documents.length}개</p>
+                <p>매칭 결과: {project.matches.length}명</p>
+                <p>발송: {project.quoteSharesSummary.sent}건</p>
+                <p>진행 중: {project.quoteSharesSummary.inProgress}건</p>
+                <p>완료: {project.quoteSharesSummary.completed}건</p>
+                <p>취소: {project.quoteSharesSummary.canceled}건</p>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-900">주요 매칭</h3>
+              {project.matches.length > 0 ? (
+                <ul className="mt-3 space-y-2 text-sm text-gray-700">
+                  {project.matches.slice(0, 3).map((match) => (
+                    <li key={match.id} className="rounded-lg bg-gray-50 px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium text-gray-900">
+                          {match.developer?.displayName || '전문가'}
+                        </span>
+                        <span className="text-blue-600">{Math.round(match.score)}점</span>
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {match.developer?.headline || '-'} · {match.status}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-gray-500">매칭된 전문가가 없습니다.</p>
+              )}
+            </section>
+          </div>
+
+          <section className="mt-6 rounded-xl border border-gray-200 p-4">
+            <h3 className="text-sm font-semibold text-gray-900">원본 답변</h3>
+            <pre className="mt-3 max-h-80 overflow-auto rounded-lg bg-gray-50 p-4 text-xs leading-6 text-gray-700">
+              {JSON.stringify(project.rawAnswers, null, 2)}
+            </pre>
+          </section>
+        </section>
+      );
+    }
+
+    const share = selectedDetail.data;
+
+    return (
+      <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">선택한 견적 상세</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {share.projectRequest?.projectName || '견적서'} · 생성 {formatDate(share.createdAt)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSelectedDetail(null)}
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700"
+          >
+            닫기
+          </button>
+        </div>
+        <div className="mt-4 space-y-3 text-sm text-gray-700">
+          <p>
+            상태: <strong>{getQuoteStatusLabel(share.status)}</strong>
+          </p>
+          <p>프로젝트: {share.projectRequest?.projectName || '견적서'}</p>
+          <p>진행 시작: {formatDate(share.startedAt)}</p>
+          <p>완료 시각: {formatDate(share.completedAt)}</p>
+          <p>고객 연락방법: {share.contactMethod || '아직 공개되지 않았습니다.'}</p>
+          {share.counterpartyEmail ? (
+            <p className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700">
+              <Mail className="h-4 w-4" />
+              공개 연락 이메일: {share.counterpartyEmail}
+            </p>
+          ) : null}
+        </div>
+      </section>
+    );
+  };
+
   const renderCustomerMode = () => (
     <>
       <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
@@ -560,9 +766,19 @@ export function MyPage() {
             </div>
           ) : (
             projectRequests.map((project) => (
-              <article key={project.id} className="rounded-xl border border-gray-200 p-4">
+              <button
+                key={project.id}
+                type="button"
+                onClick={() => void handleViewProjectDetail(project.id)}
+                aria-pressed={selectedDetail?.kind === 'project' && selectedDetail.data.id === project.id}
+                className={`w-full rounded-xl border p-4 text-left transition hover:border-blue-300 hover:bg-blue-50/40 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  selectedDetail?.kind === 'project' && selectedDetail.data.id === project.id
+                    ? 'border-blue-300 bg-blue-50/60'
+                    : 'border-gray-200'
+                }`}
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-gray-900">
                       {project.projectName || '이름 없는 견적서'}
                     </p>
@@ -570,11 +786,14 @@ export function MyPage() {
                       {project.siteType || '-'} · 연락방법: {project.contactMethod || '미입력'}
                     </p>
                   </div>
-                  <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                    발송 {sentCountByProject[project.id] ?? 0}건
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                      발송 {sentCountByProject[project.id] ?? 0}건
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </div>
                 </div>
-              </article>
+              </button>
             ))
           )}
         </div>
@@ -1201,26 +1420,7 @@ export function MyPage() {
 
         {!isLoading ? (activeMode === 'expert' ? renderExpertMode() : renderCustomerMode()) : null}
 
-        {selectedDetail ? (
-          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-            <h2 className="text-xl font-bold text-gray-900">선택한 견적 상세</h2>
-            <div className="mt-4 space-y-3 text-sm text-gray-700">
-              <p>
-                상태: <strong>{getQuoteStatusLabel(selectedDetail.status)}</strong>
-              </p>
-              <p>프로젝트: {selectedDetail.projectRequest?.projectName || '견적서'}</p>
-              <p>진행 시작: {formatDate(selectedDetail.startedAt)}</p>
-              <p>완료 시각: {formatDate(selectedDetail.completedAt)}</p>
-              <p>고객 연락방법: {selectedDetail.contactMethod || '아직 공개되지 않았습니다.'}</p>
-              {selectedDetail.counterpartyEmail ? (
-                <p className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700">
-                  <Mail className="h-4 w-4" />
-                  공개 연락 이메일: {selectedDetail.counterpartyEmail}
-                </p>
-              ) : null}
-            </div>
-          </section>
-        ) : null}
+        {renderSelectedDetailPanel()}
       </div>
     </div>
   );
