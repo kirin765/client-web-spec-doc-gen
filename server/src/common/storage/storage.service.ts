@@ -9,6 +9,15 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
+function normalizeBucketIdentifier(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return 'spec-gen-documents';
+  }
+
+  return trimmed.startsWith('s3://') ? trimmed.slice('s3://'.length) : trimmed;
+}
+
 @Injectable()
 export class StorageService {
   private s3Client: S3Client;
@@ -21,7 +30,7 @@ export class StorageService {
     const secretAccessKey = this.configService.get<string>('aws.secretAccessKey');
     const bucket = this.configService.get<string>('aws.s3Bucket');
 
-    this.bucket = bucket || 'spec-gen-documents';
+    this.bucket = normalizeBucketIdentifier(bucket);
     // 기본값: 1시간 (3600초), 환경 변수로 설정 가능
     this.defaultExpiresIn =
       this.configService.get<number>('aws.signedUrlExpiration') || 3600;

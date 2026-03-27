@@ -25,6 +25,15 @@ function mapRegion(region: any) {
   };
 }
 
+function normalizeRegionCode(value: unknown) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 @Injectable()
 export class DevelopersService {
   constructor(
@@ -43,9 +52,10 @@ export class DevelopersService {
       next.availabilityStatus = normalizeEnumFromApi(data.availabilityStatus) as any;
     }
 
-    if (typeof data.regionCode === 'string' && data.regionCode.length > 0) {
-      next.regionCode = data.regionCode;
-      next.regions = [data.regionCode];
+    const normalizedRegionCode = normalizeRegionCode(data.regionCode);
+    if (normalizedRegionCode) {
+      next.regionCode = normalizedRegionCode;
+      next.regions = [normalizedRegionCode];
     } else if (Array.isArray(data.regions) && data.regions.length > 0) {
       next.regionCode = data.regions[0];
       next.regions = [data.regions[0]];

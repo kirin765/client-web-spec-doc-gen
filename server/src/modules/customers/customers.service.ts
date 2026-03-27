@@ -15,6 +15,15 @@ function mapRegion(region: any) {
   };
 }
 
+function normalizeRegionCode(value: unknown) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 @Injectable()
 export class CustomersService {
   constructor(private prisma: PrismaService) {}
@@ -53,13 +62,13 @@ export class CustomersService {
       update: {
         displayName: dto.displayName,
         introduction: dto.introduction,
-        regionCode: dto.regionCode ?? null,
+        regionCode: normalizeRegionCode(dto.regionCode),
       },
       create: {
         userId,
         displayName: dto.displayName,
         introduction: dto.introduction,
-        regionCode: dto.regionCode ?? null,
+        regionCode: normalizeRegionCode(dto.regionCode),
       },
       include: {
         region: true,
@@ -84,7 +93,9 @@ export class CustomersService {
       data: {
         ...(dto.displayName !== undefined ? { displayName: dto.displayName } : {}),
         ...(dto.introduction !== undefined ? { introduction: dto.introduction } : {}),
-        ...(dto.regionCode !== undefined ? { regionCode: dto.regionCode || null } : {}),
+        ...(dto.regionCode !== undefined
+          ? { regionCode: normalizeRegionCode(dto.regionCode) }
+          : {}),
       },
       include: {
         region: true,

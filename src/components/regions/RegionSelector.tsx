@@ -82,17 +82,6 @@ export function RegionSelector({
     };
   }, [rootCode]);
 
-  useEffect(() => {
-    if (!selectedRoot || children.length === 0) {
-      return;
-    }
-
-    const hasSelectedChild = children.some((child) => child.code === value);
-    if (!hasSelectedChild) {
-      onChange(children[0].code);
-    }
-  }, [children, onChange, selectedRoot, value]);
-
   return (
     <div className="space-y-3">
       <div>
@@ -116,7 +105,7 @@ export function RegionSelector({
         </select>
 
         <select
-          value={children.some((child) => child.code === value) ? value : ''}
+          value={value && (value === rootCode || children.some((child) => child.code === value)) ? value : ''}
           onChange={(event) => onChange(event.target.value)}
           disabled={!selectedRoot || children.length === 0 || isLoadingChildren}
           className="rounded-xl border border-gray-300 px-4 py-3"
@@ -130,6 +119,9 @@ export function RegionSelector({
                   ? `${selectedRoot.name} 전체`
                   : '하위 지역 선택'}
           </option>
+          {selectedRoot ? (
+            <option value={selectedRoot.code}>{`${selectedRoot.name} 전체`}</option>
+          ) : null}
           {children.map((child) => (
             <option key={child.code} value={child.code}>
               {child.name}
