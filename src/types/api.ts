@@ -137,6 +137,53 @@ export interface ProjectRequestListResponse {
   page: number;
 }
 
+export interface AdminDeveloperSummary {
+  id: string;
+  displayName: string;
+  headline: string;
+  type: 'freelancer' | 'agency';
+  availabilityStatus: 'available' | 'busy' | 'limited';
+  active: boolean;
+  status: 'pending' | 'active';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminDeveloperListResponse {
+  data: AdminDeveloperSummary[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+export interface AdminProjectRequestSummary {
+  id: string;
+  projectName: string | null;
+  siteType: string | null;
+  status: string;
+  contactMethod: string | null;
+  costEstimate: {
+    totalMin: number;
+    totalMax: number;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+  submittedAt: string | null;
+}
+
+export interface AdminProjectRequestListResponse {
+  data: AdminProjectRequestSummary[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
 export interface ExpertFaqItem {
   id: string;
   developerId: string;
