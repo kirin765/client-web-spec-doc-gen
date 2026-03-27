@@ -39,6 +39,11 @@ export class QuoteSharesController {
     return this.quoteSharesService.approveByDeveloper(id, user.id);
   }
 
+  @Patch(':id/complete')
+  async completeByDeveloper(@Param('id') id: string, @User() user: any) {
+    return this.quoteSharesService.completeByDeveloper(id, user.id);
+  }
+
   @Patch(':id/cancel-by-developer')
   async cancelByDeveloper(@Param('id') id: string, @User() user: any) {
     return this.quoteSharesService.cancelByDeveloper(id, user.id);

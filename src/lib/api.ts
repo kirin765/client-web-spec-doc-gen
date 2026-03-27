@@ -1,10 +1,21 @@
 import type {
   AuthResponse,
+  CreateReviewPayload,
+  CustomerProfileApi,
   DeveloperProfileApi,
+  DeveloperReviewsResponse,
+  ExpertFaqItem,
+  ExpertPortfolioItem,
   ProjectRequestListResponse,
   QuoteShareItem,
+  RegionSummary,
+  ReviewItem,
   SessionUser,
+  UploadImagesResponse,
+  UpsertCustomerProfilePayload,
   UpsertDeveloperProfilePayload,
+  UpsertExpertFaqPayload,
+  UpsertExpertPortfolioPayload,
 } from '@/types/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL?.trim() || 'http://localhost:3001';
@@ -13,6 +24,7 @@ interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
   token?: string | null;
   body?: unknown;
+  headers?: Record<string, string>;
 }
 
 export class ApiError extends Error {
@@ -27,7 +39,8 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+    ...options.headers,
   };
 
   if (options.token) {
@@ -37,7 +50,12 @@ async function request<T>(path: string, options: ApiRequestOptions = {}): Promis
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method ?? 'GET',
     headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    body:
+      options.body instanceof FormData
+        ? options.body
+        : options.body !== undefined
+          ? JSON.stringify(options.body)
+          : undefined,
   });
 
   const json = await response.json().catch(() => null);
@@ -97,6 +115,139 @@ export function patchMyDeveloperProfile(
     method: 'PATCH',
     token,
     body: payload,
+  });
+}
+
+export function getMyCustomerProfile(token: string) {
+  return request<CustomerProfileApi>('/customers/me/profile', {
+    token,
+  });
+}
+
+export function upsertMyCustomerProfile(
+  token: string,
+  payload: UpsertCustomerProfilePayload,
+) {
+  return request<CustomerProfileApi>('/customers/me/profile', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+}
+
+export function patchMyCustomerProfile(
+  token: string,
+  payload: Partial<UpsertCustomerProfilePayload>,
+) {
+  return request<CustomerProfileApi>('/customers/me/profile', {
+    method: 'PATCH',
+    token,
+    body: payload,
+  });
+}
+
+export function listRegions() {
+  return request<RegionSummary[]>('/regions');
+}
+
+export function listRegionChildren(code: string) {
+  return request<RegionSummary[]>(`/regions/${code}/children`);
+}
+
+export function listDeveloperFaqs(developerId: string) {
+  return request<ExpertFaqItem[]>(`/developers/${developerId}/faqs`);
+}
+
+export function listMyFaqs(token: string) {
+  return request<ExpertFaqItem[]>('/developers/me/faqs', { token });
+}
+
+export function createMyFaq(token: string, payload: UpsertExpertFaqPayload) {
+  return request<ExpertFaqItem>('/developers/me/faqs', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+}
+
+export function updateMyFaq(
+  token: string,
+  faqId: string,
+  payload: Partial<UpsertExpertFaqPayload>,
+) {
+  return request<ExpertFaqItem>(`/developers/me/faqs/${faqId}`, {
+    method: 'PATCH',
+    token,
+    body: payload,
+  });
+}
+
+export function deleteMyFaq(token: string, faqId: string) {
+  return request<{ success: true }>(`/developers/me/faqs/${faqId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export function listDeveloperPortfolios(developerId: string) {
+  return request<ExpertPortfolioItem[]>(`/developers/${developerId}/portfolios`);
+}
+
+export function listMyPortfolios(token: string) {
+  return request<ExpertPortfolioItem[]>('/developers/me/portfolios', { token });
+}
+
+export function createMyPortfolio(token: string, payload: UpsertExpertPortfolioPayload) {
+  return request<ExpertPortfolioItem>('/developers/me/portfolios', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+}
+
+export function updateMyPortfolio(
+  token: string,
+  portfolioId: string,
+  payload: Partial<UpsertExpertPortfolioPayload>,
+) {
+  return request<ExpertPortfolioItem>(`/developers/me/portfolios/${portfolioId}`, {
+    method: 'PATCH',
+    token,
+    body: payload,
+  });
+}
+
+export function deleteMyPortfolio(token: string, portfolioId: string) {
+  return request<{ success: true }>(`/developers/me/portfolios/${portfolioId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export function listDeveloperReviews(developerId: string) {
+  return request<DeveloperReviewsResponse>(`/developers/${developerId}/reviews`);
+}
+
+export function listReceivedReviews(token: string) {
+  return request<ReviewItem[]>('/reviews/me/received', { token });
+}
+
+export function createReview(token: string, payload: CreateReviewPayload) {
+  return request<ReviewItem>('/reviews', {
+    method: 'POST',
+    token,
+    body: payload,
+  });
+}
+
+export function uploadImages(token: string, files: File[]) {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+
+  return request<UploadImagesResponse>('/uploads/images', {
+    method: 'POST',
+    token,
+    body: formData,
   });
 }
 
@@ -161,6 +312,13 @@ export function cancelQuoteShareByUser(token: string, quoteShareId: string) {
 
 export function approveQuoteShareByDeveloper(token: string, quoteShareId: string) {
   return request<QuoteShareItem>(`/quote-shares/${quoteShareId}/approve`, {
+    method: 'PATCH',
+    token,
+  });
+}
+
+export function completeQuoteShareByDeveloper(token: string, quoteShareId: string) {
+  return request<QuoteShareItem>(`/quote-shares/${quoteShareId}/complete`, {
     method: 'PATCH',
     token,
   });

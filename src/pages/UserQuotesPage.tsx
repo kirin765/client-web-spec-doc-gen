@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { FileText, Mail, RefreshCw, SendHorizontal, XCircle } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
 import {
@@ -20,7 +20,8 @@ function formatDate(value: string | null | undefined) {
 }
 
 function toStatusLabel(status: QuoteShareItem['status']) {
-  if (status === 'approved') return '승인됨';
+  if (status === 'completed') return '완료';
+  if (status === 'in_progress') return '진행 중';
   if (status === 'sent') return '전송됨';
   if (status === 'canceled_by_user') return '사용자 취소';
   return '전문가 취소';
@@ -28,6 +29,7 @@ function toStatusLabel(status: QuoteShareItem['status']) {
 
 export function UserQuotesPage() {
   const token = useAuthStore((state) => state.token);
+  const activeMode = useAuthStore((state) => state.activeMode);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [projectRequests, setProjectRequests] = useState<ProjectRequestSummary[]>([]);
@@ -65,6 +67,9 @@ export function UserQuotesPage() {
   }, [sentShares]);
 
   if (!token) return null;
+  if (activeMode === 'expert') {
+    return <Navigate to="/mypage" replace />;
+  }
 
   return (
     <div className="bg-gray-50 px-6 py-10">
@@ -80,7 +85,7 @@ export function UserQuotesPage() {
               <p className="text-sm font-semibold text-blue-600">사용자 견적서</p>
               <h1 className="mt-2 text-3xl font-bold text-gray-900">내가 만든 견적서 목록</h1>
               <p className="mt-3 text-gray-600">
-                전문가에게 보낸 견적 상태와 승인 후 연락 가능한 Gmail을 확인할 수 있습니다.
+                전문가에게 보낸 견적 상태와 내가 남긴 연락방법, 완료 여부를 확인할 수 있습니다.
               </p>
             </div>
             <button
@@ -121,7 +126,8 @@ export function UserQuotesPage() {
                         {project.projectName || '이름 없는 견적서'}
                       </p>
                       <p className="mt-1 text-sm text-gray-500">
-                        {project.siteType || '-'} · 생성 {formatDate(project.createdAt)}
+                        {project.siteType || '-'} · 생성 {formatDate(project.createdAt)} · 연락방법:{' '}
+                        {project.contactMethod || '미입력'}
                       </p>
                     </div>
                     <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
@@ -195,7 +201,9 @@ export function UserQuotesPage() {
                 상태: <strong>{toStatusLabel(selectedDetail.status)}</strong>
               </p>
               <p>전문가: {selectedDetail.developer?.displayName || '-'}</p>
-              <p>승인 시각: {formatDate(selectedDetail.approvedAt)}</p>
+              <p>진행 시작: {formatDate(selectedDetail.startedAt)}</p>
+              <p>완료 시각: {formatDate(selectedDetail.completedAt)}</p>
+              <p>내 연락방법: {selectedDetail.contactMethod || '미입력'}</p>
               {selectedDetail.counterpartyEmail ? (
                 <p className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-emerald-700">
                   <Mail className="h-4 w-4" />
@@ -203,7 +211,7 @@ export function UserQuotesPage() {
                 </p>
               ) : (
                 <p className="text-gray-500">
-                  아직 승인되지 않아 전문가 Gmail이 노출되지 않습니다.
+                  아직 진행이 시작되지 않아 전문가 Gmail이 노출되지 않습니다.
                 </p>
               )}
             </div>

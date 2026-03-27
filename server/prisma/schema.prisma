@@ -19,8 +19,10 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  projectRequests ProjectRequest[]
+  projectRequests  ProjectRequest[]
   developerProfile Developer?
+  customerProfile  CustomerProfile?
+  writtenReviews   Review[]
 
   @@map("users")
 }
@@ -46,6 +48,7 @@ model ProjectRequest {
   status          ProjectStatus        @default(DRAFT)
   projectName     String?              @map("project_name")
   siteType        String?              @map("site_type")
+  contactMethod   String?              @map("contact_method")
   rawAnswers      Json?                @map("raw_answers")
   normalizedSpec  Json?                @map("normalized_spec")
   costEstimate    Json?                @map("cost_estimate")
@@ -95,6 +98,7 @@ model RequirementDocument {
 model Developer {
   id                          String             @id @default(cuid())
   userId                      String?            @unique @map("user_id")
+  regionCode                  String?            @map("region_code")
   type                        DeveloperType      @default(FREELANCER)
   displayName                 String             @map("display_name")
   headline                    String             @default("")
@@ -121,10 +125,15 @@ model Developer {
   matchResults                MatchResult[]
   proposals                   Proposal[]
   quoteShares                 QuoteShare[]
+  faqs                        ExpertFaq[]
+  portfolios                  ExpertPortfolio[]
+  reviews                     Review[]
   user                        User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  region                      Region?            @relation("DeveloperRegion", fields: [regionCode], references: [code], onDelete: SetNull)
 
   @@index([active, availabilityStatus])
   @@index([budgetMin, budgetMax])
+  @@index([regionCode])
   @@map("developers")
 }
 
@@ -199,7 +208,8 @@ model QuoteShare {
   projectRequestId  String               @map("project_request_id")
   developerId       String               @map("developer_id")
   status            QuoteShareStatus     @default(SENT)
-  approvedAt        DateTime?            @map("approved_at")
+  startedAt         DateTime?            @map("started_at")
+  completedAt       DateTime?            @map("completed_at")
   canceledAt        DateTime?            @map("canceled_at")
   canceledBy        QuoteShareCanceledBy? @map("canceled_by")
   createdAt         DateTime             @default(now()) @map("created_at")
@@ -207,6 +217,7 @@ model QuoteShare {
 
   projectRequest    ProjectRequest       @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
   developer         Developer            @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  review            Review?
 
   @@unique([projectRequestId, developerId])
   @@index([projectRequestId, status])
@@ -216,7 +227,8 @@ model QuoteShare {
 
 enum QuoteShareStatus {
   SENT
-  APPROVED
+  IN_PROGRESS
+  COMPLETED
   CANCELED_BY_USER
   CANCELED_BY_DEVELOPER
 }
@@ -236,4 +248,88 @@ model PricingRuleVersion {
 
   @@index([effectiveFrom])
   @@map("pricing_rule_versions")
+}
+
+model CustomerProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique @map("user_id")
+  displayName  String   @map("display_name")
+  introduction String?
+  regionCode   String?  @map("region_code")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  region       Region?  @relation("CustomerRegion", fields: [regionCode], references: [code], onDelete: SetNull)
+
+  @@index([regionCode])
+  @@map("customer_profiles")
+}
+
+model ExpertFaq {
+  id         String   @id @default(cuid())
+  developerId String  @map("developer_id")
+  question   String
+  answer     String
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  developer  Developer @relation(fields: [developerId], references: [id], onDelete: Cascade)
+
+  @@index([developerId, sortOrder])
+  @@map("expert_faqs")
+}
+
+model ExpertPortfolio {
+  id          String   @id @default(cuid())
+  developerId String   @map("developer_id")
+  description String
+  imageUrls   Json     @default("[]") @map("image_urls")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  developer   Developer @relation(fields: [developerId], references: [id], onDelete: Cascade)
+
+  @@index([developerId, sortOrder])
+  @@map("expert_portfolios")
+}
+
+model Review {
+  id             String   @id @default(cuid())
+  quoteShareId   String   @unique @map("quote_share_id")
+  developerId    String   @map("developer_id")
+  customerUserId String   @map("customer_user_id")
+  rating         Int
+  content        String
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  quoteShare     QuoteShare @relation(fields: [quoteShareId], references: [id], onDelete: Cascade)
+  developer      Developer  @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  customer       User       @relation(fields: [customerUserId], references: [id], onDelete: Cascade)
+
+  @@index([developerId, createdAt])
+  @@index([customerUserId])
+  @@map("reviews")
+}
+
+model Region {
+  code             String            @id
+  name             String
+  depth            Int
+  parentCode       String?           @map("parent_code")
+  sortOrder        Int               @default(0) @map("sort_order")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+
+  parent           Region?           @relation("RegionHierarchy", fields: [parentCode], references: [code], onDelete: SetNull)
+  children         Region[]          @relation("RegionHierarchy")
+  customerProfiles CustomerProfile[] @relation("CustomerRegion")
+  developers       Developer[]       @relation("DeveloperRegion")
+
+  @@index([depth, sortOrder])
+  @@index([parentCode, sortOrder])
+  @@map("regions")
 }

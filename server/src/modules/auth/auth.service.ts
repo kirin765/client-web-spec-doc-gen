@@ -14,6 +14,10 @@ export interface SessionUser {
   id: string;
   email: string;
   role: string;
+  hasCustomerProfile: boolean;
+  customerProfileId: string | null;
+  hasExpertProfile: boolean;
+  expertProfileId: string | null;
   hasDeveloperProfile: boolean;
   developerProfileId: string | null;
 }
@@ -183,9 +187,13 @@ export class AuthService {
   }
 
   private async getSessionUser(userId: string): Promise<SessionUser> {
-    const [user, developer] = await Promise.all([
+    const [user, customerProfile, developer] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: userId },
+      }),
+      this.prisma.customerProfile.findUnique({
+        where: { userId },
+        select: { id: true },
       }),
       this.prisma.developer.findUnique({
         where: { userId },
@@ -201,6 +209,10 @@ export class AuthService {
       id: user.id,
       email: user.email,
       role: String(user.role).toLowerCase(),
+      hasCustomerProfile: Boolean(customerProfile?.id),
+      customerProfileId: customerProfile?.id ?? null,
+      hasExpertProfile: Boolean(developer?.id),
+      expertProfileId: developer?.id ?? null,
       hasDeveloperProfile: Boolean(developer?.id),
       developerProfileId: developer?.id ?? null,
     };

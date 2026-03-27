@@ -6,14 +6,22 @@ import { useQuoteStore } from '@/store/useQuoteStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { AuthControls } from '@/components/auth/AuthControls';
 import { Zap } from 'lucide-react';
+import { ModeToggle } from '@/components/mode/ModeToggle';
 
 export function Header() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { resetQuote } = useQuoteStore();
   const user = useAuthStore((state) => state.user);
+  const activeMode = useAuthStore((state) => state.activeMode);
+  const setActiveMode = useAuthStore((state) => state.setActiveMode);
 
   const handleNewQuote = () => {
+    if (activeMode === 'expert') {
+      navigate('/mypage');
+      return;
+    }
+
     resetQuote();
     navigate('/wizard');
   };
@@ -43,7 +51,7 @@ export function Header() {
               ) : null}
               {user ? (
                 <Link to="/mypage" className="hover:text-gray-900">
-                  마이페이지
+                  {activeMode === 'expert' ? '전문가 마이페이지' : '고객 마이페이지'}
                 </Link>
               ) : null}
               {user?.role === 'admin' ? (
@@ -52,15 +60,27 @@ export function Header() {
                 </Link>
               ) : null}
             </nav>
+            {user ? (
+              <ModeToggle
+                value={activeMode}
+                onChange={setActiveMode}
+                className="hidden lg:inline-flex"
+              />
+            ) : null}
             <button
               onClick={handleNewQuote}
               className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
             >
-              {t('nav.newQuote')}
+              {activeMode === 'expert' ? '마이페이지' : t('nav.newQuote')}
             </button>
             <AuthControls />
           </div>
         </div>
+        {user ? (
+          <div className="mt-3 lg:hidden">
+            <ModeToggle value={activeMode} onChange={setActiveMode} />
+          </div>
+        ) : null}
       </div>
     </header>
   );

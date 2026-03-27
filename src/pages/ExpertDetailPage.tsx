@@ -1,22 +1,35 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Send } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Send, Star } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
 import {
   createQuoteShare,
   getDeveloperById,
+  listDeveloperFaqs,
+  listDeveloperPortfolios,
+  listDeveloperReviews,
   listMyProjectRequests,
   listSentQuoteShares,
 } from '@/lib/api';
-import type { DeveloperProfileApi, ProjectRequestSummary } from '@/types/api';
+import type {
+  DeveloperProfileApi,
+  DeveloperReviewsResponse,
+  ExpertFaqItem,
+  ExpertPortfolioItem,
+  ProjectRequestSummary,
+} from '@/types/api';
 import { formatRange } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export function ExpertDetailPage() {
   const { developerId } = useParams<{ developerId: string }>();
   const token = useAuthStore((state) => state.token);
+  const activeMode = useAuthStore((state) => state.activeMode);
   const [developer, setDeveloper] = useState<DeveloperProfileApi | null>(null);
   const [projects, setProjects] = useState<ProjectRequestSummary[]>([]);
+  const [faqs, setFaqs] = useState<ExpertFaqItem[]>([]);
+  const [portfolios, setPortfolios] = useState<ExpertPortfolioItem[]>([]);
+  const [reviews, setReviews] = useState<DeveloperReviewsResponse | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [alreadySentProjectIds, setAlreadySentProjectIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
@@ -30,8 +43,16 @@ export function ExpertDetailPage() {
 
     const fetchAll = async () => {
       try {
-        const profile = await getDeveloperById(developerId);
+        const [profile, nextFaqs, nextPortfolios, nextReviews] = await Promise.all([
+          getDeveloperById(developerId),
+          listDeveloperFaqs(developerId),
+          listDeveloperPortfolios(developerId),
+          listDeveloperReviews(developerId),
+        ]);
         setDeveloper(profile);
+        setFaqs(nextFaqs);
+        setPortfolios(nextPortfolios);
+        setReviews(nextReviews);
 
         if (token) {
           const [projectList, shares] = await Promise.all([
@@ -101,11 +122,19 @@ export function ExpertDetailPage() {
                 {developer.introduction || '소개가 아직 등록되지 않았습니다.'}
               </p>
 
-              <div className="grid gap-3 md:grid-cols-3 text-sm text-gray-600">
-                <div>유형: {developer.type === 'agency' ? '에이전시' : '프리랜서'}</div>
-                <div>예산: {formatRange(developer.budgetMin, developer.budgetMax)}</div>
-                <div>응답 속도: {developer.avgResponseHours}시간</div>
-              </div>
+                <div className="grid gap-3 md:grid-cols-3 text-sm text-gray-600">
+                  <div>유형: {developer.type === 'agency' ? '에이전시' : '프리랜서'}</div>
+                  <div>예산: {formatRange(developer.budgetMin, developer.budgetMax)}</div>
+                  <div>응답 속도: {developer.avgResponseHours}시간</div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3 text-sm text-gray-600">
+                  <div>활동 지역: {developer.region?.name || '미설정'}</div>
+                  <div>FAQ: {developer.faqCount}개</div>
+                  <div>
+                    리뷰: {developer.reviewCount}개 / 평균 {developer.reviewAverage.toFixed(1)}점
+                  </div>
+                </div>
 
               <div className="flex flex-wrap gap-2">
                 {developer.specialties.slice(0, 5).map((specialty) => (
@@ -122,6 +151,8 @@ export function ExpertDetailPage() {
           <h2 className="text-xl font-bold text-gray-900">내 견적서 1건 보내기</h2>
           {!token ? (
             <p className="mt-3 text-gray-600">로그인 후 견적서를 보낼 수 있습니다.</p>
+          ) : activeMode !== 'customer' ? (
+            <p className="mt-3 text-gray-600">전문가 모드에서는 견적서를 보낼 수 없습니다. 고객 모드로 전환해 주세요.</p>
           ) : projects.length === 0 ? (
             <p className="mt-3 text-gray-600">
               보낼 수 있는 견적서가 없습니다. 결과 페이지에서 먼저 "내 견적서에 저장"을 눌러 주세요.
@@ -155,7 +186,12 @@ export function ExpertDetailPage() {
               ) : null}
 
               <button
-                disabled={!selectedProjectId || alreadySentProjectIds.has(selectedProjectId) || !developer?.active}
+                disabled={
+                  activeMode !== 'customer' ||
+                  !selectedProjectId ||
+                  alreadySentProjectIds.has(selectedProjectId) ||
+                  !developer?.active
+                }
                 onClick={async () => {
                   if (!token || !selectedProjectId || !developer) return;
                   setSuccessMessage(null);
@@ -181,6 +217,75 @@ export function ExpertDetailPage() {
               {errorMessage ? <p className="text-rose-600">{errorMessage}</p> : null}
             </div>
           )}
+        </section>
+
+        <section className="grid gap-8 lg:grid-cols-2">
+          <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
+            <h2 className="text-xl font-bold text-gray-900">FAQ</h2>
+            <div className="mt-4 space-y-3">
+              {faqs.length === 0 ? (
+                <p className="text-sm text-gray-500">등록된 FAQ가 없습니다.</p>
+              ) : (
+                faqs.map((faq) => (
+                  <article key={faq.id} className="rounded-xl border border-gray-200 p-4">
+                    <p className="font-semibold text-gray-900">{faq.question}</p>
+                    <p className="mt-2 text-sm leading-6 text-gray-600">{faq.answer}</p>
+                  </article>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
+            <h2 className="text-xl font-bold text-gray-900">리뷰</h2>
+            <div className="mt-4 space-y-3">
+              {reviews && reviews.items.length > 0 ? (
+                reviews.items.map((review) => (
+                  <article key={review.id} className="rounded-xl border border-gray-200 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-semibold text-gray-900">
+                        {review.customer?.name || review.customer?.email || '고객'}
+                      </p>
+                      <p className="inline-flex items-center gap-1 text-sm font-semibold text-amber-600">
+                        <Star className="h-4 w-4 fill-current" />
+                        {review.rating}.0
+                      </p>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-gray-600">{review.content}</p>
+                  </article>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">등록된 리뷰가 없습니다.</p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
+          <h2 className="text-xl font-bold text-gray-900">포트폴리오</h2>
+          <div className="mt-4 space-y-4">
+            {portfolios.length === 0 ? (
+              <p className="text-sm text-gray-500">공개된 포트폴리오가 없습니다.</p>
+            ) : (
+              portfolios.map((portfolio) => (
+                <article key={portfolio.id} className="rounded-2xl border border-gray-200 p-4">
+                  <div className="grid gap-4 md:grid-cols-[1fr,280px]">
+                    <p className="text-sm leading-6 text-gray-700">{portfolio.description}</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {portfolio.imageUrls.map((image) => (
+                        <img
+                          key={image.storageUrl}
+                          src={image.url}
+                          alt="포트폴리오 이미지"
+                          className="h-24 w-full rounded-lg object-cover"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
         </section>
       </div>
     </div>

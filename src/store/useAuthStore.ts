@@ -1,17 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ApiError, getCurrentUser, loginWithGoogle } from '@/lib/api';
-import type { SessionUser } from '@/types/api';
+import type { SessionUser, UserMode } from '@/types/api';
 
 interface AuthState {
   token: string | null;
   user: SessionUser | null;
+  activeMode: UserMode;
   isAuthenticating: boolean;
   errorMessage: string | null;
   loginWithGoogleToken: (idToken: string) => Promise<void>;
   refreshMe: () => Promise<void>;
   clearSession: () => void;
   updateUser: (partial: Partial<SessionUser>) => void;
+  setActiveMode: (mode: UserMode) => void;
+  syncActiveMode: (user: SessionUser | null) => void;
 }
 
 const STORAGE_KEY = 'auth-store';
@@ -26,11 +29,36 @@ function getErrorMessage(error: unknown) {
   return '인증 처리 중 오류가 발생했습니다.';
 }
 
+function resolveActiveMode(user: SessionUser | null, currentMode: UserMode): UserMode {
+  if (!user) {
+    return 'customer';
+  }
+
+  if (currentMode === 'expert' && user.hasExpertProfile) {
+    return 'expert';
+  }
+
+  if (currentMode === 'customer' && user.hasCustomerProfile) {
+    return 'customer';
+  }
+
+  if (user.hasCustomerProfile) {
+    return 'customer';
+  }
+
+  if (user.hasExpertProfile) {
+    return 'expert';
+  }
+
+  return currentMode;
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       token: null,
       user: null,
+      activeMode: 'customer',
       isAuthenticating: false,
       errorMessage: null,
 
@@ -41,6 +69,7 @@ export const useAuthStore = create<AuthState>()(
           set({
             token: response.token,
             user: response.user,
+            activeMode: resolveActiveMode(response.user, get().activeMode),
             isAuthenticating: false,
           });
         } catch (error) {
@@ -58,11 +87,16 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const user = await getCurrentUser(token);
-          set({ user, errorMessage: null });
+          set((state) => ({
+            user,
+            activeMode: resolveActiveMode(user, state.activeMode),
+            errorMessage: null,
+          }));
         } catch {
           set({
             token: null,
             user: null,
+            activeMode: 'customer',
             errorMessage: '세션이 만료되어 로그아웃되었습니다.',
           });
         }
@@ -72,6 +106,7 @@ export const useAuthStore = create<AuthState>()(
         set({
           token: null,
           user: null,
+          activeMode: 'customer',
           isAuthenticating: false,
           errorMessage: null,
         });
@@ -79,12 +114,29 @@ export const useAuthStore = create<AuthState>()(
 
       updateUser: (partial) =>
         set((state) => ({
-          user: state.user
-            ? {
-                ...state.user,
-                ...partial,
-              }
-            : state.user,
+          user:
+            state.user
+              ? {
+                  ...state.user,
+                  ...partial,
+                }
+              : state.user,
+          activeMode: resolveActiveMode(
+            state.user
+              ? {
+                  ...state.user,
+                  ...partial,
+                }
+              : state.user,
+            state.activeMode,
+          ),
+        })),
+
+      setActiveMode: (mode) => set({ activeMode: mode }),
+
+      syncActiveMode: (user) =>
+        set((state) => ({
+          activeMode: resolveActiveMode(user, state.activeMode),
         })),
     }),
     {
@@ -92,6 +144,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         token: state.token,
         user: state.user,
+        activeMode: state.activeMode,
       }),
     },
   ),

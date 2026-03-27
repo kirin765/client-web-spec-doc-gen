@@ -76,6 +76,10 @@ export class CreateDeveloperDto {
   @IsOptional()
   regions?: string[];
 
+  @IsString()
+  @IsOptional()
+  regionCode?: string;
+
   @IsArray()
   @IsString({ each: true })
   @IsOptional()

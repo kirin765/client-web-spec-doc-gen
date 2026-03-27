@@ -6,11 +6,16 @@ import { useQuoteStore } from '@/store/useQuoteStore';
 import { Zap, FileText, DollarSign, CheckCircle } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
 import { getSiteOrigin } from '@/lib/site';
+import { useAuthStore } from '@/store/useAuthStore';
+import { ModeToggle } from '@/components/mode/ModeToggle';
 
 export function LandingPage() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const { resetQuote } = useQuoteStore();
+  const user = useAuthStore((state) => state.user);
+  const activeMode = useAuthStore((state) => state.activeMode);
+  const setActiveMode = useAuthStore((state) => state.setActiveMode);
   const siteOrigin = getSiteOrigin();
 
   const structuredData = {
@@ -31,9 +36,29 @@ export function LandingPage() {
   };
 
   const handleStartQuote = () => {
+    if (activeMode === 'expert') {
+      navigate('/mypage');
+      return;
+    }
+
     resetQuote();
     navigate('/wizard');
   };
+
+  const heroTitle =
+    activeMode === 'expert'
+      ? '전문가 모드에서 프로필과 포트폴리오를 관리하세요'
+      : t('landing.heroTitle');
+  const heroSubtitle =
+    activeMode === 'expert'
+      ? '받은 견적을 진행하고 완료 처리한 뒤, 고객 리뷰까지 한 흐름으로 관리할 수 있습니다.'
+      : t('landing.heroSubtitle');
+  const ctaLabel =
+    activeMode === 'expert'
+      ? user?.hasExpertProfile
+        ? '전문가 마이페이지 열기'
+        : '전문가 프로필 작성'
+      : t('landing.cta');
 
   return (
     <div className="min-h-screen bg-white">
@@ -45,15 +70,21 @@ export function LandingPage() {
       {/* 히어로 섹션 */}
       <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 px-6 py-20 sm:py-32">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-            {t('landing.heroTitle')}
-          </h1>
-          <p className="mt-6 text-xl text-gray-600">{t('landing.heroSubtitle')}</p>
+          <div className="mb-8">
+            <ModeToggle value={activeMode} onChange={setActiveMode} />
+          </div>
+          <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">{heroTitle}</h1>
+          <p className="mt-6 text-xl text-gray-600">{heroSubtitle}</p>
+          {user ? (
+            <p className="mt-4 text-sm font-medium text-slate-500">
+              현재 모드: {activeMode === 'expert' ? '전문가' : '고객'}
+            </p>
+          ) : null}
           <button
             onClick={handleStartQuote}
             className="mt-8 inline-block rounded-lg bg-blue-600 px-8 py-4 font-semibold text-white transition-colors hover:bg-blue-700"
           >
-            {t('landing.cta')}
+            {ctaLabel}
           </button>
         </div>
       </section>
@@ -134,7 +165,7 @@ export function LandingPage() {
             className="mt-8 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-8 py-4 font-semibold text-white transition-colors hover:bg-blue-700"
           >
             <CheckCircle className="h-5 w-5" />
-            {t('landing.cta')}
+            {ctaLabel}
           </button>
         </div>
       </section>
