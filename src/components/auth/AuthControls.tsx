@@ -1,7 +1,13 @@
 import { GoogleLogin } from '@react-oauth/google';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 
-export function AuthControls() {
+interface AuthControlsProps {
+  redirectTo?: string;
+}
+
+export function AuthControls({ redirectTo = '/mypage' }: AuthControlsProps) {
+  const navigate = useNavigate();
   const isAuthenticating = useAuthStore((state) => state.isAuthenticating);
   const errorMessage = useAuthStore((state) => state.errorMessage);
   const loginWithGoogleToken = useAuthStore((state) => state.loginWithGoogleToken);
@@ -25,6 +31,7 @@ export function AuthControls() {
           if (!idToken || isAuthenticating) return;
           try {
             await loginWithGoogleToken(idToken);
+            navigate(redirectTo, { replace: true });
           } catch {
             // 에러 메시지는 스토어에서 표시
           }
