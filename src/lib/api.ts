@@ -1,5 +1,7 @@
 import type {
   AuthResponse,
+  AdminDeveloperListResponse,
+  AdminProjectRequestListResponse,
   CreateReviewPayload,
   CustomerProfileApi,
   DeveloperProfileApi,
@@ -277,6 +279,53 @@ export function submitProjectRequest(
 
 export function listMyProjectRequests(token: string) {
   return request<ProjectRequestListResponse>('/project-requests?pageSize=100&page=1', {
+    token,
+  });
+}
+
+export function listAdminDevelopers(
+  token: string,
+  options: { status?: 'pending' | 'active'; page?: number; limit?: number } = {},
+) {
+  const params = new URLSearchParams();
+  if (options.status) params.set('status', options.status);
+  if (options.page) params.set('page', String(options.page));
+  if (options.limit) params.set('limit', String(options.limit));
+
+  const query = params.toString();
+  return request<AdminDeveloperListResponse>(`/admin/developers${query ? `?${query}` : ''}`, {
+    token,
+  });
+}
+
+export function listAdminProjects(
+  token: string,
+  options: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    siteType?: string;
+    submittedFrom?: string;
+    submittedTo?: string;
+  } = {},
+) {
+  const params = new URLSearchParams();
+  if (options.page) params.set('page', String(options.page));
+  if (options.limit) params.set('limit', String(options.limit));
+  if (options.status) params.set('status', options.status);
+  if (options.siteType) params.set('siteType', options.siteType);
+  if (options.submittedFrom) params.set('submittedFrom', options.submittedFrom);
+  if (options.submittedTo) params.set('submittedTo', options.submittedTo);
+
+  const query = params.toString();
+  return request<AdminProjectRequestListResponse>(`/admin/projects${query ? `?${query}` : ''}`, {
+    token,
+  });
+}
+
+export function approveAdminDeveloper(token: string, developerId: string) {
+  return request(`/admin/developers/${developerId}/approve`, {
+    method: 'PATCH',
     token,
   });
 }
