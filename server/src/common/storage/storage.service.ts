@@ -69,6 +69,21 @@ export class StorageService {
     });
   }
 
+  extractKey(storageUrl: string): string {
+    if (!storageUrl.startsWith(`s3://${this.bucket}/`)) {
+      throw new Error(`Unsupported storage URL: ${storageUrl}`);
+    }
+
+    return storageUrl.slice(`s3://${this.bucket}/`.length);
+  }
+
+  async getSignedUrlFromStorageUrl(
+    storageUrl: string,
+    expiresIn?: number,
+  ): Promise<string> {
+    return this.getSignedUrl(this.extractKey(storageUrl), expiresIn);
+  }
+
   async deleteFile(key: string): Promise<void> {
     const command = new DeleteObjectCommand({
       Bucket: this.bucket,
@@ -78,4 +93,3 @@ export class StorageService {
     await this.s3Client.send(command);
   }
 }
-

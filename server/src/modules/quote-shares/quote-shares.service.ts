@@ -10,42 +10,79 @@ import { CreateQuoteShareDto } from './dto/create-quote-share.dto';
 
 type Actor = 'user' | 'developer';
 
+const quoteShareInclude = {
+  review: {
+    select: { id: true },
+  },
+  projectRequest: {
+    include: {
+      user: {
+        select: { id: true, email: true },
+      },
+    },
+  },
+  developer: {
+    include: {
+      user: {
+        select: { id: true, email: true },
+      },
+    },
+  },
+} as const;
+
 @Injectable()
 export class QuoteSharesService {
   constructor(private prisma: PrismaService) {}
+
+  private shouldRevealContact(status: string) {
+    return status === 'IN_PROGRESS' || status === 'COMPLETED';
+  }
 
   private mapQuoteShare(
     quoteShare: any,
     actor: Actor,
     includeCounterpartyEmail: boolean,
   ) {
-    const canRevealContact = quoteShare.status === 'APPROVED' && includeCounterpartyEmail;
+    const canRevealContact = this.shouldRevealContact(quoteShare.status);
+    const reviewId = quoteShare.review?.id ?? null;
     const counterpartyEmail =
-      canRevealContact && actor === 'user'
-        ? quoteShare.developer?.user?.email ?? null
-        : canRevealContact
-          ? quoteShare.projectRequest?.user?.email ?? null
-          : null;
+      canRevealContact && includeCounterpartyEmail
+        ? actor === 'user'
+          ? quoteShare.developer?.user?.email ?? null
+          : quoteShare.projectRequest?.user?.email ?? null
+        : null;
+    const contactMethod =
+      actor === 'user' || canRevealContact
+        ? quoteShare.projectRequest?.contactMethod ?? null
+        : null;
 
     return {
       id: quoteShare.id,
       projectRequestId: quoteShare.projectRequestId,
       developerId: quoteShare.developerId,
       status: normalizeEnumToApi(quoteShare.status),
-      approvedAt: quoteShare.approvedAt?.toISOString() ?? null,
+      startedAt: quoteShare.startedAt?.toISOString() ?? null,
+      completedAt: quoteShare.completedAt?.toISOString() ?? null,
       canceledAt: quoteShare.canceledAt?.toISOString() ?? null,
       canceledBy: quoteShare.canceledBy
         ? normalizeEnumToApi(quoteShare.canceledBy)
         : null,
       createdAt: quoteShare.createdAt.toISOString(),
       updatedAt: quoteShare.updatedAt.toISOString(),
-      canOpenContact: quoteShare.status === 'APPROVED',
+      canOpenContact: canRevealContact,
+      canComplete: actor === 'developer' && quoteShare.status === 'IN_PROGRESS',
+      canReview:
+        actor === 'user' &&
+        quoteShare.status === 'COMPLETED' &&
+        reviewId === null,
+      reviewId,
+      contactMethod,
       counterpartyEmail,
       projectRequest: quoteShare.projectRequest
         ? {
             id: quoteShare.projectRequest.id,
-            projectName: quoteShare.projectRequest.projectName,
-            siteType: quoteShare.projectRequest.siteType,
+            projectName: quoteShare.projectRequest.projectName ?? null,
+            siteType: quoteShare.projectRequest.siteType ?? null,
             status: normalizeEnumToApi(quoteShare.projectRequest.status),
           }
         : null,
@@ -113,7 +150,9 @@ export class QuoteSharesService {
     }
 
     if (developer.userId && developer.userId === userId) {
-      throw new BadRequestException('Cannot share a quote to your own developer profile');
+      throw new BadRequestException(
+        'Cannot share a quote to your own developer profile',
+      );
     }
 
     const existing = await this.prisma.quoteShare.findUnique({
@@ -135,22 +174,7 @@ export class QuoteSharesService {
         developerId: dto.developerId,
         status: 'SENT',
       },
-      include: {
-        projectRequest: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-        developer: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-      },
+      include: quoteShareInclude,
     });
 
     return this.mapQuoteShare(created, 'user', false);
@@ -163,22 +187,7 @@ export class QuoteSharesService {
           userId,
         },
       },
-      include: {
-        projectRequest: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-        developer: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-      },
+      include: quoteShareInclude,
       orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
     });
 
@@ -191,26 +200,8 @@ export class QuoteSharesService {
     const list = await this.prisma.quoteShare.findMany({
       where: {
         developerId: developer.id,
-        status: {
-          in: ['SENT', 'APPROVED'],
-        },
       },
-      include: {
-        projectRequest: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-        developer: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-      },
+      include: quoteShareInclude,
       orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
     });
 
@@ -220,22 +211,7 @@ export class QuoteSharesService {
   async getDetail(id: string, userId: string) {
     const quoteShare = await this.prisma.quoteShare.findUnique({
       where: { id },
-      include: {
-        projectRequest: {
-          include: {
-            user: {
-              select: { id: true, email: true },
-            },
-          },
-        },
-        developer: {
-          include: {
-            user: {
-              select: { id: true, email: true },
-            },
-          },
-        },
-      },
+      include: quoteShareInclude,
     });
 
     if (!quoteShare) {
@@ -249,11 +225,7 @@ export class QuoteSharesService {
       throw new ForbiddenException('You do not have access to this quote share');
     }
 
-    return this.mapQuoteShare(
-      quoteShare,
-      isOwner ? 'user' : 'developer',
-      true,
-    );
+    return this.mapQuoteShare(quoteShare, isOwner ? 'user' : 'developer', true);
   }
 
   async cancelByUser(id: string, userId: string) {
@@ -271,11 +243,13 @@ export class QuoteSharesService {
     }
 
     if (quoteShare.projectRequest.userId !== userId) {
-      throw new ForbiddenException('Cannot cancel another user\'s quote share');
+      throw new ForbiddenException(
+        'Cannot cancel another user\'s quote share',
+      );
     }
 
-    if (quoteShare.status === 'APPROVED') {
-      throw new BadRequestException('Approved quote share cannot be canceled by user');
+    if (quoteShare.status !== 'SENT') {
+      throw new BadRequestException('Only sent quote shares can be canceled');
     }
 
     const updated = await this.prisma.quoteShare.update({
@@ -285,22 +259,7 @@ export class QuoteSharesService {
         canceledAt: new Date(),
         canceledBy: 'USER',
       },
-      include: {
-        projectRequest: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-        developer: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-      },
+      include: quoteShareInclude,
     });
 
     return this.mapQuoteShare(updated, 'user', false);
@@ -317,37 +276,61 @@ export class QuoteSharesService {
     }
 
     if (quoteShare.developerId !== developer.id) {
-      throw new ForbiddenException('Cannot approve another developer\'s quote share');
+      throw new ForbiddenException(
+        'Cannot approve another developer\'s quote share',
+      );
     }
 
     if (quoteShare.status !== 'SENT') {
-      throw new BadRequestException('Only sent quote shares can be approved');
+      throw new BadRequestException('Only sent quote shares can be started');
     }
 
     const updated = await this.prisma.quoteShare.update({
       where: { id },
       data: {
-        status: 'APPROVED',
-        approvedAt: new Date(),
+        status: 'IN_PROGRESS',
+        startedAt: new Date(),
+        completedAt: null,
         canceledAt: null,
         canceledBy: null,
       },
-      include: {
-        projectRequest: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-        developer: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
+      include: quoteShareInclude,
+    });
+
+    return this.mapQuoteShare(updated, 'developer', false);
+  }
+
+  async completeByDeveloper(id: string, userId: string) {
+    const developer = await this.getDeveloperByUserId(userId);
+    const quoteShare = await this.prisma.quoteShare.findUnique({
+      where: { id },
+    });
+
+    if (!quoteShare) {
+      throw new NotFoundException('Quote share not found');
+    }
+
+    if (quoteShare.developerId !== developer.id) {
+      throw new ForbiddenException(
+        'Cannot complete another developer\'s quote share',
+      );
+    }
+
+    if (quoteShare.status !== 'IN_PROGRESS') {
+      throw new BadRequestException(
+        'Only in-progress quote shares can be completed',
+      );
+    }
+
+    const updated = await this.prisma.quoteShare.update({
+      where: { id },
+      data: {
+        status: 'COMPLETED',
+        completedAt: new Date(),
+        canceledAt: null,
+        canceledBy: null,
       },
+      include: quoteShareInclude,
     });
 
     return this.mapQuoteShare(updated, 'developer', false);
@@ -364,11 +347,13 @@ export class QuoteSharesService {
     }
 
     if (quoteShare.developerId !== developer.id) {
-      throw new ForbiddenException('Cannot cancel another developer\'s quote share');
+      throw new ForbiddenException(
+        'Cannot cancel another developer\'s quote share',
+      );
     }
 
-    if (quoteShare.status === 'APPROVED') {
-      throw new BadRequestException('Approved quote share cannot be canceled by developer');
+    if (quoteShare.status !== 'SENT') {
+      throw new BadRequestException('Only sent quote shares can be canceled');
     }
 
     const updated = await this.prisma.quoteShare.update({
@@ -378,22 +363,7 @@ export class QuoteSharesService {
         canceledAt: new Date(),
         canceledBy: 'DEVELOPER',
       },
-      include: {
-        projectRequest: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-        developer: {
-          include: {
-            user: {
-              select: { email: true },
-            },
-          },
-        },
-      },
+      include: quoteShareInclude,
     });
 
     return this.mapQuoteShare(updated, 'developer', false);

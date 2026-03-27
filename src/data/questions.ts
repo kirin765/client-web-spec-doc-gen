@@ -74,6 +74,15 @@ export const questionCategories: QuestionCategory[] = [
         validation: { required: false },
         pricingImpact: { type: 'add', value: 0, category: '기본' },
       },
+      {
+        id: 'contactMethod',
+        categoryId: 'basics',
+        type: 'text-input',
+        labelKey: 'questions.contactMethod.label',
+        descriptionKey: 'questions.contactMethod.description',
+        validation: { required: true },
+        pricingImpact: { type: 'add', value: 0, category: '기본' },
+      },
     ],
   },
 

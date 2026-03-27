@@ -31,6 +31,12 @@
       "placeholder": "예: 20-30대 직장인, B2B 기업 고객"
     },
 
+    "contactMethod": {
+      "label": "전문가가 연락할 수단을 적어주세요",
+      "description": "휴대폰, 카카오톡 ID, 이메일 등 원하는 연락 방법을 자유롭게 입력해주세요",
+      "placeholder": "예: 카카오톡 ID example123 / 010-1234-5678"
+    },
+
     "expectedPages": {
       "label": "예상 페이지 수는 몇 개인가요?",
       "description": "대략적인 페이지 수를 선택해주세요"

@@ -66,7 +66,7 @@ export function ExpertDirectoryPage() {
                 로그인 후 발송 가능
               </span>
             )}
-            {user?.hasDeveloperProfile ? (
+            {user?.hasExpertProfile ? (
               <Link
                 to="/mypage"
                 className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-4 py-3 text-sm font-semibold text-white"
@@ -124,6 +124,10 @@ export function ExpertDirectoryPage() {
                   <div className="mt-4 text-sm text-gray-600">
                     <p>유형: {developer.type === 'agency' ? '에이전시' : '프리랜서'}</p>
                     <p className="mt-1">예산: {formatRange(developer.budgetMin, developer.budgetMax)}</p>
+                    <p className="mt-1">활동 지역: {developer.region?.name || '미설정'}</p>
+                    <p className="mt-1">
+                      리뷰 {developer.reviewCount}개 · 평균 {developer.reviewAverage.toFixed(1)}점
+                    </p>
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">

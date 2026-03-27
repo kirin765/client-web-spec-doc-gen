@@ -9,3 +9,4 @@ export * from './types/developer';
 export * from './types/matching';
 export * from './types/proposal';
 export * from './types/pricing-rule';
+export * from './regions';
