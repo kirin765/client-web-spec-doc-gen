@@ -26,6 +26,7 @@ export function Header() {
   const activeMode = useAuthStore((state) => state.activeMode);
   const setActiveMode = useAuthStore((state) => state.setActiveMode);
   const clearSession = useAuthStore((state) => state.clearSession);
+  const isExpertMode = activeMode === 'expert';
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -149,26 +150,32 @@ export function Header() {
                     </div>
 
                     <div className="mt-3 space-y-1">
-                      <MenuItem
-                        icon={<LayoutGrid className="h-4 w-4" />}
-                        label="전문가 목록"
-                        onClick={() => go('/experts')}
-                      />
-                      <MenuItem
-                        icon={<FileText className="h-4 w-4" />}
-                        label="내 견적서"
-                        onClick={() => go('/quotes')}
-                      />
+                      {!isExpertMode ? (
+                        <MenuItem
+                          icon={<LayoutGrid className="h-4 w-4" />}
+                          label="전문가 목록"
+                          onClick={() => go('/experts')}
+                        />
+                      ) : null}
+                      {!isExpertMode ? (
+                        <MenuItem
+                          icon={<FileText className="h-4 w-4" />}
+                          label="내 견적서"
+                          onClick={() => go('/quotes')}
+                        />
+                      ) : null}
                       <MenuItem
                         icon={<UserCircle2 className="h-4 w-4" />}
-                        label={activeMode === 'expert' ? '전문가 마이페이지' : '고객 마이페이지'}
+                        label={isExpertMode ? '전문가 마이페이지' : '고객 마이페이지'}
                         onClick={() => go('/mypage')}
                       />
-                      <MenuItem
-                        icon={<PlusCircle className="h-4 w-4" />}
-                        label={activeMode === 'expert' ? '전문가 프로필 작성' : '견적 작성 시작'}
-                        onClick={handleStart}
-                      />
+                      {!isExpertMode ? (
+                        <MenuItem
+                          icon={<PlusCircle className="h-4 w-4" />}
+                          label="견적 작성 시작"
+                          onClick={handleStart}
+                        />
+                      ) : null}
                       {user.role === 'admin' ? (
                         <MenuItem
                           icon={<Shield className="h-4 w-4" />}
