@@ -30,6 +30,7 @@ import { CostSummary } from '@/components/result/CostSummary';
 import { RequirementsPreview } from '@/components/result/RequirementsPreview';
 import { DeveloperMatchSection } from '@/components/result/DeveloperMatchSection';
 import { Seo } from '@/components/seo/Seo';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import { developerProfiles } from '@/data/developerProfiles';
 import { FileDown, Plus, Edit, Save, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -39,6 +40,7 @@ export function ResultPage() {
   const { answers, resetQuote } = useQuoteStore();
   const token = useAuthStore((state) => state.token);
   const [activeTab, setActiveTab] = useState<'cost' | 'document' | 'matching'>('cost');
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isSavingToServer, setIsSavingToServer] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -102,6 +104,15 @@ export function ResultPage() {
       setSaveError(error instanceof Error ? error.message : '견적서 저장에 실패했습니다.');
     } finally {
       setIsSavingToServer(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    setIsDownloadingPdf(true);
+    try {
+      await downloadPdf(reqDocument);
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
 
@@ -171,13 +182,15 @@ export function ResultPage() {
       <section className="border-t bg-white px-6 py-8">
         <div className="mx-auto max-w-5xl">
           <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
-            <button
-              onClick={() => downloadPdf(reqDocument)}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700"
+            <LoadingButton
+              loading={isDownloadingPdf}
+              loadingLabel="PDF 생성 중..."
+              onClick={() => void handleDownloadPdf()}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
             >
               <FileDown className="h-5 w-5" />
               {t('result.pdfDownload')}
-            </button>
+            </LoadingButton>
             <button
               onClick={handleEdit}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-6 py-3 font-semibold text-gray-700 transition-colors hover:bg-gray-50"
@@ -192,14 +205,15 @@ export function ResultPage() {
               <Plus className="h-5 w-5" />
               {t('result.newQuote')}
             </button>
-            <button
+            <LoadingButton
               onClick={() => void handleSaveMyQuote()}
-              disabled={isSavingToServer}
+              loading={isSavingToServer}
+              loadingLabel="저장 중..."
               className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-300"
             >
-              {isSavingToServer ? <Save className="h-5 w-5 animate-pulse" /> : <Save className="h-5 w-5" />}
+              <Save className="h-5 w-5" />
               내 견적서에 저장
-            </button>
+            </LoadingButton>
             {token ? (
               <Link
                 to="/quotes"

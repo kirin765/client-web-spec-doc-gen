@@ -12,6 +12,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import { RegionSelector } from '@/components/regions/RegionSelector';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
@@ -745,15 +746,16 @@ export function MyPage() {
         </div>
 
         <div className="mt-6">
-          <button
+          <LoadingButton
             type="button"
+            loading={isSavingCustomer}
+            loadingLabel="저장 중..."
             onClick={() => void handleCustomerSave()}
-            disabled={isSavingCustomer}
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             <Save className="h-4 w-4" />
             고객 프로필 저장
-          </button>
+          </LoadingButton>
         </div>
       </section>
 
@@ -1018,15 +1020,16 @@ export function MyPage() {
         </div>
 
         <div className="mt-6">
-          <button
+          <LoadingButton
             type="button"
+            loading={isSavingExpert}
+            loadingLabel="저장 중..."
             onClick={() => void handleExpertSave()}
-            disabled={isSavingExpert}
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
           >
             <Save className="h-4 w-4" />
             전문가 프로필 저장
-          </button>
+          </LoadingButton>
         </div>
       </section>
 
@@ -1062,15 +1065,16 @@ export function MyPage() {
               className="w-full rounded-xl border border-gray-300 px-4 py-3"
             />
             <div className="flex flex-wrap gap-2">
-              <button
+              <LoadingButton
                 type="button"
+                loading={isSavingFaq}
+                loadingLabel="저장 중..."
                 onClick={() => void handleFaqSave()}
-                disabled={isSavingFaq}
                 className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 <Save className="h-4 w-4" />
                 {faqForm.id ? 'FAQ 수정' : 'FAQ 추가'}
-              </button>
+              </LoadingButton>
               {faqForm.id ? (
                 <button
                   type="button"
@@ -1207,15 +1211,16 @@ export function MyPage() {
             ) : null}
 
             <div className="flex flex-wrap gap-2">
-              <button
+              <LoadingButton
                 type="button"
+                loading={isSavingPortfolio}
+                loadingLabel="저장 중..."
                 onClick={() => void handlePortfolioSave()}
-                disabled={isSavingPortfolio}
                 className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 <Save className="h-4 w-4" />
                 {portfolioForm.id ? '포트폴리오 수정' : '포트폴리오 추가'}
-              </button>
+              </LoadingButton>
               {portfolioForm.id ? (
                 <button
                   type="button"

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Briefcase, Mail, RefreshCw } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import { listDevelopers } from '@/lib/api';
 import type { DeveloperProfileApi } from '@/types/api';
 import { formatRange } from '@/lib/utils';
@@ -11,6 +12,7 @@ export function ExpertDirectoryPage() {
   const user = useAuthStore((state) => state.user);
   const [developers, setDevelopers] = useState<DeveloperProfileApi[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadDevelopers = async () => {
@@ -80,13 +82,22 @@ export function ExpertDirectoryPage() {
         <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-bold text-gray-900">전문가 목록</h2>
-            <button
-              onClick={() => void loadDevelopers()}
+            <LoadingButton
+              loading={isRefreshing}
+              loadingLabel="새로고침 중..."
+              onClick={async () => {
+                setIsRefreshing(true);
+                try {
+                  await loadDevelopers();
+                } finally {
+                  setIsRefreshing(false);
+                }
+              }}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700"
             >
               <RefreshCw className="h-4 w-4" />
               새로고침
-            </button>
+            </LoadingButton>
           </div>
 
           {isLoading ? (

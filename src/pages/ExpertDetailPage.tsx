@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Send, Star } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import {
   createQuoteShare,
   getDeveloperById,
@@ -33,6 +34,7 @@ export function ExpertDetailPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [alreadySentProjectIds, setAlreadySentProjectIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const [isSendingQuote, setIsSendingQuote] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -185,7 +187,9 @@ export function ExpertDetailPage() {
                 </div>
               ) : null}
 
-              <button
+              <LoadingButton
+                loading={isSendingQuote}
+                loadingLabel="전송 중..."
                 disabled={
                   activeMode !== 'customer' ||
                   !selectedProjectId ||
@@ -194,6 +198,7 @@ export function ExpertDetailPage() {
                 }
                 onClick={async () => {
                   if (!token || !selectedProjectId || !developer) return;
+                  setIsSendingQuote(true);
                   setSuccessMessage(null);
                   setErrorMessage(null);
                   try {
@@ -205,13 +210,15 @@ export function ExpertDetailPage() {
                     setSuccessMessage('견적서를 전문가에게 보냈습니다.');
                   } catch (error) {
                     setErrorMessage(error instanceof Error ? error.message : '견적서 전송 실패');
+                  } finally {
+                    setIsSendingQuote(false);
                   }
                 }}
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
               >
                 <Send className="h-4 w-4" />
                 견적서 보내기
-              </button>
+              </LoadingButton>
 
               {successMessage ? <p className="text-emerald-700">{successMessage}</p> : null}
               {errorMessage ? <p className="text-rose-600">{errorMessage}</p> : null}

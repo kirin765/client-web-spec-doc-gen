@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Seo } from '@/components/seo/Seo';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
   approveAdminDeveloper,
@@ -46,6 +47,7 @@ export function AdminPage() {
   const [projects, setProjects] = useState<AdminProjectRequestSummary[]>([]);
   const [pendingDevelopers, setPendingDevelopers] = useState<AdminDeveloperSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [approvingDeveloperId, setApprovingDeveloperId] = useState<string | null>(null);
 
@@ -138,13 +140,22 @@ export function AdminPage() {
           <article className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
             <div className="flex items-center justify-between gap-4">
               <h2 className="text-xl font-bold text-gray-900">전문가 승인</h2>
-              <button
+              <LoadingButton
                 type="button"
-                onClick={() => void loadData()}
+                loading={isRefreshing}
+                loadingLabel="새로고침 중..."
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  try {
+                    await loadData();
+                  } finally {
+                    setIsRefreshing(false);
+                  }
+                }}
                 className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700"
               >
                 새로고침
-              </button>
+              </LoadingButton>
             </div>
             <div className="mt-6 space-y-4">
               {pendingDevelopers.length === 0 ? (
@@ -162,14 +173,15 @@ export function AdminPage() {
                         {developer.type} · {developer.availabilityStatus} · 생성 {formatDate(developer.createdAt)}
                       </p>
                     </div>
-                    <button
+                    <LoadingButton
                       type="button"
+                      loading={approvingDeveloperId === developer.id}
+                      loadingLabel="승인 중..."
                       onClick={() => void handleApprove(developer.id)}
-                      disabled={approvingDeveloperId === developer.id}
                       className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
                     >
-                      {approvingDeveloperId === developer.id ? '승인 중...' : '승인'}
-                    </button>
+                      승인
+                    </LoadingButton>
                   </div>
                 ))
               )}
