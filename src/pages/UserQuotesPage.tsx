@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { FileText, Mail, RefreshCw, SendHorizontal, XCircle } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import {
   cancelQuoteShareByUser,
   getQuoteShareDetail,
@@ -31,6 +32,9 @@ export function UserQuotesPage() {
   const token = useAuthStore((state) => state.token);
   const activeMode = useAuthStore((state) => state.activeMode);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadingDetailId, setLoadingDetailId] = useState<string | null>(null);
+  const [cancelingShareId, setCancelingShareId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [projectRequests, setProjectRequests] = useState<ProjectRequestSummary[]>([]);
   const [sentShares, setSentShares] = useState<QuoteShareItem[]>([]);
@@ -88,13 +92,22 @@ export function UserQuotesPage() {
                 전문가에게 보낸 견적 상태와 내가 남긴 연락방법, 완료 여부를 확인할 수 있습니다.
               </p>
             </div>
-            <button
-              onClick={() => void loadData()}
+            <LoadingButton
+              loading={isRefreshing}
+              loadingLabel="새로고침 중..."
+              onClick={async () => {
+                setIsRefreshing(true);
+                try {
+                  await loadData();
+                } finally {
+                  setIsRefreshing(false);
+                }
+              }}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700"
             >
               <RefreshCw className="h-4 w-4" />
               새로고침
-            </button>
+            </LoadingButton>
           </div>
         </section>
 
@@ -160,29 +173,43 @@ export function UserQuotesPage() {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <button
+                      <LoadingButton
+                        loading={loadingDetailId === share.id}
+                        loadingLabel="불러오는 중..."
                         onClick={async () => {
                           if (!token) return;
-                          const detail = await getQuoteShareDetail(token, share.id);
-                          setSelectedDetail(detail);
+                          setLoadingDetailId(share.id);
+                          try {
+                            const detail = await getQuoteShareDetail(token, share.id);
+                            setSelectedDetail(detail);
+                          } finally {
+                            setLoadingDetailId(null);
+                          }
                         }}
                         className="inline-flex items-center gap-1 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700"
                       >
                         <FileText className="h-4 w-4" />
                         상세
-                      </button>
+                      </LoadingButton>
                       {share.status === 'sent' ? (
-                        <button
+                        <LoadingButton
+                          loading={cancelingShareId === share.id}
+                          loadingLabel="취소 중..."
                           onClick={async () => {
                             if (!token) return;
-                            await cancelQuoteShareByUser(token, share.id);
-                            await loadData();
+                            setCancelingShareId(share.id);
+                            try {
+                              await cancelQuoteShareByUser(token, share.id);
+                              await loadData();
+                            } finally {
+                              setCancelingShareId(null);
+                            }
                           }}
                           className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700"
                         >
                           <XCircle className="h-4 w-4" />
                           취소
-                        </button>
+                        </LoadingButton>
                       ) : null}
                     </div>
                   </div>
