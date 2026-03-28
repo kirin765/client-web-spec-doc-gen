@@ -8,4 +8,6 @@ shared/src/**/*.js
 shared/src/**/*.js.map
 shared/src/**/*.d.ts
 client_secret.*
-Screenshot.*
+client_secret_*.json
+test.pdf
+Screenshot*
