@@ -127,7 +127,12 @@ async function main() {
     throw error;
   }
 
-  const frontend = spawnCommand('npm', ['run', 'dev', '--', '--host', '0.0.0.0'], ROOT_CWD, 'web');
+  const frontend = spawnCommand(
+    'npm',
+    ['run', 'dev', '--', '--host', '0.0.0.0', '--port', '5173', '--strictPort'],
+    ROOT_CWD,
+    'web',
+  );
   const frontendExit = waitForExit(frontend, 'web');
 
   const shutdown = async (exitCode = 0) => {
