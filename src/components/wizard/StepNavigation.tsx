@@ -68,8 +68,8 @@ export function StepNavigation() {
           className={cn(
             'flex items-center gap-2 rounded-lg px-6 py-2 font-medium transition-colors',
             isStepComplete()
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'cursor-not-allowed bg-gray-300 text-gray-500'
+              ? 'bg-slate-900 text-white hover:bg-slate-800'
+              : 'cursor-not-allowed bg-slate-200 text-slate-400'
           )}
         >
           {isLastStep ? (

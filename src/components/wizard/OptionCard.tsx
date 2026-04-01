@@ -57,8 +57,8 @@ export function OptionCard({ option, selected, onSelect }: OptionCardProps) {
         'rounded-lg border-2 p-4 text-left transition-all duration-200',
         'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
         selected
-          ? 'border-blue-500 bg-blue-50 shadow-md'
-          : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+          ? 'border-slate-900 bg-slate-900/5 shadow-md'
+          : 'border-gray-200 bg-white hover:border-slate-400 hover:shadow-md'
       )}
     >
       <div className="flex gap-3">
@@ -71,7 +71,7 @@ export function OptionCard({ option, selected, onSelect }: OptionCardProps) {
             <div className="mt-1 text-sm text-gray-600">{t(option.descriptionKey)}</div>
           )}
         </div>
-        {selected && <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-blue-600" />}
+        {selected && <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-slate-900" />}
       </div>
     </button>
   );

@@ -84,7 +84,7 @@ export function ExpertDetailPage() {
   }
 
   return (
-    <div className="bg-gray-50 px-6 py-10">
+    <div className="bg-slate-50 px-6 py-10">
       <Seo
         title={`${developer?.displayName || '전문가'} 상세 | 웹사이트 견적 자동 생성기`}
         description="전문가 상세 정보를 확인하고 내 견적서를 보낼 수 있습니다."

@@ -50,7 +50,7 @@ export function WizardShell() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-slate-50">
       {/* 진행 바 */}
       <div className="border-b bg-white px-6 py-6">
         <div className="mx-auto max-w-6xl">
@@ -73,12 +73,12 @@ export function WizardShell() {
                   className="flex flex-col items-center gap-1 rounded-lg p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
                       isActive
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-slate-900 text-white'
                         : isComplete
-                          ? 'bg-green-100 text-green-600'
-                          : 'bg-gray-200 text-gray-400'
+                          ? 'bg-blue-50 text-blue-600'
+                          : 'bg-slate-100 text-slate-400'
                     }`}
                   >
                     {isComplete ? (
@@ -112,9 +112,9 @@ export function WizardShell() {
 
           <div className="space-y-4">
             {/* 기본 가격 */}
-            <div className="rounded-lg bg-blue-50 p-3">
-              <div className="text-xs font-semibold text-gray-600 uppercase">{t('wizard.baseFee')}</div>
-              <div className="mt-1 text-lg font-bold text-blue-600">
+            <div className="rounded-xl bg-slate-900 p-4 text-white">
+              <div className="text-xs font-semibold uppercase text-slate-400">{t('wizard.baseFee')}</div>
+              <div className="mt-1 text-lg font-bold text-white">
                 {formatRange(costEstimate.baseTier.minCost, costEstimate.baseTier.maxCost)}
               </div>
             </div>

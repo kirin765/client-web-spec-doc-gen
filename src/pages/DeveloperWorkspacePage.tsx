@@ -88,7 +88,7 @@ export function DeveloperWorkspacePage() {
   };
 
   return (
-    <div className="bg-gray-50 px-6 py-10">
+    <div className="bg-slate-50 px-6 py-10">
       <Seo
         title="전문가 워크스페이스 | 웹사이트 견적 자동 생성기"
         description="전문가 프로필을 등록하고 매칭된 의뢰에 제안을 제출하세요."

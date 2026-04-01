@@ -76,7 +76,7 @@ export function UserQuotesPage() {
   }
 
   return (
-    <div className="bg-gray-50 px-6 py-10">
+    <div className="bg-slate-50 px-6 py-10">
       <Seo
         title="내 견적서 | 웹사이트 견적 자동 생성기"
         description="내가 만든 견적서와 전문가 발송 상태를 확인합니다."
