@@ -50,9 +50,9 @@ export function WizardShell() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-secondary-50">
       {/* 진행 바 */}
-      <div className="border-b bg-white px-6 py-6">
+      <div className="border-b border-secondary-200 bg-white px-6 py-6">
         <div className="mx-auto max-w-6xl">
           <div className="grid grid-cols-6 gap-2">
             {questionCategories.map((category, idx) => {
@@ -70,15 +70,15 @@ export function WizardShell() {
                     }
                   }}
                   disabled={idx > currentStep}
-                  className="flex flex-col items-center gap-1 rounded-lg p-2 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex flex-col items-center gap-2 rounded-lg p-2 transition-colors duration-base disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-base ${
                       isActive
-                        ? 'bg-slate-900 text-white'
+                        ? 'bg-primary-600 text-white shadow-sm'
                         : isComplete
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'bg-slate-100 text-slate-400'
+                          ? 'bg-primary-100 text-primary-600'
+                          : 'bg-secondary-100 text-secondary-400'
                     }`}
                   >
                     {isComplete ? (
@@ -89,7 +89,7 @@ export function WizardShell() {
                       <Circle className="h-5 w-5" />
                     )}
                   </div>
-                  <span className="text-xs font-medium text-gray-700">{t(`steps.${category.id}`)}</span>
+                  <span className="text-body-xs font-semibold text-secondary-700">{t(`steps.${category.id}`)}</span>
                 </button>
               );
             })}
@@ -107,27 +107,27 @@ export function WizardShell() {
         </div>
 
         {/* 우측: 비용 미리보기 (데스크톱) */}
-        <div className="hidden w-80 border-l bg-white p-6 shadow-sm lg:block">
-          <h3 className="mb-4 text-lg font-bold text-gray-900">{t('wizard.estimatedCost')}</h3>
+        <div className="hidden w-80 border-l border-secondary-200 bg-white p-6 shadow-sm lg:block">
+          <h3 className="heading-lg mb-6 text-secondary-900">{t('wizard.estimatedCost')}</h3>
 
           <div className="space-y-4">
             {/* 기본 가격 */}
-            <div className="rounded-xl bg-slate-900 p-4 text-white">
-              <div className="text-xs font-semibold uppercase text-slate-400">{t('wizard.baseFee')}</div>
-              <div className="mt-1 text-lg font-bold text-white">
+            <div className="rounded-lg bg-primary-900 p-5 text-white">
+              <div className="text-caption-sm uppercase text-primary-200">{t('wizard.baseFee')}</div>
+              <div className="mt-2 text-heading-lg font-bold">
                 {formatRange(costEstimate.baseTier.minCost, costEstimate.baseTier.maxCost)}
               </div>
             </div>
 
             {/* 추가 비용 항목 */}
             {costEstimate.breakdown.slice(1).length > 0 && (
-              <div className="border-t pt-4">
-                <div className="text-xs font-semibold text-gray-600 uppercase">{t('wizard.additionalItems')}</div>
-                <div className="mt-2 space-y-2">
+              <div className="border-t border-secondary-200 pt-4">
+                <div className="text-caption-sm uppercase text-secondary-600">{t('wizard.additionalItems')}</div>
+                <div className="mt-3 space-y-2">
                   {costEstimate.breakdown.slice(1).map((item, idx) => (
-                    <div key={idx} className="flex justify-between text-sm">
-                      <span className="text-gray-700">{item.category}</span>
-                      <span className="font-medium text-gray-900">
+                    <div key={idx} className="flex justify-between text-body-sm">
+                      <span className="text-secondary-700">{item.category}</span>
+                      <span className="font-semibold text-secondary-900">
                         +{formatRange(item.minAmount, item.maxAmount)}
                       </span>
                     </div>
@@ -138,9 +138,9 @@ export function WizardShell() {
 
             {/* 승수 적용 */}
             {(costEstimate.designMultiplier > 1 || costEstimate.timelineMultiplier > 1) && (
-              <div className="border-t pt-4">
-                <div className="text-xs font-semibold text-gray-600 uppercase">{t('wizard.multipliers')}</div>
-                <div className="mt-2 space-y-1 text-sm">
+              <div className="border-t border-secondary-200 pt-4">
+                <div className="text-caption-sm uppercase text-secondary-600">{t('wizard.multipliers')}</div>
+                <div className="mt-3 space-y-1 text-body-sm text-secondary-700">
                   {costEstimate.designMultiplier > 1 && (
                     <div>{t('wizard.designMultiplier')}: ×{costEstimate.designMultiplier}</div>
                   )}
@@ -152,9 +152,9 @@ export function WizardShell() {
             )}
 
             {/* 최종 예상 비용 */}
-            <div className="border-t pt-4">
-              <div className="text-xs font-semibold text-gray-600 uppercase">{t('wizard.finalEstimate')}</div>
-              <div className="mt-2 text-xl font-bold text-gray-900">
+            <div className="border-t border-secondary-200 pt-4">
+              <div className="text-caption-sm uppercase text-secondary-600">{t('wizard.finalEstimate')}</div>
+              <div className="mt-2 text-display-sm font-bold text-primary-600">
                 {formatRange(costEstimate.totalMin, costEstimate.totalMax)}
               </div>
             </div>
