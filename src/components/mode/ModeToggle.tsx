@@ -24,7 +24,7 @@ export function ModeToggle({ value, onChange, className }: ModeToggleProps) {
   return (
     <div
       className={cn(
-        'inline-flex rounded-2xl border border-slate-200 bg-white p-1 shadow-sm',
+        'inline-flex rounded-xl border border-secondary-200 bg-white p-1 shadow-sm',
         className,
       )}
     >
@@ -37,14 +37,14 @@ export function ModeToggle({ value, onChange, className }: ModeToggleProps) {
             type="button"
             onClick={() => onChange(option.value)}
             className={cn(
-              'rounded-xl px-4 py-2 text-left transition-colors',
+              'rounded-lg px-4 py-2.5 text-left transition-all duration-base',
               selected
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                ? 'bg-secondary-900 text-white shadow-sm'
+                : 'text-secondary-600 hover:bg-secondary-100 hover:text-secondary-900',
             )}
           >
-            <p className="text-sm font-semibold">{option.label}</p>
-            <p className={cn('text-xs', selected ? 'text-slate-200' : 'text-slate-500')}>
+            <p className="text-body-sm font-semibold">{option.label}</p>
+            <p className={cn('text-body-xs mt-1', selected ? 'text-secondary-300' : 'text-secondary-500')}>
               {option.description}
             </p>
           </button>
