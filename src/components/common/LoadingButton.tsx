@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface LoadingButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading: boolean;
@@ -22,7 +23,10 @@ export function LoadingButton({
       {...props}
       disabled={isDisabled}
       aria-busy={loading || undefined}
-      className={className}
+      className={cn(
+        'inline-flex items-center justify-center gap-2 transition-opacity duration-base disabled:opacity-60',
+        className
+      )}
     >
       {loading ? (
         <>

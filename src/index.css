@@ -6,10 +6,246 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+   BASE STYLES — 기본 요소 스타일
+   ============================================================================ */
 @layer base {
+  /* 기본 body 스타일 */
   body {
-    @apply text-gray-900 bg-white antialiased;
+    @apply bg-neutral-50 text-secondary-900 antialiased;
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI',
       Roboto, 'Noto Sans KR', sans-serif;
+  }
+
+  /* HTML 기본 스크롤 동작 */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* 링크 스타일 */
+  a {
+    @apply text-primary-600 hover:text-primary-700 transition-colors duration-base;
+    text-decoration: none;
+  }
+
+  /* 선택 색상 */
+  ::selection {
+    @apply bg-primary-200 text-secondary-900;
+  }
+}
+
+/* ============================================================================
+   COMPONENTS — 재사용 가능한 유틸리티
+   ============================================================================ */
+@layer components {
+  /* 컨테이너 — 최대 너비와 패딩 */
+  .container-base {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .container-lg {
+    @apply mx-auto max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .container-md {
+    @apply mx-auto max-w-3xl px-4 sm:px-6;
+  }
+
+  /* 제목 스타일 */
+  .heading-display-lg {
+    @apply text-display-lg text-secondary-900 font-display;
+  }
+
+  .heading-display-md {
+    @apply text-display-md text-secondary-900 font-display;
+  }
+
+  .heading-display-sm {
+    @apply text-display-sm text-secondary-900 font-display;
+  }
+
+  .heading-xl {
+    @apply text-heading-xl text-secondary-900 font-semibold;
+  }
+
+  .heading-lg {
+    @apply text-heading-lg text-secondary-900 font-semibold;
+  }
+
+  .heading-md {
+    @apply text-heading-md text-secondary-800 font-semibold;
+  }
+
+  .heading-sm {
+    @apply text-heading-sm text-secondary-800 font-semibold;
+  }
+
+  /* 본문 텍스트 */
+  .text-body-lg {
+    @apply text-body-lg text-secondary-700;
+  }
+
+  .text-body-md {
+    @apply text-body-md text-secondary-700;
+  }
+
+  .text-body-sm {
+    @apply text-body-sm text-secondary-600;
+  }
+
+  .text-body-xs {
+    @apply text-body-xs text-secondary-500;
+  }
+
+  /* 캡션 & 라벨 */
+  .text-caption-md {
+    @apply text-caption-md text-secondary-600 uppercase tracking-wide;
+  }
+
+  .text-caption-sm {
+    @apply text-caption-sm text-secondary-500;
+  }
+
+  /* 카드 스타일 */
+  .card {
+    @apply rounded-lg bg-white border border-secondary-200 shadow-card transition-shadow duration-base;
+  }
+
+  .card:hover {
+    @apply shadow-card-hover;
+  }
+
+  .card-interactive {
+    @apply cursor-pointer;
+  }
+
+  .card-interactive:hover {
+    @apply shadow-card-hover border-primary-300;
+  }
+
+  /* 버튼 기본 스타일 */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2.5 font-semibold transition-all duration-base;
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary-100 text-secondary-900 hover:bg-secondary-200 active:bg-secondary-300;
+  }
+
+  .btn-ghost {
+    @apply text-secondary-700 hover:bg-secondary-100 active:bg-secondary-200;
+  }
+
+  .btn-outline {
+    @apply border-2 border-secondary-300 text-secondary-700 hover:border-primary-500 hover:text-primary-600;
+  }
+
+  .btn-danger {
+    @apply bg-error-600 text-white hover:bg-error-700 active:bg-error-800;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm font-medium;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-lg font-semibold;
+  }
+
+  /* 입력 필드 기본 스타일 */
+  .input {
+    @apply rounded-lg border border-secondary-300 bg-white px-4 py-2.5 text-body-md transition-colors duration-base;
+    @apply placeholder:text-secondary-400;
+    @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-100;
+  }
+
+  .input-error {
+    @apply border-error-500 focus:ring-error-100;
+  }
+
+  .input-success {
+    @apply border-success-500 focus:ring-success-100;
+  }
+
+  /* 배지 */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-caption-sm font-semibold;
+  }
+
+  .badge-primary {
+    @apply bg-primary-100 text-primary-700;
+  }
+
+  .badge-secondary {
+    @apply bg-secondary-100 text-secondary-700;
+  }
+
+  .badge-success {
+    @apply bg-success-100 text-success-700;
+  }
+
+  .badge-warning {
+    @apply bg-warning-100 text-warning-700;
+  }
+
+  .badge-error {
+    @apply bg-error-100 text-error-700;
+  }
+
+  /* 격자 레이아웃 */
+  .grid-cols-auto {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  /* 구분선 */
+  .divider {
+    @apply border-t border-secondary-200;
+  }
+
+  /* 포커스 링 */
+  .focus-ring {
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500;
+  }
+}
+
+/* ============================================================================
+   UTILITIES — 추가 유틸리티
+   ============================================================================ */
+@layer utilities {
+  /* 텍스트 자르기 */
+  .line-clamp-1 {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+
+  .line-clamp-2 {
+    @apply line-clamp-2;
+  }
+
+  .line-clamp-3 {
+    @apply line-clamp-3;
+  }
+
+  /* 플렉스 센터 */
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+
+  /* 배경 페이드 */
+  .bg-fade {
+    @apply bg-gradient-to-b from-white to-transparent;
+  }
+
+  /* 포지션 센터 */
+  .absolute-center {
+    @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
   }
 }
