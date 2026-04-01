@@ -6,6 +6,10 @@
   "scripts": {
     "predev": "node scripts/generate-seo-assets.mjs",
     "dev": "vite",
+    "dev:infra": "docker compose up -d",
+    "dev:infra:down": "docker compose down",
+    "dev:web": "node scripts/dev-web.mjs",
+    "dev:local": "npm run dev:infra && npm run dev:web",
     "prebuild": "node scripts/generate-seo-assets.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",

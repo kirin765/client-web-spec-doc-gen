@@ -1,5 +1,41 @@
 # Deployment Notes
 
+## Local Development
+
+Use the root scripts for an integrated local stack:
+
+```bash
+npm run dev:local
+```
+
+Before that, install dependencies in both workspaces:
+
+```bash
+npm install
+cd server && npm install
+```
+
+You also need Docker Desktop or an equivalent `docker compose` runtime for Postgres and Redis.
+
+That command does three things:
+
+1. Starts Postgres and Redis with Docker Compose.
+2. Applies Prisma migrations and generates the Prisma client.
+3. Starts the frontend and backend dev servers together.
+
+If you want to run pieces separately:
+
+```bash
+npm run dev:infra
+npm run dev:web
+```
+
+To stop the local containers:
+
+```bash
+npm run dev:infra:down
+```
+
 ## Environment Variables
 
 Frontend:
