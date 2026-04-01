@@ -7,6 +7,18 @@ import {
 import { StorageService } from '../../common/storage/storage.service';
 import { CreateDeveloperDto } from './dto/create-developer.dto';
 import { UpdateDeveloperDto } from './dto/update-developer.dto';
+import { getCareerLevel } from './developer-career';
+
+interface DeveloperSearchFilters {
+  availabilityStatus?: string;
+  minBudget?: number;
+  maxBudget?: number;
+  minCareerYears?: number;
+  maxCareerYears?: number;
+  skills?: string[];
+  supportedProjectTypes?: string[];
+  careerLevels?: string[];
+}
 
 function asArray(value: unknown): string[] {
   return Array.isArray(value) ? (value as string[]) : [];
@@ -61,7 +73,55 @@ export class DevelopersService {
       next.regions = [data.regions[0]];
     }
 
+    if ('totalCareerYears' in data) {
+      next.totalCareerYears = data.totalCareerYears ?? null;
+    }
+
     return next;
+  }
+
+  private matchesCareerFilters(
+    developer: { totalCareerYears: number | null },
+    filters: DeveloperSearchFilters,
+  ) {
+    const hasCareerFilter =
+      (Array.isArray(filters.careerLevels) && filters.careerLevels.length > 0) ||
+      (typeof filters.minCareerYears === 'number' && Number.isFinite(filters.minCareerYears)) ||
+      (typeof filters.maxCareerYears === 'number' && Number.isFinite(filters.maxCareerYears));
+
+    if (!hasCareerFilter) {
+      return true;
+    }
+
+    const totalCareerYears = developer.totalCareerYears;
+    if (!Number.isFinite(totalCareerYears) || totalCareerYears == null || totalCareerYears <= 0) {
+      return false;
+    }
+
+    if (
+      typeof filters.minCareerYears === 'number' &&
+      Number.isFinite(filters.minCareerYears) &&
+      totalCareerYears < filters.minCareerYears
+    ) {
+      return false;
+    }
+
+    if (
+      typeof filters.maxCareerYears === 'number' &&
+      Number.isFinite(filters.maxCareerYears) &&
+      totalCareerYears > filters.maxCareerYears
+    ) {
+      return false;
+    }
+
+    if (Array.isArray(filters.careerLevels) && filters.careerLevels.length > 0) {
+      const careerLevel = getCareerLevel(totalCareerYears);
+      if (!careerLevel || !filters.careerLevels.includes(careerLevel)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private async signStorageUrls(urls: string[]) {
@@ -143,7 +203,9 @@ export class DevelopersService {
       supportedTimelines: asArray(developer.supportedTimelines),
       budgetMin: developer.budgetMin,
       budgetMax: developer.budgetMax,
+      totalCareerYears: developer.totalCareerYears ?? null,
       availabilityStatus: normalizeEnumToApi(developer.availabilityStatus),
+      careerLevel: getCareerLevel(developer.totalCareerYears),
       avgResponseHours: developer.avgResponseHours,
       portfolioLinks: asArray(developer.portfolioLinks),
       regionCode: developer.regionCode ?? null,
@@ -398,7 +460,7 @@ export class DevelopersService {
     });
   }
 
-  async search(filters: any) {
+  async search(filters: DeveloperSearchFilters) {
     const activeDevelopers = await this.prisma.developer.findMany({
       where: { active: true },
       include: {
@@ -459,6 +521,10 @@ export class DevelopersService {
           asArray(developer.supportedProjectTypes).includes(projectType),
         );
         if (!hasProjectType) return false;
+      }
+
+      if (!this.matchesCareerFilters(developer, filters)) {
+        return false;
       }
 
       return true;

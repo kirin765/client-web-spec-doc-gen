@@ -57,6 +57,11 @@ export class CreateDeveloperDto {
   @Min(0)
   budgetMax: number;
 
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  totalCareerYears?: number;
+
   @IsIn(['available', 'busy', 'limited'])
   @IsOptional()
   availabilityStatus?: AvailabilityStatus;
