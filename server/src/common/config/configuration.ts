@@ -28,8 +28,6 @@ export const configSchema = z.object({
   SMTP_FROM: z.string().email().optional(),
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),
   APP_URL: z.string().url().optional(),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  ADMIN_GOOGLE_EMAILS: z.string().optional(),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -67,12 +65,5 @@ export default () => {
     },
     frontendUrl: validated.FRONTEND_URL,
     appUrl: validated.APP_URL,
-    auth: {
-      googleClientId: validated.GOOGLE_CLIENT_ID,
-      adminGoogleEmails: (validated.ADMIN_GOOGLE_EMAILS ?? '')
-        .split(',')
-        .map((email) => email.trim().toLowerCase())
-        .filter(Boolean),
-    },
   };
 };

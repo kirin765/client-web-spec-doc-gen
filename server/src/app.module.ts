@@ -12,11 +12,6 @@ import { DevelopersModule } from './modules/developers/developers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ProposalsModule } from './modules/proposals/proposals.module';
-import { QuoteSharesModule } from './modules/quote-shares/quote-shares.module';
-import { CustomersModule } from './modules/customers/customers.module';
-import { RegionsModule } from './modules/regions/regions.module';
-import { ReviewsModule } from './modules/reviews/reviews.module';
-import { UploadsModule } from './modules/uploads/uploads.module';
 import configuration from './common/config/configuration';
 
 @Module({
@@ -34,12 +29,7 @@ import configuration from './common/config/configuration';
     DocumentsModule,
     MatchingModule,
     DevelopersModule,
-    CustomersModule,
-    RegionsModule,
     ProposalsModule,
-    QuoteSharesModule,
-    ReviewsModule,
-    UploadsModule,
     NotificationsModule,
     AdminModule,
     StorageModule,

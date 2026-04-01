@@ -8,29 +8,9 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/db/prisma.service';
 import { randomBytes } from 'crypto';
-import { OAuth2Client } from 'google-auth-library';
-
-export interface SessionUser {
-  id: string;
-  email: string;
-  role: string;
-  hasCustomerProfile: boolean;
-  customerProfileId: string | null;
-  hasExpertProfile: boolean;
-  expertProfileId: string | null;
-  hasDeveloperProfile: boolean;
-  developerProfileId: string | null;
-}
-
-export interface AuthSessionResponse {
-  token: string;
-  user: SessionUser;
-}
 
 @Injectable()
 export class AuthService {
-  private googleClient = new OAuth2Client();
-
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -58,7 +38,7 @@ export class AuthService {
     return { sent: true };
   }
 
-  async verifyMagicLink(token: string): Promise<AuthSessionResponse> {
+  async verifyMagicLink(token: string): Promise<{ token: string; email: string }> {
     const magicLink = await this.prisma.magicLinkToken.findUnique({
       where: { token },
     });
@@ -87,57 +67,10 @@ export class AuthService {
     });
 
     const jwt = this.createJwt(user.id, user.email, user.role);
-    const sessionUser = await this.getSessionUser(user.id);
-
-    return { token: jwt, user: sessionUser };
-  }
-
-  async loginWithGoogle(googleIdToken: string): Promise<AuthSessionResponse> {
-    const googleClientId = this.configService.get<string>('auth.googleClientId');
-
-    if (!googleClientId) {
-      throw new BadRequestException('Google login is not configured');
-    }
-
-    let payload: any = null;
-    try {
-      const ticket = await this.googleClient.verifyIdToken({
-        idToken: googleIdToken,
-        audience: googleClientId,
-      });
-      payload = ticket.getPayload();
-    } catch {
-      throw new UnauthorizedException('Invalid Google token');
-    }
-
-    if (!payload?.email || !payload?.email_verified) {
-      throw new UnauthorizedException('Google account email is not verified');
-    }
-
-    const email = String(payload.email).toLowerCase();
-    const adminGoogleEmails = this.configService.get<string[]>(
-      'auth.adminGoogleEmails',
-      [],
-    );
-    const nextRole = adminGoogleEmails.includes(email) ? 'ADMIN' : 'CLIENT';
-
-    const user = await this.prisma.user.upsert({
-      where: { email },
-      update: {
-        role: nextRole as any,
-        emailVerifiedAt: new Date(),
-      },
-      create: {
-        email,
-        role: nextRole as any,
-        emailVerifiedAt: new Date(),
-      },
-    });
-
-    const jwt = this.createJwt(user.id, user.email, user.role);
-    const sessionUser = await this.getSessionUser(user.id);
-
-    return { token: jwt, user: sessionUser };
+    return {
+      token: jwt,
+      email: user.email,
+    };
   }
 
   async validateJwt(payload: any): Promise<any> {
@@ -175,46 +108,8 @@ export class AuthService {
   }
 
   async getCurrentUser(userId: string) {
-    const user = await this.prisma.user.findUnique({
+    return this.prisma.user.findUnique({
       where: { id: userId },
     });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    return this.getSessionUser(user.id);
-  }
-
-  private async getSessionUser(userId: string): Promise<SessionUser> {
-    const [user, customerProfile, developer] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: userId },
-      }),
-      this.prisma.customerProfile.findUnique({
-        where: { userId },
-        select: { id: true },
-      }),
-      this.prisma.developer.findUnique({
-        where: { userId },
-        select: { id: true },
-      }),
-    ]);
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    return {
-      id: user.id,
-      email: user.email,
-      role: String(user.role).toLowerCase(),
-      hasCustomerProfile: Boolean(customerProfile?.id),
-      customerProfileId: customerProfile?.id ?? null,
-      hasExpertProfile: Boolean(developer?.id),
-      expertProfileId: developer?.id ?? null,
-      hasDeveloperProfile: Boolean(developer?.id),
-      developerProfileId: developer?.id ?? null,
-    };
   }
 }

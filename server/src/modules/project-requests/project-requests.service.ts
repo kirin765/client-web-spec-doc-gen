@@ -11,32 +11,9 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { CreateDraftDto, UpdateAnswersDto, SubmitProjectRequestDto } from './dto';
 import { normalizeAnswers, validateNormalizedSpec } from '../../common/utils/normalizer';
-import { normalizeEnumToApi } from '../../common/utils/enum-normalizer';
 
 function toPrismaJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
-}
-
-function toContactMethod(value: unknown) {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function mapProjectRequestSummary(projectRequest: any) {
-  return {
-    id: projectRequest.id,
-    projectName: projectRequest.projectName ?? null,
-    siteType: projectRequest.siteType ?? null,
-    contactMethod: projectRequest.contactMethod ?? null,
-    status: normalizeEnumToApi(projectRequest.status),
-    createdAt: projectRequest.createdAt.toISOString(),
-    updatedAt: projectRequest.updatedAt.toISOString(),
-    submittedAt: projectRequest.submittedAt?.toISOString() ?? null,
-  };
 }
 
 @Injectable()
@@ -49,12 +26,12 @@ export class ProjectRequestsService {
   ) {}
 
   async createDraft(
-    userId: string,
+    userId: string | undefined,
     dto: CreateDraftDto,
   ): Promise<any> {
     const projectRequest = await this.prisma.projectRequest.create({
       data: {
-        userId,
+        userId: userId || null,
         projectName: dto.projectName,
         siteType: dto.siteType,
         status: 'DRAFT',
@@ -85,9 +62,6 @@ export class ProjectRequestsService {
           ...projectRequest.rawAnswers,
           ...dto.rawAnswers,
         },
-        ...(Object.prototype.hasOwnProperty.call(dto.rawAnswers, 'contactMethod')
-          ? { contactMethod: toContactMethod(dto.rawAnswers.contactMethod) }
-          : {}),
       },
     });
 
@@ -133,7 +107,6 @@ export class ProjectRequestsService {
       data: {
         rawAnswers: toPrismaJson(dto.rawAnswers),
         normalizedSpec: toPrismaJson(normalizedSpec),
-        contactMethod: toContactMethod(dto.rawAnswers.contactMethod),
         status: 'SUBMITTED',
         submittedAt: new Date(),
         pricingVersion: pricingVersion?.version,
@@ -194,7 +167,7 @@ export class ProjectRequestsService {
     ]);
 
     return {
-      data: data.map(mapProjectRequestSummary),
+      data,
       total,
       pageSize,
       page,
@@ -215,38 +188,10 @@ export class ProjectRequestsService {
       },
     });
 
-    const quoteShares = await this.prisma.quoteShare.findMany({
-      where: { projectRequestId },
-      select: {
-        status: true,
-      },
-    });
-
-    const quoteSharesSummary = quoteShares.reduce(
-      (acc, item) => {
-        if (item.status === 'SENT') {
-          acc.sent += 1;
-        } else if (item.status === 'IN_PROGRESS') {
-          acc.inProgress += 1;
-        } else if (item.status === 'COMPLETED') {
-          acc.completed += 1;
-        } else {
-          acc.canceled += 1;
-        }
-        return acc;
-      },
-      { sent: 0, inProgress: 0, completed: 0, canceled: 0 },
-    );
-
     return {
-      ...mapProjectRequestSummary(projectRequest),
-      rawAnswers: projectRequest.rawAnswers,
-      normalizedSpec: projectRequest.normalizedSpec,
-      costEstimate: projectRequest.costEstimate,
-      pricingVersion: projectRequest.pricingVersion,
+      ...projectRequest,
       documents,
       matches,
-      quoteSharesSummary,
     };
   }
 }
