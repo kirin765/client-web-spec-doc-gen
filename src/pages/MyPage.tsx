@@ -1394,7 +1394,7 @@ export function MyPage() {
   );
 
   return (
-    <div className="bg-gray-50 px-6 py-10">
+    <div className="bg-slate-50 px-6 py-10">
       <Seo
         title={
           activeMode === 'expert'

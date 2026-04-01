@@ -98,7 +98,7 @@ export function AdminPage() {
   };
 
   return (
-    <div className="bg-gray-50 px-6 py-10">
+    <div className="bg-slate-50 px-6 py-10">
       <Seo
         title="관리자 대시보드 | 웹사이트 견적 자동 생성기"
         description="프로젝트 목록, 전문가 승인, 가격 룰을 관리하는 관리자 화면입니다."

@@ -81,12 +81,31 @@ export function Header() {
   const avatarLabel = user?.email?.slice(0, 1).toUpperCase() || 'G';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
+    <header
+      className={cn(
+        'sticky top-0 z-40 border-b backdrop-blur-sm transition-colors',
+        location.pathname === '/'
+          ? 'border-white/10 bg-navy-950/95'
+          : 'border-slate-200 bg-white/95',
+      )}
+    >
       <div className="mx-auto max-w-7xl px-6 py-4">
         <div className="flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2">
-            <Zap className="h-6 w-6 text-blue-600" />
-            <h1 className="text-lg font-bold text-gray-900">{t('app.title')}</h1>
+            <Zap
+              className={cn(
+                'h-6 w-6',
+                location.pathname === '/' ? 'text-blue-400' : 'text-blue-600',
+              )}
+            />
+            <h1
+              className={cn(
+                'text-lg font-bold',
+                location.pathname === '/' ? 'text-white' : 'text-gray-900',
+              )}
+            >
+              {t('app.title')}
+            </h1>
           </Link>
 
           <div className="flex items-center gap-3">

@@ -33,14 +33,14 @@ export function ExpertDirectoryPage() {
   }, []);
 
   return (
-    <div className="bg-gray-50 px-6 py-10">
+    <div className="bg-slate-50 px-6 py-10">
       <Seo
         title="전문가 리스트 | 웹사이트 견적 자동 생성기"
         description="등록된 전문가를 조회하고 상세 페이지에서 견적서를 보낼 수 있습니다."
         noIndex
       />
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-2xl bg-slate-900 px-8 py-10 text-white shadow-2xl">
+        <section className="rounded-2xl bg-navy-950 px-8 py-10 text-white shadow-2xl">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-200">
             전문가 조회
           </p>

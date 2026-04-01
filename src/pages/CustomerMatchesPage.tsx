@@ -39,7 +39,7 @@ export function CustomerMatchesPage() {
   const submittedProposalCount = proposals.filter((proposal) => proposal.projectId === project.id).length;
 
   return (
-    <div className="bg-gray-50 px-6 py-10">
+    <div className="bg-slate-50 px-6 py-10">
       <Seo
         title={`${project.projectName} 매칭 결과 | 웹사이트 견적 자동 생성기`}
         description="프로젝트에 가장 적합한 전문가 후보와 추천 이유, 예상 비용 범위를 확인하세요."
