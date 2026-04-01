@@ -29,6 +29,7 @@ function buildDraftFromDeveloper(developer?: DeveloperDraftInput | null): Develo
     supportedTimelines: developer?.supportedTimelines ?? [],
     budgetMin: developer?.budgetMin ?? 1_000_000,
     budgetMax: developer?.budgetMax ?? 5_000_000,
+    totalCareerYears: developer?.totalCareerYears ?? null,
     avgResponseHours: developer?.avgResponseHours ?? 24,
     availabilityStatus: developer?.availabilityStatus ?? 'available',
     portfolioLinks: developer?.portfolioLinks ?? [],
@@ -264,6 +265,19 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="주요 기능 경험"
+                  className="rounded-xl border border-gray-300 px-4 py-3"
+                />
+                <input
+                  type="number"
+                  value={developerForm.totalCareerYears ?? ''}
+                  onChange={(event) =>
+                    setDeveloperForm((current) => ({
+                      ...current,
+                      totalCareerYears:
+                        event.target.value === '' ? null : Number(event.target.value),
+                    }))
+                  }
+                  placeholder="총 경력 연차"
                   className="rounded-xl border border-gray-300 px-4 py-3"
                 />
                 <input

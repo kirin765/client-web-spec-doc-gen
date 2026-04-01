@@ -22,6 +22,19 @@ import type {
 import { formatRange } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 
+function getCareerLevelLabel(level: DeveloperProfileApi['careerLevel']) {
+  switch (level) {
+    case 'newcomer':
+      return '신입';
+    case 'senior':
+      return '시니어';
+    case 'veteran':
+      return '베테랑';
+    default:
+      return '미설정';
+  }
+}
+
 export function ExpertDetailPage() {
   const { developerId } = useParams<{ developerId: string }>();
   const token = useAuthStore((state) => state.token);
@@ -131,11 +144,17 @@ export function ExpertDetailPage() {
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-3 text-sm text-gray-600">
+                  <div>
+                    경력:{' '}
+                    {developer.totalCareerYears != null && developer.careerLevel
+                      ? `${developer.totalCareerYears}년 · ${getCareerLevelLabel(developer.careerLevel)}`
+                      : '미등록'}
+                  </div>
                   <div>활동 지역: {developer.region?.name || '미설정'}</div>
                   <div>FAQ: {developer.faqCount}개</div>
-                  <div>
-                    리뷰: {developer.reviewCount}개 / 평균 {developer.reviewAverage.toFixed(1)}점
-                  </div>
+                </div>
+                <div className="text-sm text-gray-600">
+                  리뷰: {developer.reviewCount}개 / 평균 {developer.reviewAverage.toFixed(1)}점
                 </div>
 
               <div className="flex flex-wrap gap-2">

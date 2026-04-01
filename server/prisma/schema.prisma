@@ -113,6 +113,7 @@ model Developer {
   supportedTimelines          Json               @default("[]") @map("supported_timelines")
   budgetMin                   Int                @default(0) @map("budget_min")
   budgetMax                   Int                @default(0) @map("budget_max")
+  totalCareerYears            Int?               @map("total_career_years")
   availabilityStatus          AvailabilityStatus @default(AVAILABLE) @map("availability_status")
   avgResponseHours            Int                @default(24) @map("avg_response_hours")
   portfolioLinks              Json               @default("[]") @map("portfolio_links")
@@ -133,6 +134,7 @@ model Developer {
 
   @@index([active, availabilityStatus])
   @@index([budgetMin, budgetMax])
+  @@index([totalCareerYears])
   @@index([regionCode])
   @@map("developers")
 }
