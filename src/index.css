@@ -53,57 +53,73 @@
 
   /* 제목 스타일 */
   .heading-display-lg {
-    @apply text-display-lg text-secondary-900 font-display;
+    @apply font-display text-[48px] font-bold text-secondary-900;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
   }
 
   .heading-display-md {
-    @apply text-display-md text-secondary-900 font-display;
+    @apply font-display text-[36px] font-bold text-secondary-900;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
   }
 
   .heading-display-sm {
-    @apply text-display-sm text-secondary-900 font-display;
+    @apply font-display text-[28px] font-bold text-secondary-900;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
   }
 
   .heading-xl {
-    @apply text-heading-xl text-secondary-900 font-semibold;
+    @apply text-[24px] font-semibold text-secondary-900;
+    line-height: 1.35;
   }
 
   .heading-lg {
-    @apply text-heading-lg text-secondary-900 font-semibold;
+    @apply text-[20px] font-semibold text-secondary-900;
+    line-height: 1.4;
   }
 
   .heading-md {
-    @apply text-heading-md text-secondary-800 font-semibold;
+    @apply text-[18px] font-semibold text-secondary-800;
+    line-height: 1.4;
   }
 
   .heading-sm {
-    @apply text-heading-sm text-secondary-800 font-semibold;
+    @apply text-[16px] font-semibold text-secondary-800;
+    line-height: 1.5;
   }
 
   /* 본문 텍스트 */
   .text-body-lg {
-    @apply text-body-lg text-secondary-700;
+    @apply font-body text-[16px] text-secondary-700;
+    line-height: 1.6;
   }
 
   .text-body-md {
-    @apply text-body-md text-secondary-700;
+    @apply font-body text-[15px] text-secondary-700;
+    line-height: 1.6;
   }
 
   .text-body-sm {
-    @apply text-body-sm text-secondary-600;
+    @apply font-body text-[14px] text-secondary-600;
+    line-height: 1.5;
   }
 
   .text-body-xs {
-    @apply text-body-xs text-secondary-500;
+    @apply font-body text-[12px] text-secondary-500;
+    line-height: 1.5;
   }
 
   /* 캡션 & 라벨 */
   .text-caption-md {
-    @apply text-caption-md text-secondary-600 uppercase tracking-wide;
+    @apply font-body text-[13px] font-medium uppercase tracking-wide text-secondary-600;
+    line-height: 1.5;
   }
 
   .text-caption-sm {
-    @apply text-caption-sm text-secondary-500;
+    @apply font-body text-[12px] font-medium text-secondary-500;
+    line-height: 1.4;
   }
 
   /* 카드 스타일 */
