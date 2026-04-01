@@ -217,19 +217,6 @@
    UTILITIES — 추가 유틸리티
    ============================================================================ */
 @layer utilities {
-  /* 텍스트 자르기 */
-  .line-clamp-1 {
-    @apply overflow-hidden text-ellipsis whitespace-nowrap;
-  }
-
-  .line-clamp-2 {
-    @apply line-clamp-2;
-  }
-
-  .line-clamp-3 {
-    @apply line-clamp-3;
-  }
-
   /* 플렉스 센터 */
   .flex-center {
     @apply flex items-center justify-center;
