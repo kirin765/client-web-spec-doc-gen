@@ -129,22 +129,22 @@ export function LandingPage() {
             ) : (
               <>
                 웹 프로젝트 견적,{' '}
-                <span className="text-blue-400">5분</span>이면
+                <span className="text-primary-400">5분</span>이면
                 <br className="hidden sm:block" /> 충분합니다
               </>
             )}
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 sm:text-xl">
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-secondary-400 sm:text-xl">
             {heroSubtitle}
           </p>
 
           {/* 신뢰 배지 */}
           {!isExpert && (
-            <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
+            <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-secondary-500">
               {(['무료 이용', '5분 완성', 'PDF 즉시 다운로드', '전문가 매칭'] as const).map((badge) => (
                 <span key={badge} className="flex items-center gap-1.5">
-                  <CheckCircle className="h-3.5 w-3.5 text-blue-400" />
+                  <CheckCircle className="h-3.5 w-3.5 text-primary-400" />
                   {badge}
                 </span>
               ))}
@@ -155,7 +155,7 @@ export function LandingPage() {
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <button
               onClick={handleStartQuote}
-              className="w-full rounded-xl bg-blue-500 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-400 hover:shadow-blue-400/30 sm:w-auto"
+              className="w-full rounded-xl bg-primary-500 px-8 py-4 text-base font-semibold text-white shadow-lg shadow-primary-500/20 transition-all hover:bg-primary-400 hover:shadow-primary-400/30 sm:w-auto"
             >
               {ctaLabel}
             </button>
@@ -170,7 +170,7 @@ export function LandingPage() {
           </div>
 
           {user && (
-            <p className="mt-6 text-sm text-slate-600">
+            <p className="mt-6 text-sm text-secondary-600">
               현재 모드: {isExpert ? '전문가' : '고객'}
             </p>
           )}
@@ -178,13 +178,13 @@ export function LandingPage() {
       </section>
 
       {/* ── 통계 섹션 ── */}
-      <section className="border-b border-slate-100 bg-white px-6 py-12">
+      <section className="border-b border-secondary-200 bg-white px-6 py-12">
         <div className="mx-auto max-w-3xl">
-          <div className="grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <div className="grid grid-cols-1 divide-y divide-secondary-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {STATS.map(({ value, label }) => (
               <div key={label} className="px-8 py-6 text-center">
-                <p className="text-4xl font-bold text-slate-900">{value}</p>
-                <p className="mt-1 text-slate-500">{label}</p>
+                <p className="text-4xl font-bold text-secondary-900">{value}</p>
+                <p className="mt-1 text-secondary-500">{label}</p>
               </div>
             ))}
           </div>
@@ -195,10 +195,10 @@ export function LandingPage() {
       <section className="px-6 py-20 sm:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
-            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">
+            <h2 className="text-heading-lg font-bold text-secondary-900 sm:text-heading-xl">
               이런 분들에게 필요합니다
             </h2>
-            <p className="mt-4 text-lg text-slate-500">
+            <p className="mt-4 text-body-md text-secondary-500">
               개발 경험 없이도 전문적인 프로젝트 문서를 만들 수 있습니다
             </p>
           </div>
@@ -207,13 +207,13 @@ export function LandingPage() {
             {FEATURES.map(({ icon: Icon, titleKey, descKey }) => (
               <div
                 key={titleKey}
-                className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-900/5 transition-shadow hover:shadow-md"
+                className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-secondary-900/5 transition-shadow hover:shadow-md"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50">
-                  <Icon className="h-6 w-6 text-blue-600" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50">
+                  <Icon className="h-6 w-6 text-primary-600" />
                 </div>
-                <h3 className="mt-5 text-lg font-semibold text-slate-900">{t(titleKey)}</h3>
-                <p className="mt-2 leading-relaxed text-slate-500">{t(descKey)}</p>
+                <h3 className="mt-5 text-body-md font-semibold text-secondary-900">{t(titleKey)}</h3>
+                <p className="mt-2 leading-relaxed text-secondary-500">{t(descKey)}</p>
               </div>
             ))}
           </div>
@@ -221,10 +221,10 @@ export function LandingPage() {
       </section>
 
       {/* ── 프로세스 섹션 ── */}
-      <section className="bg-slate-50 px-6 py-20 sm:py-28">
+      <section className="bg-secondary-50 px-6 py-20 sm:py-28">
         <div className="mx-auto max-w-5xl">
           <div className="mb-14 text-center">
-            <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl">
+            <h2 className="text-heading-lg font-bold text-secondary-900 sm:text-heading-xl">
               {t('landing.processTitle')}
             </h2>
           </div>
@@ -232,39 +232,39 @@ export function LandingPage() {
           <div className="grid items-start gap-8 md:grid-cols-[1fr,2.5rem,1fr,2.5rem,1fr]">
             {/* Step 1 */}
             <div className="text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-lg font-bold text-white shadow-lg">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary-900 text-lg font-bold text-white shadow-lg">
                 1
               </div>
-              <h3 className="mt-5 text-lg font-semibold text-slate-900">{t('landing.step1Title')}</h3>
-              <p className="mt-2 text-slate-500">{t('landing.step1Desc')}</p>
+              <h3 className="mt-5 text-body-md font-semibold text-secondary-900">{t('landing.step1Title')}</h3>
+              <p className="mt-2 text-secondary-500">{t('landing.step1Desc')}</p>
             </div>
 
             {/* 화살표 */}
             <div className="hidden items-center justify-center pt-4 md:flex">
-              <ArrowRight className="h-6 w-6 text-slate-300" />
+              <ArrowRight className="h-6 w-6 text-secondary-300" />
             </div>
 
             {/* Step 2 */}
             <div className="text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-lg font-bold text-white shadow-lg">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary-900 text-lg font-bold text-white shadow-lg">
                 2
               </div>
-              <h3 className="mt-5 text-lg font-semibold text-slate-900">{t('landing.step2Title')}</h3>
-              <p className="mt-2 text-slate-500">{t('landing.step2Desc')}</p>
+              <h3 className="mt-5 text-body-md font-semibold text-secondary-900">{t('landing.step2Title')}</h3>
+              <p className="mt-2 text-secondary-500">{t('landing.step2Desc')}</p>
             </div>
 
             {/* 화살표 */}
             <div className="hidden items-center justify-center pt-4 md:flex">
-              <ArrowRight className="h-6 w-6 text-slate-300" />
+              <ArrowRight className="h-6 w-6 text-secondary-300" />
             </div>
 
             {/* Step 3 */}
             <div className="text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-lg font-bold text-white shadow-lg">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary-900 text-lg font-bold text-white shadow-lg">
                 3
               </div>
-              <h3 className="mt-5 text-lg font-semibold text-slate-900">{t('landing.step3Title')}</h3>
-              <p className="mt-2 text-slate-500">{t('landing.step3Desc')}</p>
+              <h3 className="mt-5 text-body-md font-semibold text-secondary-900">{t('landing.step3Title')}</h3>
+              <p className="mt-2 text-secondary-500">{t('landing.step3Desc')}</p>
             </div>
           </div>
         </div>
@@ -274,8 +274,8 @@ export function LandingPage() {
       <section className="bg-navy-950 px-6 py-20 sm:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="mb-14 text-center">
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">왜 저희 서비스인가요?</h2>
-            <p className="mt-4 text-lg text-slate-400">수백 명의 사업주가 선택한 이유</p>
+            <h2 className="text-heading-lg font-bold text-white sm:text-heading-xl">왜 저희 서비스인가요?</h2>
+            <p className="mt-4 text-body-md text-secondary-400">수백 명의 사업주가 선택한 이유</p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
@@ -284,11 +284,11 @@ export function LandingPage() {
                 key={title}
                 className="rounded-2xl border border-white/8 bg-white/5 p-8 backdrop-blur-sm"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
-                  <Icon className="h-6 w-6 text-blue-400" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-500/20">
+                  <Icon className="h-6 w-6 text-primary-400" />
                 </div>
-                <h3 className="mt-5 text-lg font-semibold text-white">{title}</h3>
-                <p className="mt-2 leading-relaxed text-slate-400">{desc}</p>
+                <h3 className="mt-5 text-body-md font-semibold text-white">{title}</h3>
+                <p className="mt-2 leading-relaxed text-secondary-400">{desc}</p>
               </div>
             ))}
           </div>
@@ -298,17 +298,17 @@ export function LandingPage() {
       {/* ── 하단 CTA ── */}
       <section className="bg-white px-6 py-20 sm:py-28">
         <div className="mx-auto max-w-3xl">
-          <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 to-navy-950 p-12 text-center shadow-2xl">
+          <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-secondary-900 to-navy-950 p-12 text-center shadow-2xl">
             <div className="mb-4 flex justify-center">
-              <Clock className="h-8 w-8 text-blue-400" />
+              <Clock className="h-8 w-8 text-primary-400" />
             </div>
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">
+            <h2 className="text-heading-lg font-bold text-white sm:text-heading-xl">
               {t('landing.ctaTitle')}
             </h2>
-            <p className="mt-4 text-lg text-slate-400">{t('landing.ctaSubtitle')}</p>
+            <p className="mt-4 text-body-md text-secondary-400">{t('landing.ctaSubtitle')}</p>
             <button
               onClick={handleStartQuote}
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-blue-500 px-8 py-4 font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:bg-blue-400"
+              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-500 px-8 py-4 font-semibold text-white shadow-lg shadow-primary-500/25 transition-all hover:bg-primary-400"
             >
               <CheckCircle className="h-5 w-5" />
               {ctaLabel}
