@@ -24,18 +24,25 @@ import { calculateCost } from '@/lib/costCalculator';
 import { generateDocument } from '@/lib/documentGenerator';
 import { buildMatchingInput, matchDevelopers } from '@/lib/developerMatcher';
 import { downloadPdf } from '@/lib/downloadPdf';
+import { createDraftProjectRequest, submitProjectRequest } from '@/lib/api';
 import { CostSummary } from '@/components/result/CostSummary';
 import { RequirementsPreview } from '@/components/result/RequirementsPreview';
 import { DeveloperMatchSection } from '@/components/result/DeveloperMatchSection';
 import { Seo } from '@/components/seo/Seo';
+import { LoadingButton } from '@/components/common/LoadingButton';
 import { developerProfiles } from '@/data/developerProfiles';
-import { FileDown, Plus, Edit } from 'lucide-react';
+import { FileDown, Plus, Edit, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export function ResultPage() {
   const navigate = useNavigate();
   const { answers, resetQuote } = useQuoteStore();
+  const token = useAuthStore((state) => state.token);
   const [activeTab, setActiveTab] = useState<'cost' | 'document' | 'matching'>('cost');
+  const [isSavingQuote, setIsSavingQuote] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { t } = useTranslation('common');
   const hasAnswers = Boolean(answers && Object.keys(answers).length > 0);
 
@@ -63,6 +70,42 @@ export function ResultPage() {
 
   const handleEdit = () => {
     navigate('/wizard');
+  };
+
+  const handleSaveQuote = async () => {
+    if (!token) {
+      setSaveError('로그인 후 내 견적서에 저장할 수 있습니다.');
+      setSaveMessage(null);
+      return;
+    }
+
+    const projectName = reqDocument.clientInfo.projectName?.trim() || '이름 없는 프로젝트';
+    const siteType = String(answers.siteType ?? '').trim();
+
+    if (!siteType) {
+      setSaveError('사이트 유형 정보가 없어 견적서를 저장할 수 없습니다.');
+      setSaveMessage(null);
+      return;
+    }
+
+    setIsSavingQuote(true);
+    setSaveError(null);
+    setSaveMessage(null);
+
+    try {
+      const draft = await createDraftProjectRequest(token, {
+        projectName,
+        siteType,
+        description: reqDocument.projectOverview.description,
+      });
+
+      await submitProjectRequest(token, draft.id, answers);
+      setSaveMessage('내 견적서에 저장했습니다. 마이페이지에서 확인할 수 있습니다.');
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : '견적서 저장에 실패했습니다.');
+    } finally {
+      setIsSavingQuote(false);
+    }
   };
 
   return (
@@ -130,6 +173,16 @@ export function ResultPage() {
       {/* 액션 버튼 */}
       <section className="border-t bg-white px-6 py-8">
         <div className="mx-auto max-w-5xl">
+          {saveMessage ? (
+            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+              {saveMessage}
+            </div>
+          ) : null}
+          {saveError ? (
+            <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+              {saveError}
+            </div>
+          ) : null}
           <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
             <button
               onClick={() => downloadPdf(reqDocument)}
@@ -138,6 +191,17 @@ export function ResultPage() {
               <FileDown className="h-5 w-5" />
               {t('result.pdfDownload')}
             </button>
+            <LoadingButton
+              type="button"
+              loading={isSavingQuote}
+              loadingLabel="저장 중..."
+              onClick={() => void handleSaveQuote()}
+              data-testid="save-quote-button"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+            >
+              <Save className="h-5 w-5" />
+              내 견적서에 저장
+            </LoadingButton>
             <button
               onClick={handleEdit}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-6 py-3 font-semibold text-gray-700 transition-colors hover:bg-gray-50"
