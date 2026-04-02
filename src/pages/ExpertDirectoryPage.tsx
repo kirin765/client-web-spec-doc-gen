@@ -4,7 +4,7 @@ import { ArrowRight, Briefcase, Mail, RefreshCw } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
 import { LoadingButton } from '@/components/common/LoadingButton';
 import { listDevelopers } from '@/lib/api';
-import type { DeveloperProfileApi } from '@/types/api';
+import type { DeveloperProfileApi, ListDevelopersFilters } from '@/types/api';
 import { formatRange } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -37,6 +37,15 @@ function formatCareerSummary(developer: DeveloperProfileApi) {
   return `경력 ${developer.totalCareerYears}년 · ${getCareerLevelLabel(developer.careerLevel)}`;
 }
 
+function parseCareerYears(value: string) {
+  if (value.trim() === '') {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export function ExpertDirectoryPage() {
   const user = useAuthStore((state) => state.user);
   const [developers, setDevelopers] = useState<DeveloperProfileApi[]>([]);
@@ -46,27 +55,44 @@ export function ExpertDirectoryPage() {
   const [selectedCareerLevels, setSelectedCareerLevels] = useState<CareerLevel[]>([]);
   const [minCareerYears, setMinCareerYears] = useState('');
   const [maxCareerYears, setMaxCareerYears] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState<ListDevelopersFilters>({});
 
-  const loadDevelopers = useCallback(async () => {
+  const loadDevelopers = useCallback(async (filters: ListDevelopersFilters) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const list = await listDevelopers({
-        careerLevels: selectedCareerLevels,
-        minCareerYears: minCareerYears.trim() === '' ? undefined : Number(minCareerYears),
-        maxCareerYears: maxCareerYears.trim() === '' ? undefined : Number(maxCareerYears),
-      });
+      const list = await listDevelopers(filters);
       setDevelopers(list);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '전문가 목록을 불러오지 못했습니다.');
     } finally {
       setIsLoading(false);
     }
-  }, [maxCareerYears, minCareerYears, selectedCareerLevels]);
+  }, []);
 
   useEffect(() => {
-    void loadDevelopers();
-  }, [loadDevelopers]);
+    void loadDevelopers(appliedFilters);
+  }, [appliedFilters, loadDevelopers]);
+
+  const applyFilters = () => {
+    const nextMinCareerYears = parseCareerYears(minCareerYears);
+    const nextMaxCareerYears = parseCareerYears(maxCareerYears);
+
+    if (
+      typeof nextMinCareerYears === 'number' &&
+      typeof nextMaxCareerYears === 'number' &&
+      nextMinCareerYears > nextMaxCareerYears
+    ) {
+      setErrorMessage('최소 경력 연차는 최대 경력 연차보다 클 수 없습니다.');
+      return;
+    }
+
+    setAppliedFilters({
+      careerLevels: selectedCareerLevels,
+      minCareerYears: nextMinCareerYears,
+      maxCareerYears: nextMaxCareerYears,
+    });
+  };
 
   return (
     <div className="bg-gray-50 px-6 py-10">
@@ -124,7 +150,7 @@ export function ExpertDirectoryPage() {
               onClick={async () => {
                 setIsRefreshing(true);
                 try {
-                  await loadDevelopers();
+                  await loadDevelopers(appliedFilters);
                 } finally {
                   setIsRefreshing(false);
                 }
@@ -181,7 +207,7 @@ export function ExpertDirectoryPage() {
               <LoadingButton
                 loading={isLoading}
                 loadingLabel="검색 중..."
-                onClick={() => void loadDevelopers()}
+                onClick={applyFilters}
                 className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
               >
                 검색
