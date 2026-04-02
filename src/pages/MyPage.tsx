@@ -55,6 +55,35 @@ import type {
 } from '@/types/api';
 import { formatRange } from '@/lib/utils';
 
+function getCareerLevel(totalCareerYears: number | null | undefined) {
+  if (!Number.isFinite(totalCareerYears) || totalCareerYears == null || totalCareerYears <= 0) {
+    return null;
+  }
+
+  if (totalCareerYears <= 3) {
+    return 'newcomer';
+  }
+
+  if (totalCareerYears <= 9) {
+    return 'senior';
+  }
+
+  return 'veteran';
+}
+
+function getCareerLevelLabel(level: ReturnType<typeof getCareerLevel>) {
+  switch (level) {
+    case 'newcomer':
+      return '신입';
+    case 'senior':
+      return '시니어';
+    case 'veteran':
+      return '베테랑';
+    default:
+      return '미설정';
+  }
+}
+
 type SelectedDetail =
   | { kind: 'project'; data: ProjectRequestDetail }
   | { kind: 'quote'; data: QuoteShareItem };
@@ -133,6 +162,7 @@ type ExpertFormState = {
   supportedProjectTypes: string;
   budgetMin: string;
   budgetMax: string;
+  totalCareerYears: string;
   availabilityStatus: 'available' | 'busy' | 'limited';
   avgResponseHours: string;
   languages: string;
@@ -170,6 +200,7 @@ const INITIAL_EXPERT_FORM: ExpertFormState = {
   supportedProjectTypes: '',
   budgetMin: '1000000',
   budgetMax: '5000000',
+  totalCareerYears: '',
   availabilityStatus: 'available',
   avgResponseHours: '24',
   languages: 'ko',
@@ -293,6 +324,10 @@ export function MyPage() {
           supportedProjectTypes: joinCsv(nextDeveloperProfile.supportedProjectTypes),
           budgetMin: String(nextDeveloperProfile.budgetMin),
           budgetMax: String(nextDeveloperProfile.budgetMax),
+          totalCareerYears:
+            nextDeveloperProfile.totalCareerYears == null
+              ? ''
+              : String(nextDeveloperProfile.totalCareerYears),
           availabilityStatus: nextDeveloperProfile.availabilityStatus,
           avgResponseHours: String(nextDeveloperProfile.avgResponseHours),
           languages: joinCsv(nextDeveloperProfile.languages),
@@ -344,12 +379,17 @@ export function MyPage() {
     supportedProjectTypes: splitCsv(expertForm.supportedProjectTypes),
     budgetMin: Number(expertForm.budgetMin || 0),
     budgetMax: Number(expertForm.budgetMax || 0),
+    totalCareerYears:
+      expertForm.totalCareerYears.trim() === '' ? null : Number(expertForm.totalCareerYears),
     availabilityStatus: expertForm.availabilityStatus,
     avgResponseHours: Number(expertForm.avgResponseHours || 24),
     languages: splitCsv(expertForm.languages),
     portfolioLinks: [],
     regionCode: expertForm.regionCode || undefined,
   };
+  const expertCareerLevel = getCareerLevel(
+    expertForm.totalCareerYears.trim() === '' ? null : Number(expertForm.totalCareerYears),
+  );
 
   const handleViewDetail = async (quoteShareId: string) => {
     if (!token) return;
@@ -1011,6 +1051,20 @@ export function MyPage() {
             placeholder="최대 예산"
             className="rounded-xl border border-secondary-300 px-4 py-3"
           />
+          <div>
+            <input
+              value={expertForm.totalCareerYears}
+              onChange={(event) =>
+                setExpertForm((prev) => ({ ...prev, totalCareerYears: event.target.value }))
+              }
+              placeholder="총 경력 연차"
+              className="w-full rounded-xl border border-gray-300 px-4 py-3"
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              자동 분류: {getCareerLevelLabel(expertCareerLevel)} · 1~3년 신입 / 4~9년 시니어 / 10년+
+              베테랑
+            </p>
+          </div>
           <input
             value={expertForm.avgResponseHours}
             onChange={(event) =>

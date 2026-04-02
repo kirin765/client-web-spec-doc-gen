@@ -11,6 +11,7 @@ import type {
   DeveloperReviewsResponse,
   ExpertFaqItem,
   ExpertPortfolioItem,
+  ListDevelopersFilters,
   ProjectRequestListResponse,
   ProjectRequestDetail,
   QuoteShareItem,
@@ -88,8 +89,43 @@ export function getCurrentUser(token: string) {
   });
 }
 
-export function listDevelopers() {
-  return request<DeveloperProfileApi[]>('/developers');
+export function listDevelopers(filters: ListDevelopersFilters = {}) {
+  const query = new URLSearchParams();
+
+  if (filters.skills?.length) {
+    query.set('skills', filters.skills.join(','));
+  }
+
+  if (filters.projectTypes?.length) {
+    query.set('projectTypes', filters.projectTypes.join(','));
+  }
+
+  if (typeof filters.minBudget === 'number') {
+    query.set('minBudget', String(filters.minBudget));
+  }
+
+  if (typeof filters.maxBudget === 'number') {
+    query.set('maxBudget', String(filters.maxBudget));
+  }
+
+  if (filters.availabilityStatus) {
+    query.set('availabilityStatus', filters.availabilityStatus);
+  }
+
+  if (filters.careerLevels?.length) {
+    query.set('careerLevels', filters.careerLevels.join(','));
+  }
+
+  if (typeof filters.minCareerYears === 'number') {
+    query.set('minCareerYears', String(filters.minCareerYears));
+  }
+
+  if (typeof filters.maxCareerYears === 'number') {
+    query.set('maxCareerYears', String(filters.maxCareerYears));
+  }
+
+  const queryString = query.toString();
+  return request<DeveloperProfileApi[]>(`/developers${queryString ? `?${queryString}` : ''}`);
 }
 
 export function getDeveloperById(developerId: string) {

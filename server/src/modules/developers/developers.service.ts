@@ -6,8 +6,20 @@ import {
 } from '../../common/utils/enum-normalizer';
 import { CreateDeveloperDto } from './dto/create-developer.dto';
 import { UpdateDeveloperDto } from './dto/update-developer.dto';
+import { getCareerLevel } from './developer-career';
 import { UpsertExpertFaqDto } from './dto/upsert-expert-faq.dto';
 import { UpsertExpertPortfolioDto } from './dto/upsert-expert-portfolio.dto';
+
+interface DeveloperSearchFilters {
+  skills?: string[];
+  supportedProjectTypes?: string[];
+  minBudget?: number;
+  maxBudget?: number;
+  availabilityStatus?: string;
+  careerLevels?: string[];
+  minCareerYears?: number;
+  maxCareerYears?: number;
+}
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
@@ -49,6 +61,50 @@ function mapSignedImage(storageUrl: string) {
 export class DevelopersService {
   constructor(private prisma: PrismaService) {}
 
+  private matchesCareerFilters(
+    developer: { totalCareerYears: number | null },
+    filters: DeveloperSearchFilters,
+  ) {
+    const hasCareerFilter =
+      (Array.isArray(filters.careerLevels) && filters.careerLevels.length > 0) ||
+      (typeof filters.minCareerYears === 'number' && Number.isFinite(filters.minCareerYears)) ||
+      (typeof filters.maxCareerYears === 'number' && Number.isFinite(filters.maxCareerYears));
+
+    if (!hasCareerFilter) {
+      return true;
+    }
+
+    const totalCareerYears = developer.totalCareerYears;
+    if (!Number.isFinite(totalCareerYears) || totalCareerYears == null || totalCareerYears <= 0) {
+      return false;
+    }
+
+    if (
+      typeof filters.minCareerYears === 'number' &&
+      Number.isFinite(filters.minCareerYears) &&
+      totalCareerYears < filters.minCareerYears
+    ) {
+      return false;
+    }
+
+    if (
+      typeof filters.maxCareerYears === 'number' &&
+      Number.isFinite(filters.maxCareerYears) &&
+      totalCareerYears > filters.maxCareerYears
+    ) {
+      return false;
+    }
+
+    if (Array.isArray(filters.careerLevels) && filters.careerLevels.length > 0) {
+      const careerLevel = getCareerLevel(totalCareerYears);
+      if (!careerLevel || !filters.careerLevels.includes(careerLevel)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   private buildDeveloperMutationData(
     data: Partial<CreateDeveloperDto> & { regionCode?: string },
   ) {
@@ -81,6 +137,9 @@ export class DevelopersService {
         : {}),
       ...(data.budgetMin !== undefined ? { budgetMin: data.budgetMin } : {}),
       ...(data.budgetMax !== undefined ? { budgetMax: data.budgetMax } : {}),
+      ...(data.totalCareerYears !== undefined
+        ? { totalCareerYears: data.totalCareerYears ?? null }
+        : {}),
       ...(data.availabilityStatus !== undefined
         ? {
             availabilityStatus: normalizeEnumFromApi(data.availabilityStatus) as
@@ -115,6 +174,7 @@ export class DevelopersService {
       supportedTimelines: unknown;
       budgetMin: number;
       budgetMax: number;
+      totalCareerYears: number | null;
       availabilityStatus: string;
       avgResponseHours: number;
       portfolioLinks: unknown;
@@ -165,7 +225,9 @@ export class DevelopersService {
       supportedTimelines: toStringArray(developer.supportedTimelines),
       budgetMin: developer.budgetMin,
       budgetMax: developer.budgetMax,
+      totalCareerYears: developer.totalCareerYears ?? null,
       availabilityStatus: normalizeEnumToApi(developer.availabilityStatus),
+      careerLevel: getCareerLevel(developer.totalCareerYears),
       avgResponseHours: developer.avgResponseHours,
       portfolioLinks: toStringArray(developer.portfolioLinks),
       regionCode: developer.regionCode ?? null,
@@ -235,6 +297,7 @@ export class DevelopersService {
         supportedTimelines: data.supportedTimelines ?? [],
         budgetMin: data.budgetMin,
         budgetMax: data.budgetMax,
+        totalCareerYears: data.totalCareerYears ?? null,
         availabilityStatus: normalizeEnumFromApi(
           data.availabilityStatus ?? 'available',
         ) as 'AVAILABLE' | 'BUSY' | 'LIMITED',
@@ -265,6 +328,7 @@ export class DevelopersService {
         supportedTimelines: data.supportedTimelines ?? [],
         budgetMin: data.budgetMin,
         budgetMax: data.budgetMax,
+        totalCareerYears: data.totalCareerYears ?? null,
         availabilityStatus: normalizeEnumFromApi(
           data.availabilityStatus ?? 'available',
         ) as 'AVAILABLE' | 'BUSY' | 'LIMITED',
@@ -290,6 +354,7 @@ export class DevelopersService {
         supportedTimelines: data.supportedTimelines ?? [],
         budgetMin: data.budgetMin,
         budgetMax: data.budgetMax,
+        totalCareerYears: data.totalCareerYears ?? null,
         availabilityStatus: normalizeEnumFromApi(
           data.availabilityStatus ?? 'available',
         ) as 'AVAILABLE' | 'BUSY' | 'LIMITED',
@@ -401,13 +466,7 @@ export class DevelopersService {
     });
   }
 
-  async search(filters: {
-    skills?: string[];
-    supportedProjectTypes?: string[];
-    minBudget?: number;
-    maxBudget?: number;
-    availabilityStatus?: string;
-  }) {
+  async search(filters: DeveloperSearchFilters) {
     const developers = await this.prisma.developer.findMany({
       where: {
         active: true,
@@ -456,7 +515,11 @@ export class DevelopersService {
               projectTypes.includes(projectType),
             );
 
-      return matchesSkills && matchesProjectTypes;
+      return (
+        matchesSkills &&
+        matchesProjectTypes &&
+        this.matchesCareerFilters(developer, filters)
+      );
     });
 
     return Promise.all(filtered.map((developer) => this.mapDeveloperProfile(developer)));

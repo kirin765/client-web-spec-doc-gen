@@ -129,8 +129,17 @@ export const useMarketplaceStore = create<MarketplaceStore>()(
             supportedTimelines: normalizeList(input.supportedTimelines),
             budgetMin: input.budgetMin,
             budgetMax: input.budgetMax,
+            totalCareerYears: input.totalCareerYears,
             avgResponseHours: input.avgResponseHours,
             availabilityStatus: input.availabilityStatus,
+            careerLevel:
+              input.totalCareerYears == null || input.totalCareerYears <= 0
+                ? null
+                : input.totalCareerYears <= 3
+                  ? 'newcomer'
+                  : input.totalCareerYears <= 9
+                    ? 'senior'
+                    : 'veteran',
             portfolioLinks: normalizeList(input.portfolioLinks),
             regions: normalizeList(input.regions),
             languages: normalizeList(input.languages),
