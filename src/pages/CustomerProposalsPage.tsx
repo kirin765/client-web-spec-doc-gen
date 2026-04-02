@@ -66,7 +66,7 @@ export function CustomerProposalsPage() {
           <section className="rounded-2xl border border-dashed border-secondary-300 bg-white p-10 text-center">
             <h2 className="text-heading-md font-bold text-secondary-900">아직 도착한 제안이 없습니다</h2>
             <p className="mt-3 text-secondary-600">
-              전문가 워크스페이스에서 이 프로젝트에 대한 첫 견적을 제출해 보세요.
+              전문가 마이페이지에서 이 프로젝트에 대한 첫 견적을 제출해 보세요.
             </p>
           </section>
         ) : (

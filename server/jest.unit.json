@@ -1,0 +1,13 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testMatch": ["<rootDir>/src/**/*.spec.ts", "<rootDir>/src/**/*.test.ts"],
+  "testPathIgnorePatterns": ["<rootDir>/test/", "<rootDir>/dist/", "/node_modules/"],
+  "moduleNameMapper": {
+    "^@shared/(.*)$": "<rootDir>/../shared/src/$1"
+  },
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  }
+}
