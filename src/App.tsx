@@ -71,6 +71,7 @@ export default function App() {
                 </RequireAuth>
               }
             />
+            {/* Legacy alias kept so older links still resolve into the unified my page flow. */}
             <Route path="/developers/workspace" element={<Navigate to="/mypage" replace />} />
             <Route
               path="/admin"

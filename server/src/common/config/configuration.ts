@@ -9,6 +9,20 @@
 
 import { z } from 'zod';
 
+const booleanFromEnv = z.preprocess((value) => {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+
+  return value;
+}, z.boolean());
+
 export const configSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3001),
@@ -31,6 +45,7 @@ export const configSchema = z.object({
   APP_URL: z.string().url().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   ADMIN_GOOGLE_EMAILS: z.string().optional(),
+  E2E_AUTH_ENABLED: booleanFromEnv.default(false),
   E2E_TEST_MODE: z
     .union([z.literal('true'), z.literal('false')])
     .optional()
@@ -75,6 +90,7 @@ export default () => {
     appUrl: validated.APP_URL,
     googleClientId: validated.GOOGLE_CLIENT_ID,
     adminGoogleEmails: validated.ADMIN_GOOGLE_EMAILS,
+    e2eAuthEnabled: validated.E2E_AUTH_ENABLED,
     e2eTestMode: validated.E2E_TEST_MODE ?? false,
   };
 };

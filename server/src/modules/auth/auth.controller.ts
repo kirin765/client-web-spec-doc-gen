@@ -7,11 +7,13 @@ import {
   Body,
   UseGuards,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { User } from './decorators/user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
+import type { Role } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -75,5 +77,28 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async getCurrentUser(@User() user: any) {
     return this.authService.getCurrentUser(user.id);
+  }
+
+  @Public()
+  @Post('test/session')
+  async issueTestSession(
+    @Body()
+    body: {
+      email: string;
+      role?: Role;
+      createCustomerProfile?: boolean;
+      createDeveloperProfile?: boolean;
+      developerActive?: boolean;
+    },
+  ) {
+    if (!this.authService.isE2EAuthEnabled()) {
+      throw new NotFoundException('Not found');
+    }
+
+    if (!body.email) {
+      throw new BadRequestException('Email is required');
+    }
+
+    return this.authService.issueTestSession(body);
   }
 }

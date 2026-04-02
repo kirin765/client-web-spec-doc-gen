@@ -3,14 +3,24 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/db/prisma.service';
 import { randomBytes } from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
+import type { Role } from '@prisma/client';
 import { normalizeEnumToApi } from '../../common/utils/enum-normalizer';
 import { TEST_USER_FIXTURES } from '../../../test/e2e-test-data';
+
+interface IssueTestSessionOptions {
+  email: string;
+  role?: Role;
+  createCustomerProfile?: boolean;
+  createDeveloperProfile?: boolean;
+  developerActive?: boolean;
+}
 
 @Injectable()
 export class AuthService {
@@ -43,6 +53,14 @@ export class AuthService {
     return (
       this.configService.get<boolean>('e2eTestMode') === true ||
       this.configService.get<boolean>('E2E_TEST_MODE') === true
+    );
+  }
+
+  isE2EAuthEnabled() {
+    return (
+      this.configService.get<string>('nodeEnv') === 'test' ||
+      this.configService.get<boolean>('e2eAuthEnabled') === true ||
+      this.isE2ETestModeEnabled()
     );
   }
 
@@ -237,6 +255,112 @@ export class AuthService {
     return {
       token: this.createJwt(user.id, user.email, user.role),
       user: this.mapSessionUser(user),
+    };
+  }
+
+  async issueTestSession(options: IssueTestSessionOptions) {
+    const role = options.role ?? 'CLIENT';
+    const email = options.email.trim().toLowerCase();
+
+    if (!email) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const displayName = email.split('@')[0] || 'e2e-user';
+
+    const user = await this.prisma.user.upsert({
+      where: { email },
+      update: {
+        role,
+      },
+      create: {
+        email,
+        role,
+        name: displayName,
+      },
+    });
+
+    if (options.createCustomerProfile) {
+      await this.prisma.customerProfile.upsert({
+        where: { userId: user.id },
+        update: {
+          displayName: `${displayName} customer`,
+          introduction: 'E2E customer profile',
+        },
+        create: {
+          userId: user.id,
+          displayName: `${displayName} customer`,
+          introduction: 'E2E customer profile',
+        },
+      });
+    }
+
+    if (options.createDeveloperProfile) {
+      await this.prisma.developer.upsert({
+        where: { userId: user.id },
+        update: {
+          displayName: `${displayName} studio`,
+          headline: 'E2E developer profile',
+          introduction: 'Generated for end-to-end tests.',
+          type: 'FREELANCER',
+          active: options.developerActive ?? true,
+          budgetMin: 1000000,
+          budgetMax: 5000000,
+          languages: ['ko'],
+          skills: ['react', 'nestjs'],
+          specialties: ['e2e'],
+          supportedProjectTypes: ['landing', 'webapp'],
+          supportedCoreFeatures: ['contactForm'],
+          supportedEcommerceFeatures: [],
+          supportedDesignStyles: ['minimal'],
+          supportedDesignComplexities: ['template'],
+          supportedTimelines: ['standard'],
+          portfolioLinks: [],
+          regions: [],
+        },
+        create: {
+          userId: user.id,
+          displayName: `${displayName} studio`,
+          headline: 'E2E developer profile',
+          introduction: 'Generated for end-to-end tests.',
+          type: 'FREELANCER',
+          active: options.developerActive ?? true,
+          budgetMin: 1000000,
+          budgetMax: 5000000,
+          languages: ['ko'],
+          skills: ['react', 'nestjs'],
+          specialties: ['e2e'],
+          supportedProjectTypes: ['landing', 'webapp'],
+          supportedCoreFeatures: ['contactForm'],
+          supportedEcommerceFeatures: [],
+          supportedDesignStyles: ['minimal'],
+          supportedDesignComplexities: ['template'],
+          supportedTimelines: ['standard'],
+          portfolioLinks: [],
+          regions: [],
+        },
+      });
+    }
+
+    const sessionUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        customerProfile: {
+          select: { id: true },
+        },
+        developerProfile: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!sessionUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      token: this.createJwt(user.id, user.email, user.role),
+      user: this.mapSessionUser(sessionUser),
     };
   }
 

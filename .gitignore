@@ -11,3 +11,6 @@ client_secret.*
 client_secret_*.json
 test.pdf
 Screenshot*
+playwright-report
+test-results
+.playwright/

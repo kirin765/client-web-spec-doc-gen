@@ -4,7 +4,8 @@ import readline from 'node:readline';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const ROOT_CWD = process.cwd();
-const BACKEND_PORT = 3001;
+const BACKEND_PORT = Number(process.env.BACKEND_PORT || process.env.PORT || 3001);
+const FRONTEND_PORT = Number(process.env.FRONTEND_PORT || 5173);
 const STARTUP_TIMEOUT_MS = 120000;
 
 function prefixStream(stream, label) {
@@ -106,13 +107,14 @@ async function runCommand(command, args, cwd, label) {
 
 async function main() {
   const backendCwd = `${ROOT_CWD}/server`;
+  const backendStartScript = process.env.BACKEND_START_SCRIPT?.trim() || 'start:dev';
 
   await waitForTcpConnection('127.0.0.1', 5432, STARTUP_TIMEOUT_MS);
   await waitForTcpConnection('127.0.0.1', 6379, STARTUP_TIMEOUT_MS);
-  await runCommand('npm', ['exec', '--', 'prisma', 'generate'], backendCwd, 'prisma');
-  await runCommand('npm', ['exec', '--', 'prisma', 'migrate', 'deploy'], backendCwd, 'migrate');
+  await runCommand('npm', ['run', 'prisma:generate'], backendCwd, 'prisma');
+  await runCommand('npm', ['run', 'prisma:migrate:deploy'], backendCwd, 'migrate');
 
-  const backend = spawnCommand('npm', ['run', 'start:dev'], backendCwd, 'api');
+  const backend = spawnCommand('npm', ['run', backendStartScript], backendCwd, 'api');
   const backendExit = waitForExit(backend, 'api');
 
   try {
@@ -129,7 +131,7 @@ async function main() {
 
   const frontend = spawnCommand(
     'npm',
-    ['run', 'dev', '--', '--host', '0.0.0.0', '--port', '5173', '--strictPort'],
+    ['run', 'dev', '--', '--host', '0.0.0.0', '--port', String(FRONTEND_PORT), '--strictPort'],
     ROOT_CWD,
     'web',
   );
