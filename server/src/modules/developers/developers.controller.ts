@@ -33,6 +33,9 @@ export class DevelopersController {
     @Query('minBudget') minBudget?: string,
     @Query('maxBudget') maxBudget?: string,
     @Query('availabilityStatus') availabilityStatus?: string,
+    @Query('careerLevels') careerLevels?: string,
+    @Query('minCareerYears') minCareerYears?: string,
+    @Query('maxCareerYears') maxCareerYears?: string,
   ) {
     return this.developersService.search({
       skills: skills ? skills.split(',').map((value) => value.trim()).filter(Boolean) : undefined,
@@ -42,6 +45,11 @@ export class DevelopersController {
       minBudget: minBudget ? parseInt(minBudget, 10) : undefined,
       maxBudget: maxBudget ? parseInt(maxBudget, 10) : undefined,
       availabilityStatus,
+      careerLevels: careerLevels
+        ? careerLevels.split(',').map((value) => value.trim()).filter(Boolean)
+        : undefined,
+      minCareerYears: minCareerYears ? parseInt(minCareerYears, 10) : undefined,
+      maxCareerYears: maxCareerYears ? parseInt(maxCareerYears, 10) : undefined,
     });
   }
 

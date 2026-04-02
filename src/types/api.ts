@@ -55,7 +55,9 @@ export interface DeveloperProfileApi {
   supportedTimelines: string[];
   budgetMin: number;
   budgetMax: number;
+  totalCareerYears: number | null;
   availabilityStatus: 'available' | 'busy' | 'limited';
+  careerLevel: 'newcomer' | 'senior' | 'veteran' | null;
   avgResponseHours: number;
   portfolioLinks: string[];
   regionCode: string | null;
@@ -328,6 +330,7 @@ export interface UpsertDeveloperProfilePayload {
   supportedTimelines?: string[];
   budgetMin: number;
   budgetMax: number;
+  totalCareerYears?: number | null;
   availabilityStatus?: 'available' | 'busy' | 'limited';
   avgResponseHours?: number;
   portfolioLinks?: string[];
@@ -335,6 +338,17 @@ export interface UpsertDeveloperProfilePayload {
   regionCode?: string;
   languages?: string[];
   introduction?: string;
+}
+
+export interface ListDevelopersFilters {
+  skills?: string[];
+  projectTypes?: string[];
+  minBudget?: number;
+  maxBudget?: number;
+  availabilityStatus?: 'available' | 'busy' | 'limited';
+  careerLevels?: Array<'newcomer' | 'senior' | 'veteran'>;
+  minCareerYears?: number;
+  maxCareerYears?: number;
 }
 
 export interface UpsertCustomerProfilePayload {

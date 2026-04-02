@@ -1,12 +1,50 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Briefcase, Mail, RefreshCw } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
 import { LoadingButton } from '@/components/common/LoadingButton';
 import { listDevelopers } from '@/lib/api';
-import type { DeveloperProfileApi } from '@/types/api';
+import type { DeveloperProfileApi, ListDevelopersFilters } from '@/types/api';
 import { formatRange } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
+
+type CareerLevel = 'newcomer' | 'senior' | 'veteran';
+
+const CAREER_LEVEL_OPTIONS: Array<{ value: CareerLevel; label: string }> = [
+  { value: 'newcomer', label: '신입' },
+  { value: 'senior', label: '시니어' },
+  { value: 'veteran', label: '베테랑' },
+];
+
+function getCareerLevelLabel(level: DeveloperProfileApi['careerLevel']) {
+  switch (level) {
+    case 'newcomer':
+      return '신입';
+    case 'senior':
+      return '시니어';
+    case 'veteran':
+      return '베테랑';
+    default:
+      return '미설정';
+  }
+}
+
+function formatCareerSummary(developer: DeveloperProfileApi) {
+  if (developer.totalCareerYears == null || !developer.careerLevel) {
+    return '경력 정보 미등록';
+  }
+
+  return `경력 ${developer.totalCareerYears}년 · ${getCareerLevelLabel(developer.careerLevel)}`;
+}
+
+function parseCareerYears(value: string) {
+  if (value.trim() === '') {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
 
 export function ExpertDirectoryPage() {
   const user = useAuthStore((state) => state.user);
@@ -14,23 +52,47 @@ export function ExpertDirectoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedCareerLevels, setSelectedCareerLevels] = useState<CareerLevel[]>([]);
+  const [minCareerYears, setMinCareerYears] = useState('');
+  const [maxCareerYears, setMaxCareerYears] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState<ListDevelopersFilters>({});
 
-  const loadDevelopers = async () => {
+  const loadDevelopers = useCallback(async (filters: ListDevelopersFilters) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const list = await listDevelopers();
+      const list = await listDevelopers(filters);
       setDevelopers(list);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '전문가 목록을 불러오지 못했습니다.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    void loadDevelopers();
-  }, []);
+    void loadDevelopers(appliedFilters);
+  }, [appliedFilters, loadDevelopers]);
+
+  const applyFilters = () => {
+    const nextMinCareerYears = parseCareerYears(minCareerYears);
+    const nextMaxCareerYears = parseCareerYears(maxCareerYears);
+
+    if (
+      typeof nextMinCareerYears === 'number' &&
+      typeof nextMaxCareerYears === 'number' &&
+      nextMinCareerYears > nextMaxCareerYears
+    ) {
+      setErrorMessage('최소 경력 연차는 최대 경력 연차보다 클 수 없습니다.');
+      return;
+    }
+
+    setAppliedFilters({
+      careerLevels: selectedCareerLevels,
+      minCareerYears: nextMinCareerYears,
+      maxCareerYears: nextMaxCareerYears,
+    });
+  };
 
   return (
     <div className="bg-neutral-50 px-6 py-10">
@@ -88,7 +150,7 @@ export function ExpertDirectoryPage() {
               onClick={async () => {
                 setIsRefreshing(true);
                 try {
-                  await loadDevelopers();
+                  await loadDevelopers(appliedFilters);
                 } finally {
                   setIsRefreshing(false);
                 }
@@ -98,6 +160,59 @@ export function ExpertDirectoryPage() {
               <RefreshCw className="h-4 w-4" />
               새로고침
             </LoadingButton>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="flex flex-wrap gap-2">
+              {CAREER_LEVEL_OPTIONS.map((option) => {
+                const active = selectedCareerLevels.includes(option.value);
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      setSelectedCareerLevels((current) =>
+                        current.includes(option.value)
+                          ? current.filter((value) => value !== option.value)
+                          : [...current, option.value],
+                      )
+                    }
+                    className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                      active
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-gray-300 bg-white text-gray-700'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+              <input
+                type="number"
+                value={minCareerYears}
+                onChange={(event) => setMinCareerYears(event.target.value)}
+                placeholder="최소 경력 연차"
+                className="rounded-xl border border-gray-300 px-4 py-3"
+              />
+              <input
+                type="number"
+                value={maxCareerYears}
+                onChange={(event) => setMaxCareerYears(event.target.value)}
+                placeholder="최대 경력 연차"
+                className="rounded-xl border border-gray-300 px-4 py-3"
+              />
+              <LoadingButton
+                loading={isLoading}
+                loadingLabel="검색 중..."
+                onClick={applyFilters}
+                className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white"
+              >
+                검색
+              </LoadingButton>
+            </div>
           </div>
 
           {isLoading ? (
@@ -134,6 +249,7 @@ export function ExpertDirectoryPage() {
 
                   <div className="mt-4 text-body-sm text-secondary-600">
                     <p>유형: {developer.type === 'agency' ? '에이전시' : '프리랜서'}</p>
+                    <p className="mt-1">{formatCareerSummary(developer)}</p>
                     <p className="mt-1">예산: {formatRange(developer.budgetMin, developer.budgetMax)}</p>
                     <p className="mt-1">활동 지역: {developer.region?.name || '미설정'}</p>
                     <p className="mt-1">
