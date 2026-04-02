@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   CheckCircle2,
   ChevronRight,
@@ -831,6 +832,14 @@ export function MyPage() {
                       >
                         상세
                       </button>
+                      {share.chatRoomId && share.canChat ? (
+                        <Link
+                          to={`/chat/${share.chatRoomId}`}
+                          className="rounded-lg bg-primary-600 px-3 py-2 text-body-sm font-semibold text-white"
+                        >
+                          채팅
+                        </Link>
+                      ) : null}
                       {share.status === 'sent' ? (
                         <button
                           type="button"
@@ -1301,7 +1310,11 @@ export function MyPage() {
             </div>
           ) : (
             inbox.map((share) => (
-              <article key={share.id} className="rounded-xl border border-secondary-200 p-4">
+              <article
+                key={share.id}
+                data-testid={`inbox-quote-share-${share.id}`}
+                className="rounded-xl border border-secondary-200 p-4"
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-semibold text-secondary-900">
@@ -1319,10 +1332,20 @@ export function MyPage() {
                     >
                       상세
                     </button>
+                    {share.chatRoomId && share.canChat ? (
+                      <Link
+                        to={`/chat/${share.chatRoomId}`}
+                        data-testid={`open-chat-room-${share.chatRoomId}`}
+                        className="rounded-lg bg-primary-600 px-3 py-2 text-body-sm font-semibold text-white"
+                      >
+                        채팅
+                      </Link>
+                    ) : null}
                     {share.status === 'sent' ? (
                       <>
                         <button
                           type="button"
+                          data-testid={`start-quote-share-${share.id}`}
                           onClick={async () => {
                             await approveQuoteShareByDeveloper(token, share.id);
                             await loadData();
@@ -1348,6 +1371,7 @@ export function MyPage() {
                     {share.canComplete ? (
                       <button
                         type="button"
+                        data-testid={`complete-quote-share-${share.id}`}
                         onClick={async () => {
                           await completeQuoteShareByDeveloper(token, share.id);
                           await loadData();

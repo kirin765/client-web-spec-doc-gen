@@ -8,14 +8,86 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/db/prisma.service';
 import { randomBytes } from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
+import { normalizeEnumToApi } from '../../common/utils/enum-normalizer';
+import { TEST_USER_FIXTURES } from '../../../test/e2e-test-data';
 
 @Injectable()
 export class AuthService {
+  private googleClient: OAuth2Client;
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    this.googleClient = new OAuth2Client(
+      this.configService.get<string>('GOOGLE_CLIENT_ID') ||
+        this.configService.get<string>('googleClientId'),
+    );
+  }
+
+  private getAdminEmails() {
+    const raw =
+      this.configService.get<string>('ADMIN_GOOGLE_EMAILS') ||
+      this.configService.get<string>('adminGoogleEmails') ||
+      '';
+
+    return raw
+      .split(',')
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  private isE2ETestModeEnabled() {
+    return (
+      this.configService.get<boolean>('e2eTestMode') === true ||
+      this.configService.get<boolean>('E2E_TEST_MODE') === true
+    );
+  }
+
+  private mapSessionUser(user: {
+    id: string;
+    email: string;
+    role: string;
+    customerProfile?: { id: string } | null;
+    developerProfile?: { id: string } | null;
+  }) {
+    const customerProfileId = user.customerProfile?.id ?? null;
+    const developerProfileId = user.developerProfile?.id ?? null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: normalizeEnumToApi(user.role),
+      hasCustomerProfile: Boolean(customerProfileId),
+      customerProfileId,
+      hasExpertProfile: Boolean(developerProfileId),
+      expertProfileId: developerProfileId,
+      hasDeveloperProfile: Boolean(developerProfileId),
+      developerProfileId,
+    };
+  }
+
+  private async getUserWithProfiles(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        customerProfile: {
+          select: { id: true },
+        },
+        developerProfile: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
+  }
 
   async login(email: string): Promise<{ sent: boolean }> {
     const token = this.generateMagicLinkToken();
@@ -74,18 +146,97 @@ export class AuthService {
   }
 
   async validateJwt(payload: any): Promise<any> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: payload.sub },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
+    const user = await this.getUserWithProfiles(payload.sub);
 
     return {
       id: user.id,
       email: user.email,
       role: user.role,
+    };
+  }
+
+  async loginWithGoogleIdToken(idToken: string) {
+    const googleClientId =
+      this.configService.get<string>('GOOGLE_CLIENT_ID') ||
+      this.configService.get<string>('googleClientId');
+
+    if (!googleClientId) {
+      throw new UnauthorizedException('GOOGLE_CLIENT_ID is not configured');
+    }
+
+    const ticket = await this.googleClient.verifyIdToken({
+      idToken,
+      audience: googleClientId,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload?.email) {
+      throw new UnauthorizedException('Google account email is required');
+    }
+
+    const email = payload.email.toLowerCase();
+    const adminEmails = this.getAdminEmails();
+    const role = adminEmails.includes(email) ? 'ADMIN' : 'CLIENT';
+
+    const user = await this.prisma.user.upsert({
+      where: { email },
+      update: {
+        name: payload.name ?? undefined,
+        role,
+        emailVerifiedAt: new Date(),
+      },
+      create: {
+        email,
+        name: payload.name ?? undefined,
+        role,
+        emailVerifiedAt: new Date(),
+      },
+      include: {
+        customerProfile: {
+          select: { id: true },
+        },
+        developerProfile: {
+          select: { id: true },
+        },
+      },
+    });
+
+    return {
+      token: this.createJwt(user.id, user.email, user.role),
+      user: this.mapSessionUser(user),
+    };
+  }
+
+  async loginAsTestUser(userKey: 'customer' | 'developer' | 'admin') {
+    if (!this.isE2ETestModeEnabled()) {
+      throw new UnauthorizedException('Test login is only available in test mode');
+    }
+
+    const fixture = TEST_USER_FIXTURES[userKey];
+    if (!fixture) {
+      throw new BadRequestException('Unknown test user');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: fixture.email },
+      include: {
+        customerProfile: {
+          select: { id: true },
+        },
+        developerProfile: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Seeded test user not found');
+    }
+
+    return {
+      token: this.createJwt(user.id, user.email, user.role),
+      user: this.mapSessionUser(user),
     };
   }
 
@@ -108,8 +259,7 @@ export class AuthService {
   }
 
   async getCurrentUser(userId: string) {
-    return this.prisma.user.findUnique({
-      where: { id: userId },
-    });
+    const user = await this.getUserWithProfiles(userId);
+    return this.mapSessionUser(user);
   }
 }

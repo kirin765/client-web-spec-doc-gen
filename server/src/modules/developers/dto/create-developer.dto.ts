@@ -83,5 +83,9 @@ export class CreateDeveloperDto {
 
   @IsString()
   @IsOptional()
+  regionCode?: string;
+
+  @IsString()
+  @IsOptional()
   introduction?: string;
 }

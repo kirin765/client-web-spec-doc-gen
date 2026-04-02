@@ -25,23 +25,25 @@ export class ProjectRequestsController {
   ) {}
 
   @Post('draft')
+  @UseGuards(JwtAuthGuard)
   async createDraft(
     @Body() createDraftDto: CreateDraftDto,
-    @User() user?: any,
+    @User() user: any,
   ) {
     return this.projectRequestsService.createDraft(
-      user?.id,
+      user.id,
       createDraftDto,
     );
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   async createDraftLegacy(
     @Body() createDraftDto: CreateDraftDto,
-    @User() user?: any,
+    @User() user: any,
   ) {
     return this.projectRequestsService.createDraft(
-      user?.id,
+      user.id,
       createDraftDto,
     );
   }
