@@ -23,6 +23,10 @@ model User {
   developerProfile Developer?
   customerProfile  CustomerProfile?
   writtenReviews   Review[]
+  customerChatRooms ChatRoom[]             @relation("CustomerChatRooms")
+  developerChatRooms ChatRoom[]            @relation("DeveloperChatRooms")
+  chatParticipantStates ChatParticipantState[]
+  sentChatMessages  ChatMessage[]          @relation("ChatMessageSender")
 
   @@map("users")
 }
@@ -220,6 +224,7 @@ model QuoteShare {
   projectRequest    ProjectRequest       @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
   developer         Developer            @relation(fields: [developerId], references: [id], onDelete: Cascade)
   review            Review?
+  chatRoom          ChatRoom?
 
   @@unique([projectRequestId, developerId])
   @@index([projectRequestId, status])
@@ -238,6 +243,82 @@ enum QuoteShareStatus {
 enum QuoteShareCanceledBy {
   USER
   DEVELOPER
+}
+
+model ChatRoom {
+  id              String                 @id @default(cuid())
+  quoteShareId    String                 @unique @map("quote_share_id")
+  customerUserId  String                 @map("customer_user_id")
+  developerUserId String                 @map("developer_user_id")
+  status          ChatRoomStatus         @default(OPEN)
+  lastMessageAt   DateTime?              @map("last_message_at")
+  createdAt       DateTime               @default(now()) @map("created_at")
+  updatedAt       DateTime               @updatedAt @map("updated_at")
+
+  quoteShare         QuoteShare             @relation(fields: [quoteShareId], references: [id], onDelete: Cascade)
+  customerUser       User                   @relation("CustomerChatRooms", fields: [customerUserId], references: [id], onDelete: Cascade)
+  developerUser      User                   @relation("DeveloperChatRooms", fields: [developerUserId], references: [id], onDelete: Cascade)
+  messages           ChatMessage[]
+  participantStates  ChatParticipantState[]
+
+  @@index([customerUserId, updatedAt])
+  @@index([developerUserId, updatedAt])
+  @@index([status, updatedAt])
+  @@map("chat_rooms")
+}
+
+enum ChatRoomStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+model ChatMessage {
+  id           String           @id @default(cuid())
+  roomId       String           @map("room_id")
+  senderUserId String?          @map("sender_user_id")
+  senderRole   ChatSenderRole   @map("sender_role")
+  type         ChatMessageType  @default(TEXT)
+  body         String
+  metadata     Json?
+  createdAt    DateTime         @default(now()) @map("created_at")
+  editedAt     DateTime?        @map("edited_at")
+  deletedAt    DateTime?        @map("deleted_at")
+
+  room         ChatRoom         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderUser   User?            @relation("ChatMessageSender", fields: [senderUserId], references: [id], onDelete: SetNull)
+
+  @@index([roomId, createdAt])
+  @@index([senderUserId, createdAt])
+  @@map("chat_messages")
+}
+
+enum ChatSenderRole {
+  CUSTOMER
+  DEVELOPER
+  SYSTEM
+}
+
+enum ChatMessageType {
+  TEXT
+  SYSTEM
+}
+
+model ChatParticipantState {
+  roomId             String    @map("room_id")
+  userId             String    @map("user_id")
+  lastReadMessageId  String?   @map("last_read_message_id")
+  lastReadAt         DateTime? @map("last_read_at")
+  muted              Boolean   @default(false)
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  room               ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([roomId, userId])
+  @@index([userId, updatedAt])
+  @@map("chat_participant_states")
 }
 
 model PricingRuleVersion {
@@ -269,28 +350,28 @@ model CustomerProfile {
 }
 
 model ExpertFaq {
-  id         String   @id @default(cuid())
-  developerId String  @map("developer_id")
-  question   String
-  answer     String
-  sortOrder  Int      @default(0) @map("sort_order")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id          String    @id @default(cuid())
+  developerId String    @map("developer_id")
+  question    String
+  answer      String
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
-  developer  Developer @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  developer   Developer @relation(fields: [developerId], references: [id], onDelete: Cascade)
 
   @@index([developerId, sortOrder])
   @@map("expert_faqs")
 }
 
 model ExpertPortfolio {
-  id          String   @id @default(cuid())
-  developerId String   @map("developer_id")
+  id          String    @id @default(cuid())
+  developerId String    @map("developer_id")
   description String
-  imageUrls   Json     @default("[]") @map("image_urls")
-  sortOrder   Int      @default(0) @map("sort_order")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  imageUrls   Json      @default("[]") @map("image_urls")
+  sortOrder   Int       @default(0) @map("sort_order")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   developer   Developer @relation(fields: [developerId], references: [id], onDelete: Cascade)
 
@@ -299,14 +380,14 @@ model ExpertPortfolio {
 }
 
 model Review {
-  id             String   @id @default(cuid())
-  quoteShareId   String   @unique @map("quote_share_id")
-  developerId    String   @map("developer_id")
-  customerUserId String   @map("customer_user_id")
+  id             String     @id @default(cuid())
+  quoteShareId   String     @unique @map("quote_share_id")
+  developerId    String     @map("developer_id")
+  customerUserId String     @map("customer_user_id")
   rating         Int
   content        String
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
 
   quoteShare     QuoteShare @relation(fields: [quoteShareId], references: [id], onDelete: Cascade)
   developer      Developer  @relation(fields: [developerId], references: [id], onDelete: Cascade)

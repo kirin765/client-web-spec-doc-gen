@@ -247,6 +247,8 @@ export interface QuoteShareItem {
   canOpenContact: boolean;
   canComplete: boolean;
   canReview: boolean;
+  canChat: boolean;
+  chatRoomId: string | null;
   reviewId: string | null;
   contactMethod: string | null;
   counterpartyEmail: string | null;
@@ -263,6 +265,55 @@ export interface QuoteShareItem {
     type: 'freelancer' | 'agency';
     availabilityStatus: 'available' | 'busy' | 'limited';
   } | null;
+}
+
+export interface ChatMessageItem {
+  id: string;
+  roomId: string;
+  senderUserId: string | null;
+  senderRole: 'customer' | 'developer' | 'system';
+  type: 'text' | 'system';
+  body: string;
+  createdAt: string;
+  editedAt: string | null;
+  deletedAt: string | null;
+  isMine: boolean;
+}
+
+export interface ChatRoomSummary {
+  id: string;
+  quoteShareId: string;
+  status: 'open' | 'closed' | 'archived';
+  canSendMessage: boolean;
+  unreadCount: number;
+  updatedAt: string;
+  lastMessageAt: string | null;
+  projectRequest: {
+    id: string;
+    projectName: string | null;
+    siteType: string | null;
+    status: string;
+  } | null;
+  quoteShare: {
+    id: string;
+    status: string;
+  };
+  counterparty: {
+    userId: string;
+    role: 'customer' | 'developer';
+    displayName: string;
+    headline: string;
+  };
+  lastMessage: ChatMessageItem | null;
+  participantState: {
+    lastReadMessageId: string | null;
+    lastReadAt: string | null;
+  };
+}
+
+export interface ChatMessagesResponse {
+  data: ChatMessageItem[];
+  nextCursor: string | null;
 }
 
 export interface UpsertDeveloperProfilePayload {
