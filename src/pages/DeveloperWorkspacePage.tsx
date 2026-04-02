@@ -89,21 +89,21 @@ export function DeveloperWorkspacePage() {
   };
 
   return (
-    <div className="bg-gray-50 px-6 py-10">
+    <div className="bg-secondary-50 px-6 py-10">
       <Seo
         title="전문가 워크스페이스 | 웹사이트 견적 자동 생성기"
         description="전문가 프로필을 등록하고 매칭된 의뢰에 제안을 제출하세요."
         noIndex
       />
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
+        <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-secondary-100">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-blue-600">전문가 워크스페이스</p>
-              <h1 className="mt-2 text-3xl font-bold text-gray-900">
+              <p className="text-body-sm font-semibold text-primary-600">전문가 워크스페이스</p>
+              <h1 className="mt-2 text-heading-lg font-bold text-secondary-900">
                 전문가 등록, 매칭 확인, 제안 제출
               </h1>
-              <p className="mt-3 text-gray-600">
+              <p className="mt-3 text-secondary-600">
                 관리자가 승인한 전문가만 실제로 제안을 보낼 수 있습니다.
               </p>
             </div>
@@ -113,7 +113,7 @@ export function DeveloperWorkspacePage() {
                 setDeveloperForm(buildDraftFromDeveloper(null));
                 selectDeveloper(null);
               }}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 font-semibold text-gray-700"
+              className="inline-flex items-center gap-2 rounded-lg border border-secondary-300 px-4 py-2 font-semibold text-secondary-700"
             >
               <UserRoundPlus className="h-4 w-4" />
               새 전문가 등록
@@ -122,8 +122,8 @@ export function DeveloperWorkspacePage() {
         </section>
 
         <div className="grid gap-8 xl:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-            <h2 className="text-lg font-bold text-gray-900">등록된 전문가</h2>
+          <aside className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-secondary-100">
+            <h2 className="text-body-lg font-bold text-secondary-900">등록된 전문가</h2>
             <div className="mt-4 space-y-3">
               {developers.map((developer) => (
                 <button
@@ -131,17 +131,17 @@ export function DeveloperWorkspacePage() {
                   onClick={() => selectDeveloper(developer.id)}
                   className={`w-full rounded-xl border px-4 py-3 text-left ${
                     selectedDeveloperId === developer.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200'
+                      ? 'border-primary-500 bg-primary-50'
+                      : 'border-secondary-200'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-gray-900">{developer.displayName}</p>
-                      <p className="mt-1 text-sm text-gray-500">{developer.headline}</p>
+                      <p className="font-semibold text-secondary-900">{developer.displayName}</p>
+                      <p className="mt-1 text-body-sm text-secondary-500">{developer.headline}</p>
                     </div>
                     <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      className={`rounded-full px-2.5 py-1 text-caption-sm font-semibold ${
                         developer.active
                           ? 'bg-emerald-50 text-emerald-700'
                           : 'bg-amber-50 text-amber-700'
@@ -156,8 +156,8 @@ export function DeveloperWorkspacePage() {
           </aside>
 
           <div className="space-y-8">
-            <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">
+            <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-secondary-100">
+              <h2 className="text-heading-sm font-bold text-secondary-900">
                 {selectedDeveloper ? '프로필 수정' : '전문가 등록'}
               </h2>
 
@@ -171,7 +171,7 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="이름 또는 회사명"
-                  className="rounded-xl border border-gray-300 px-4 py-3"
+                  className="rounded-xl border border-secondary-300 px-4 py-3"
                 />
                 <input
                   value={developerForm.headline}
@@ -182,7 +182,7 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="한 줄 소개"
-                  className="rounded-xl border border-gray-300 px-4 py-3"
+                  className="rounded-xl border border-secondary-300 px-4 py-3"
                 />
                 <select
                   value={developerForm.type}
@@ -192,7 +192,7 @@ export function DeveloperWorkspacePage() {
                       type: event.target.value as DeveloperDraftInput['type'],
                     }))
                   }
-                  className="rounded-xl border border-gray-300 px-4 py-3"
+                  className="rounded-xl border border-secondary-300 px-4 py-3"
                 >
                   <option value="freelancer">프리랜서</option>
                   <option value="agency">에이전시</option>
@@ -205,7 +205,7 @@ export function DeveloperWorkspacePage() {
                       availabilityStatus: event.target.value as DeveloperDraftInput['availabilityStatus'],
                     }))
                   }
-                  className="rounded-xl border border-gray-300 px-4 py-3"
+                  className="rounded-xl border border-secondary-300 px-4 py-3"
                 >
                   <option value="available">가능</option>
                   <option value="limited">부분 가능</option>
@@ -220,7 +220,7 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="소개"
-                  className="md:col-span-2 rounded-xl border border-gray-300 px-4 py-3"
+                  className="md:col-span-2 rounded-xl border border-secondary-300 px-4 py-3"
                   rows={4}
                 />
                 <input
@@ -232,7 +232,7 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="기술 스택 (쉼표 구분)"
-                  className="rounded-xl border border-gray-300 px-4 py-3"
+                  className="rounded-xl border border-secondary-300 px-4 py-3"
                 />
                 <input
                   defaultValue={developerForm.specialties.join(', ')}
@@ -243,7 +243,7 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="전문 분야 (쉼표 구분)"
-                  className="rounded-xl border border-gray-300 px-4 py-3"
+                  className="rounded-xl border border-secondary-300 px-4 py-3"
                 />
                 <input
                   defaultValue={developerForm.supportedProjectTypes.join(', ')}
@@ -254,7 +254,7 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="가능 프로젝트 유형"
-                  className="rounded-xl border border-gray-300 px-4 py-3"
+                  className="rounded-xl border border-secondary-300 px-4 py-3"
                 />
                 <input
                   defaultValue={developerForm.supportedCoreFeatures.join(', ')}
@@ -265,7 +265,7 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="주요 기능 경험"
-                  className="rounded-xl border border-gray-300 px-4 py-3"
+                  className="rounded-xl border border-secondary-300 px-4 py-3"
                 />
                 <input
                   type="number"
@@ -290,7 +290,7 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="최소 예산"
-                  className="rounded-xl border border-gray-300 px-4 py-3"
+                  className="rounded-xl border border-secondary-300 px-4 py-3"
                 />
                 <input
                   type="number"
@@ -302,7 +302,7 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="최대 예산"
-                  className="rounded-xl border border-gray-300 px-4 py-3"
+                  className="rounded-xl border border-secondary-300 px-4 py-3"
                 />
                 <input
                   defaultValue={developerForm.portfolioLinks.join(', ')}
@@ -313,14 +313,14 @@ export function DeveloperWorkspacePage() {
                     }))
                   }
                   placeholder="포트폴리오 링크"
-                  className="md:col-span-2 rounded-xl border border-gray-300 px-4 py-3"
+                  className="md:col-span-2 rounded-xl border border-secondary-300 px-4 py-3"
                 />
               </div>
 
               <div className="mt-6">
                 <button
                   onClick={handleDeveloperSave}
-                  className="rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white"
+                  className="rounded-lg bg-primary-600 px-5 py-3 font-semibold text-white"
                 >
                   저장하고 사용하기
                 </button>
@@ -329,9 +329,9 @@ export function DeveloperWorkspacePage() {
 
             <section className="space-y-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">매칭된 의뢰</h2>
+                <h2 className="text-heading-sm font-bold text-secondary-900">매칭된 의뢰</h2>
                 {selectedDeveloper && !selectedDeveloper.active ? (
-                  <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-700">
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-body-sm font-semibold text-amber-700">
                     승인 대기 중
                   </span>
                 ) : null}
@@ -341,19 +341,19 @@ export function DeveloperWorkspacePage() {
                 matchedProjects.map(({ project, match, proposal }) => (
                   <article
                     key={project.id}
-                    className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
+                    className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-secondary-100"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
-                        <h3 className="text-xl font-bold text-gray-900">{project.projectName}</h3>
-                        <p className="mt-2 text-gray-600">{project.summary}</p>
+                        <h3 className="text-heading-sm font-bold text-secondary-900">{project.projectName}</h3>
+                        <p className="mt-2 text-secondary-600">{project.summary}</p>
                       </div>
-                      <div className="rounded-full bg-blue-50 px-3 py-1 text-sm font-bold text-blue-700">
+                      <div className="rounded-full bg-primary-50 px-3 py-1 text-body-sm font-bold text-primary-700">
                         {Math.round(match?.score ?? 0)}점
                       </div>
                     </div>
 
-                    <div className="mt-4 grid gap-3 md:grid-cols-3 text-sm text-gray-600">
+                    <div className="mt-4 grid gap-3 md:grid-cols-3 text-body-sm text-secondary-600">
                       <div>예산: {formatRange(project.costEstimate.totalMin, project.costEstimate.totalMax)}</div>
                       <div>상태: {project.status}</div>
                       <div>기존 제안: {proposal ? '있음' : '없음'}</div>
@@ -370,7 +370,7 @@ export function DeveloperWorkspacePage() {
                           }))
                         }
                         placeholder="최소 금액"
-                        className="rounded-xl border border-gray-300 px-4 py-3"
+                        className="rounded-xl border border-secondary-300 px-4 py-3"
                       />
                       <input
                         type="number"
@@ -382,7 +382,7 @@ export function DeveloperWorkspacePage() {
                           }))
                         }
                         placeholder="최대 금액"
-                        className="rounded-xl border border-gray-300 px-4 py-3"
+                        className="rounded-xl border border-secondary-300 px-4 py-3"
                       />
                       <input
                         defaultValue={proposal?.durationText ?? '4~6주'}
@@ -393,7 +393,7 @@ export function DeveloperWorkspacePage() {
                           }))
                         }
                         placeholder="예상 기간"
-                        className="rounded-xl border border-gray-300 px-4 py-3"
+                        className="rounded-xl border border-secondary-300 px-4 py-3"
                       />
                       <input
                         defaultValue={proposal?.portfolioLinks.join(', ') ?? ''}
@@ -404,7 +404,7 @@ export function DeveloperWorkspacePage() {
                           }))
                         }
                         placeholder="포트폴리오 링크"
-                        className="rounded-xl border border-gray-300 px-4 py-3"
+                        className="rounded-xl border border-secondary-300 px-4 py-3"
                       />
                       <textarea
                         defaultValue={proposal?.message ?? ''}
@@ -415,7 +415,7 @@ export function DeveloperWorkspacePage() {
                           }))
                         }
                         placeholder="고객에게 전달할 메시지"
-                        className="md:col-span-2 rounded-xl border border-gray-300 px-4 py-3"
+                        className="md:col-span-2 rounded-xl border border-secondary-300 px-4 py-3"
                         rows={4}
                       />
                     </div>
@@ -446,7 +446,7 @@ export function DeveloperWorkspacePage() {
                             ),
                           })
                         }
-                        className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+                        className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-secondary-300"
                       >
                         <Send className="h-4 w-4" />
                         제안 제출
@@ -455,7 +455,7 @@ export function DeveloperWorkspacePage() {
                   </article>
                 ))
               ) : (
-                <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-gray-600">
+                <div className="rounded-2xl border border-dashed border-secondary-300 bg-white p-10 text-center text-secondary-600">
                   {selectedDeveloper
                     ? '현재 선택한 전문가에게 매칭된 의뢰가 없습니다.'
                     : '왼쪽에서 전문가를 선택하거나 새로 등록해 주세요.'}

@@ -39,17 +39,15 @@ export function StepNavigation() {
   };
 
   return (
-    <div className="border-t bg-white px-6 py-4">
+    <div className="border-t border-secondary-200 bg-white px-6 py-6">
       <div className="flex items-center justify-between gap-4">
         {/* 이전 버튼 */}
         <button
           onClick={prevStep}
           disabled={isFirstStep}
           className={cn(
-            'flex items-center gap-2 rounded-lg px-6 py-2 font-medium transition-colors',
-            isFirstStep
-              ? 'cursor-not-allowed text-gray-400'
-              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+            'btn btn-outline flex items-center gap-2',
+            isFirstStep && 'opacity-50 cursor-not-allowed hover:border-secondary-300'
           )}
         >
           <ArrowLeft className="h-4 w-4" />
@@ -57,8 +55,10 @@ export function StepNavigation() {
         </button>
 
         {/* 진행상황 표시 */}
-        <div className="text-sm text-gray-600">
-          {currentStep + 1} / {questionCategories.length}
+        <div className="text-body-sm text-secondary-600 font-medium">
+          <span className="text-primary-600 font-semibold">{currentStep + 1}</span>
+          {' / '}
+          <span>{questionCategories.length}</span>
         </div>
 
         {/* 다음/결과보기 버튼 */}
@@ -66,10 +66,10 @@ export function StepNavigation() {
           onClick={handleNext}
           disabled={!isStepComplete()}
           className={cn(
-            'flex items-center gap-2 rounded-lg px-6 py-2 font-medium transition-colors',
+            'btn flex items-center gap-2',
             isStepComplete()
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'cursor-not-allowed bg-gray-300 text-gray-500'
+              ? 'btn-primary'
+              : 'bg-secondary-200 text-secondary-400 cursor-not-allowed hover:bg-secondary-200'
           )}
         >
           {isLastStep ? (

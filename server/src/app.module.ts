@@ -13,9 +13,10 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { AdminModule } from './modules/admin/admin.module';
 import { ProposalsModule } from './modules/proposals/proposals.module';
 import { QuoteSharesModule } from './modules/quote-shares/quote-shares.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { CustomersModule } from './modules/customers/customers.module';
-import { RegionsModule } from './modules/regions/regions.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { RegionsModule } from './modules/regions/regions.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import configuration from './common/config/configuration';
 
@@ -35,10 +36,11 @@ import configuration from './common/config/configuration';
     MatchingModule,
     DevelopersModule,
     CustomersModule,
-    RegionsModule,
     ProposalsModule,
     QuoteSharesModule,
+    ChatModule,
     ReviewsModule,
+    RegionsModule,
     UploadsModule,
     NotificationsModule,
     AdminModule,

@@ -17,6 +17,7 @@ export const configSchema = z.object({
   JWT_EXPIRY: z.string().default('24h'),
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_DB: z.coerce.number().default(0),
   AWS_REGION: z.string().default('us-east-1'),
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
@@ -30,6 +31,10 @@ export const configSchema = z.object({
   APP_URL: z.string().url().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   ADMIN_GOOGLE_EMAILS: z.string().optional(),
+  E2E_TEST_MODE: z
+    .union([z.literal('true'), z.literal('false')])
+    .optional()
+    .transform((value) => value === 'true'),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -51,6 +56,7 @@ export default () => {
     redis: {
       host: validated.REDIS_HOST,
       port: validated.REDIS_PORT,
+      db: validated.REDIS_DB,
     },
     aws: {
       region: validated.AWS_REGION,
@@ -67,12 +73,8 @@ export default () => {
     },
     frontendUrl: validated.FRONTEND_URL,
     appUrl: validated.APP_URL,
-    auth: {
-      googleClientId: validated.GOOGLE_CLIENT_ID,
-      adminGoogleEmails: (validated.ADMIN_GOOGLE_EMAILS ?? '')
-        .split(',')
-        .map((email) => email.trim().toLowerCase())
-        .filter(Boolean),
-    },
+    googleClientId: validated.GOOGLE_CLIENT_ID,
+    adminGoogleEmails: validated.ADMIN_GOOGLE_EMAILS,
+    e2eTestMode: validated.E2E_TEST_MODE ?? false,
   };
 };
