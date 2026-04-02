@@ -18,6 +18,28 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Public()
+  @Post('google')
+  async loginWithGoogle(@Body() body: { idToken: string }) {
+    if (!body.idToken) {
+      throw new BadRequestException('idToken is required');
+    }
+
+    return this.authService.loginWithGoogleIdToken(body.idToken);
+  }
+
+  @Public()
+  @Post('test-login')
+  async loginWithTestUser(
+    @Body() body: { userKey: 'customer' | 'developer' | 'admin' },
+  ) {
+    if (!body.userKey) {
+      throw new BadRequestException('userKey is required');
+    }
+
+    return this.authService.loginAsTestUser(body.userKey);
+  }
+
+  @Public()
   @Post('login')
   async login(@Body() body: { email: string }) {
     if (!body.email) {
