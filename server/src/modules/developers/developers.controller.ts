@@ -1,16 +1,21 @@
-// DevelopersController — 등록, 수정, 검색, 가용성 변경, 상세 조회 구현.
 import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { DevelopersService } from './developers.service';
 import { CreateDeveloperDto } from './dto/create-developer.dto';
 import { UpdateDeveloperDto } from './dto/update-developer.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { User } from '../auth/decorators/user.decorator';
+import { UpsertExpertFaqDto } from './dto/upsert-expert-faq.dto';
+import { UpsertExpertPortfolioDto } from './dto/upsert-expert-portfolio.dto';
 
 @Controller('developers')
 export class DevelopersController {
@@ -38,6 +43,90 @@ export class DevelopersController {
       maxBudget: maxBudget ? parseInt(maxBudget, 10) : undefined,
       availabilityStatus,
     });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/profile')
+  async getMyProfile(@User() user: any) {
+    return this.developersService.getByUserId(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/profile')
+  async upsertMyProfile(@User() user: any, @Body() data: CreateDeveloperDto) {
+    return this.developersService.upsertByUserId(user.id, data);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/profile')
+  async patchMyProfile(@User() user: any, @Body() data: UpdateDeveloperDto) {
+    return this.developersService.patchByUserId(user.id, data);
+  }
+
+  @Get('me/faqs')
+  @UseGuards(JwtAuthGuard)
+  async listMyFaqs(@User() user: any) {
+    return this.developersService.listFaqsByUserId(user.id);
+  }
+
+  @Post('me/faqs')
+  @UseGuards(JwtAuthGuard)
+  async createMyFaq(@User() user: any, @Body() dto: UpsertExpertFaqDto) {
+    return this.developersService.createFaq(user.id, dto);
+  }
+
+  @Patch('me/faqs/:faqId')
+  @UseGuards(JwtAuthGuard)
+  async updateMyFaq(
+    @User() user: any,
+    @Param('faqId') faqId: string,
+    @Body() dto: Partial<UpsertExpertFaqDto>,
+  ) {
+    return this.developersService.updateFaq(user.id, faqId, dto);
+  }
+
+  @Delete('me/faqs/:faqId')
+  @UseGuards(JwtAuthGuard)
+  async deleteMyFaq(@User() user: any, @Param('faqId') faqId: string) {
+    return this.developersService.deleteFaq(user.id, faqId);
+  }
+
+  @Get('me/portfolios')
+  @UseGuards(JwtAuthGuard)
+  async listMyPortfolios(@User() user: any) {
+    return this.developersService.listPortfoliosByUserId(user.id);
+  }
+
+  @Post('me/portfolios')
+  @UseGuards(JwtAuthGuard)
+  async createMyPortfolio(@User() user: any, @Body() dto: UpsertExpertPortfolioDto) {
+    return this.developersService.createPortfolio(user.id, dto);
+  }
+
+  @Patch('me/portfolios/:portfolioId')
+  @UseGuards(JwtAuthGuard)
+  async updateMyPortfolio(
+    @User() user: any,
+    @Param('portfolioId') portfolioId: string,
+    @Body() dto: Partial<UpsertExpertPortfolioDto>,
+  ) {
+    return this.developersService.updatePortfolio(user.id, portfolioId, dto);
+  }
+
+  @Delete('me/portfolios/:portfolioId')
+  @UseGuards(JwtAuthGuard)
+  async deleteMyPortfolio(@User() user: any, @Param('portfolioId') portfolioId: string) {
+    return this.developersService.deletePortfolio(user.id, portfolioId);
+  }
+
+  @Get(':id/faqs')
+  async listFaqs(@Param('id') id: string) {
+    return this.developersService.listFaqsByDeveloperId(id);
+  }
+
+  @Get(':id/portfolios')
+  async listPortfolios(@Param('id') id: string) {
+    return this.developersService.listPortfoliosByDeveloperId(id);
   }
 
   @Get(':id')

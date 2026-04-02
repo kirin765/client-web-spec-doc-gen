@@ -13,8 +13,9 @@ import { ConfigService } from '@nestjs/config';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         connection: {
-          host: configService.get('REDIS_HOST'),
-          port: configService.get('REDIS_PORT'),
+          host: configService.get('redis.host'),
+          port: configService.get('redis.port'),
+          db: configService.get('redis.db'),
         },
         defaultJobOptions: {
           removeOnComplete: true,

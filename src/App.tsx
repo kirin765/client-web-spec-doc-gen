@@ -14,6 +14,7 @@ import { ExpertDirectoryPage } from '@/pages/ExpertDirectoryPage';
 import { ExpertDetailPage } from '@/pages/ExpertDetailPage';
 import { UserQuotesPage } from '@/pages/UserQuotesPage';
 import { MyPage } from '@/pages/MyPage';
+import { ChatPage } from '@/pages/ChatPage';
 import { RequireAdmin, RequireAuth } from '@/components/auth/RouteGuards';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Analytics } from '@vercel/analytics/react';
@@ -51,6 +52,22 @@ export default function App() {
               element={
                 <RequireAuth>
                   <MyPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <RequireAuth>
+                  <ChatPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/chat/:roomId"
+              element={
+                <RequireAuth>
+                  <ChatPage />
                 </RequireAuth>
               }
             />

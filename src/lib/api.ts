@@ -4,6 +4,9 @@ import type {
   AdminProjectRequestListResponse,
   CreateReviewPayload,
   CustomerProfileApi,
+  ChatMessagesResponse,
+  ChatMessageItem,
+  ChatRoomSummary,
   DeveloperProfileApi,
   DeveloperReviewsResponse,
   ExpertFaqItem,
@@ -384,5 +387,41 @@ export function cancelQuoteShareByDeveloper(token: string, quoteShareId: string)
   return request<QuoteShareItem>(`/quote-shares/${quoteShareId}/cancel-by-developer`, {
     method: 'PATCH',
     token,
+  });
+}
+
+export function listChatRooms(token: string) {
+  return request<ChatRoomSummary[]>('/chat/rooms', { token });
+}
+
+export function getChatRoom(token: string, roomId: string) {
+  return request<ChatRoomSummary>(`/chat/rooms/${roomId}`, { token });
+}
+
+export function listChatMessages(token: string, roomId: string, cursor?: string) {
+  const params = new URLSearchParams();
+  if (cursor) {
+    params.set('cursor', cursor);
+  }
+
+  const query = params.toString();
+  return request<ChatMessagesResponse>(`/chat/rooms/${roomId}/messages${query ? `?${query}` : ''}`, {
+    token,
+  });
+}
+
+export function sendChatMessage(token: string, roomId: string, body: string) {
+  return request<ChatMessageItem>(`/chat/rooms/${roomId}/messages`, {
+    method: 'POST',
+    token,
+    body: { body },
+  });
+}
+
+export function markChatRoomRead(token: string, roomId: string, lastReadMessageId?: string) {
+  return request<{ success: true }>(`/chat/rooms/${roomId}/read`, {
+    method: 'PATCH',
+    token,
+    body: lastReadMessageId ? { lastReadMessageId } : {},
   });
 }
