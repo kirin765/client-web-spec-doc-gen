@@ -220,7 +220,7 @@ export class QuoteSharesService {
 
     if (developer.userId && developer.userId === userId) {
       throw new BadRequestException(
-        'Cannot share a quote to your own developer profile',
+        '자기 자신에게는 견적서를 보낼 수 없습니다.',
       );
     }
 

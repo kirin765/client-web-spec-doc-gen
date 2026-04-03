@@ -36,6 +36,7 @@ export class DevelopersController {
     @Query('careerLevels') careerLevels?: string,
     @Query('minCareerYears') minCareerYears?: string,
     @Query('maxCareerYears') maxCareerYears?: string,
+    @Query('regionCode') regionCode?: string,
   ) {
     return this.developersService.search({
       skills: skills ? skills.split(',').map((value) => value.trim()).filter(Boolean) : undefined,
@@ -50,6 +51,7 @@ export class DevelopersController {
         : undefined,
       minCareerYears: minCareerYears ? parseInt(minCareerYears, 10) : undefined,
       maxCareerYears: maxCareerYears ? parseInt(maxCareerYears, 10) : undefined,
+      regionCode: regionCode?.trim() || undefined,
     });
   }
 

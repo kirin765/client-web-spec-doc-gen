@@ -124,6 +124,10 @@ export function listDevelopers(filters: ListDevelopersFilters = {}) {
     query.set('maxCareerYears', String(filters.maxCareerYears));
   }
 
+  if (filters.regionCode) {
+    query.set('regionCode', filters.regionCode);
+  }
+
   const queryString = query.toString();
   return request<DeveloperProfileApi[]>(`/developers${queryString ? `?${queryString}` : ''}`);
 }
