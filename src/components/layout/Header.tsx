@@ -15,7 +15,6 @@ import {
 import { useQuoteStore } from '@/store/useQuoteStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { AuthControls } from '@/components/auth/AuthControls';
-import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function Header() {
@@ -94,11 +93,11 @@ export function Header() {
       <div className="container-base py-4">
         <div className="flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3">
-            <Zap
-              className={cn(
-                'h-6 w-6 transition-colors duration-base',
-                isHome ? 'text-primary-400' : 'text-primary-600',
-              )}
+            <img
+              src="/favicon.svg"
+              alt=""
+              aria-hidden="true"
+              className="h-7 w-7 shrink-0"
             />
             <h1
               className={cn(

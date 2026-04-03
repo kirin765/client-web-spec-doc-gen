@@ -177,21 +177,55 @@ export class ProjectRequestsService {
   async getDetail(projectRequestId: string, userId?: string): Promise<any> {
     const projectRequest = await this.getById(projectRequestId, userId);
 
-    const documents = await this.prisma.requirementDocument.findMany({
-      where: { projectRequestId },
-    });
+    const [documents, matches, quoteShareCounts] = await Promise.all([
+      this.prisma.requirementDocument.findMany({
+        where: { projectRequestId },
+      }),
+      this.prisma.matchResult.findMany({
+        where: { projectRequestId },
+        include: {
+          developer: true,
+        },
+      }),
+      this.prisma.quoteShare.groupBy({
+        by: ['status'],
+        where: { projectRequestId },
+        _count: {
+          _all: true,
+        },
+      }),
+    ]);
 
-    const matches = await this.prisma.matchResult.findMany({
-      where: { projectRequestId },
-      include: {
-        developer: true,
-      },
-    });
+    const quoteSharesSummary = {
+      sent: 0,
+      inProgress: 0,
+      completed: 0,
+      canceled: 0,
+    };
+
+    for (const item of quoteShareCounts) {
+      switch (item.status) {
+        case 'SENT':
+          quoteSharesSummary.sent += item._count._all;
+          break;
+        case 'IN_PROGRESS':
+          quoteSharesSummary.inProgress += item._count._all;
+          break;
+        case 'COMPLETED':
+          quoteSharesSummary.completed += item._count._all;
+          break;
+        case 'CANCELED_BY_USER':
+        case 'CANCELED_BY_DEVELOPER':
+          quoteSharesSummary.canceled += item._count._all;
+          break;
+      }
+    }
 
     return {
       ...projectRequest,
       documents,
       matches,
+      quoteSharesSummary,
     };
   }
 }
