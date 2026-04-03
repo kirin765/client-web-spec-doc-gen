@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import * as path from 'node:path';
 import { PrismaModule } from './common/db/prisma.module';
 import { QueueModule } from './common/queue/queue.module';
 import { StorageModule } from './common/storage/storage.module';
@@ -13,18 +14,24 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { AdminModule } from './modules/admin/admin.module';
 import { ProposalsModule } from './modules/proposals/proposals.module';
 import { QuoteSharesModule } from './modules/quote-shares/quote-shares.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { CustomersModule } from './modules/customers/customers.module';
-import { RegionsModule } from './modules/regions/regions.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
+import { RegionsModule } from './modules/regions/regions.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import configuration from './common/config/configuration';
+
+const envFileCandidates = [
+  path.resolve(process.cwd(), '.env.local'),
+  path.resolve(process.cwd(), 'server/.env.local'),
+];
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
-      envFilePath: ['.env.local', '.env'],
+      envFilePath: envFileCandidates,
     }),
     PrismaModule,
     QueueModule,
@@ -35,10 +42,11 @@ import configuration from './common/config/configuration';
     MatchingModule,
     DevelopersModule,
     CustomersModule,
-    RegionsModule,
     ProposalsModule,
     QuoteSharesModule,
+    ChatModule,
     ReviewsModule,
+    RegionsModule,
     UploadsModule,
     NotificationsModule,
     AdminModule,

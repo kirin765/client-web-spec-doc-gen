@@ -9,15 +9,6 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-function normalizeBucketIdentifier(value?: string | null) {
-  const trimmed = value?.trim();
-  if (!trimmed) {
-    return 'spec-gen-documents';
-  }
-
-  return trimmed.startsWith('s3://') ? trimmed.slice('s3://'.length) : trimmed;
-}
-
 @Injectable()
 export class StorageService {
   private s3Client: S3Client;
@@ -30,7 +21,7 @@ export class StorageService {
     const secretAccessKey = this.configService.get<string>('aws.secretAccessKey');
     const bucket = this.configService.get<string>('aws.s3Bucket');
 
-    this.bucket = normalizeBucketIdentifier(bucket);
+    this.bucket = bucket || 'spec-gen-documents';
     // 기본값: 1시간 (3600초), 환경 변수로 설정 가능
     this.defaultExpiresIn =
       this.configService.get<number>('aws.signedUrlExpiration') || 3600;
@@ -78,21 +69,6 @@ export class StorageService {
     });
   }
 
-  extractKey(storageUrl: string): string {
-    if (!storageUrl.startsWith(`s3://${this.bucket}/`)) {
-      throw new Error(`Unsupported storage URL: ${storageUrl}`);
-    }
-
-    return storageUrl.slice(`s3://${this.bucket}/`.length);
-  }
-
-  async getSignedUrlFromStorageUrl(
-    storageUrl: string,
-    expiresIn?: number,
-  ): Promise<string> {
-    return this.getSignedUrl(this.extractKey(storageUrl), expiresIn);
-  }
-
   async deleteFile(key: string): Promise<void> {
     const command = new DeleteObjectCommand({
       Bucket: this.bucket,
@@ -102,3 +78,4 @@ export class StorageService {
     await this.s3Client.send(command);
   }
 }
+

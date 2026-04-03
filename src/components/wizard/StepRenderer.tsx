@@ -31,9 +31,9 @@ export function StepRenderer({ category }: StepRendererProps) {
   return (
     <div className="space-y-8">
       {/* 카테고리 헤더 */}
-      <div className="flex items-center gap-3 border-b pb-4">
-        {IconComponent && <IconComponent className="h-6 w-6 text-blue-600" />}
-        <h2 className="text-2xl font-bold text-gray-900">{t(`steps.${category.id}`)}</h2>
+      <div className="flex items-center gap-4 border-b border-secondary-200 pb-6">
+        {IconComponent && <IconComponent className="h-7 w-7 text-primary-600" />}
+        <h2 className="heading-xl text-secondary-900">{t(`steps.${category.id}`)}</h2>
       </div>
 
       {/* 질문 목록 */}

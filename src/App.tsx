@@ -14,6 +14,7 @@ import { ExpertDirectoryPage } from '@/pages/ExpertDirectoryPage';
 import { ExpertDetailPage } from '@/pages/ExpertDetailPage';
 import { UserQuotesPage } from '@/pages/UserQuotesPage';
 import { MyPage } from '@/pages/MyPage';
+import { ChatPage } from '@/pages/ChatPage';
 import { RequireAdmin, RequireAuth } from '@/components/auth/RouteGuards';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Analytics } from '@vercel/analytics/react';
@@ -54,6 +55,23 @@ export default function App() {
                 </RequireAuth>
               }
             />
+            <Route
+              path="/chat"
+              element={
+                <RequireAuth>
+                  <ChatPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/chat/:roomId"
+              element={
+                <RequireAuth>
+                  <ChatPage />
+                </RequireAuth>
+              }
+            />
+            {/* Legacy alias kept so older links still resolve into the unified my page flow. */}
             <Route path="/developers/workspace" element={<Navigate to="/mypage" replace />} />
             <Route
               path="/admin"

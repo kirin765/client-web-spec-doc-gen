@@ -6,6 +6,9 @@ export type DeveloperType = 'freelancer' | 'agency';
 /** 가용 상태 */
 export type AvailabilityStatus = 'available' | 'busy' | 'limited';
 
+/** 경력 레벨 */
+export type DeveloperCareerLevel = 'newcomer' | 'senior' | 'veteran';
+
 /** 개발자 프로필 엔티티 — Prisma Developer 모델과 1:1 매핑 */
 export interface DeveloperProfile {
   id: string;
@@ -27,9 +30,11 @@ export interface DeveloperProfile {
   // 예산 범위 (별도 컬럼)
   budgetMin: number;
   budgetMax: number;
+  totalCareerYears: number | null;
 
   // 가용성
   availabilityStatus: AvailabilityStatus;
+  careerLevel: DeveloperCareerLevel | null;
   avgResponseHours: number;
 
   // 포트폴리오/부가 정보 (JSONB)

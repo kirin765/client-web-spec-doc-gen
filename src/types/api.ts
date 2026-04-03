@@ -55,7 +55,9 @@ export interface DeveloperProfileApi {
   supportedTimelines: string[];
   budgetMin: number;
   budgetMax: number;
+  totalCareerYears: number | null;
   availabilityStatus: 'available' | 'busy' | 'limited';
+  careerLevel: 'newcomer' | 'senior' | 'veteran' | null;
   avgResponseHours: number;
   portfolioLinks: string[];
   regionCode: string | null;
@@ -245,6 +247,8 @@ export interface QuoteShareItem {
   canOpenContact: boolean;
   canComplete: boolean;
   canReview: boolean;
+  canChat: boolean;
+  chatRoomId: string | null;
   reviewId: string | null;
   contactMethod: string | null;
   counterpartyEmail: string | null;
@@ -263,6 +267,55 @@ export interface QuoteShareItem {
   } | null;
 }
 
+export interface ChatMessageItem {
+  id: string;
+  roomId: string;
+  senderUserId: string | null;
+  senderRole: 'customer' | 'developer' | 'system';
+  type: 'text' | 'system';
+  body: string;
+  createdAt: string;
+  editedAt: string | null;
+  deletedAt: string | null;
+  isMine: boolean;
+}
+
+export interface ChatRoomSummary {
+  id: string;
+  quoteShareId: string;
+  status: 'open' | 'closed' | 'archived';
+  canSendMessage: boolean;
+  unreadCount: number;
+  updatedAt: string;
+  lastMessageAt: string | null;
+  projectRequest: {
+    id: string;
+    projectName: string | null;
+    siteType: string | null;
+    status: string;
+  } | null;
+  quoteShare: {
+    id: string;
+    status: string;
+  };
+  counterparty: {
+    userId: string;
+    role: 'customer' | 'developer';
+    displayName: string;
+    headline: string;
+  };
+  lastMessage: ChatMessageItem | null;
+  participantState: {
+    lastReadMessageId: string | null;
+    lastReadAt: string | null;
+  };
+}
+
+export interface ChatMessagesResponse {
+  data: ChatMessageItem[];
+  nextCursor: string | null;
+}
+
 export interface UpsertDeveloperProfilePayload {
   displayName: string;
   type: 'freelancer' | 'agency';
@@ -277,6 +330,7 @@ export interface UpsertDeveloperProfilePayload {
   supportedTimelines?: string[];
   budgetMin: number;
   budgetMax: number;
+  totalCareerYears?: number | null;
   availabilityStatus?: 'available' | 'busy' | 'limited';
   avgResponseHours?: number;
   portfolioLinks?: string[];
@@ -284,6 +338,18 @@ export interface UpsertDeveloperProfilePayload {
   regionCode?: string;
   languages?: string[];
   introduction?: string;
+}
+
+export interface ListDevelopersFilters {
+  skills?: string[];
+  projectTypes?: string[];
+  minBudget?: number;
+  maxBudget?: number;
+  availabilityStatus?: 'available' | 'busy' | 'limited';
+  careerLevels?: Array<'newcomer' | 'senior' | 'veteran'>;
+  minCareerYears?: number;
+  maxCareerYears?: number;
+  regionCode?: string;
 }
 
 export interface UpsertCustomerProfilePayload {

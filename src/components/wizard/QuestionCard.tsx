@@ -27,7 +27,7 @@ export function QuestionCard({ question }: QuestionCardProps) {
 
   const renderSingleSelect = () => {
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         {question.options?.map((option) => (
           <OptionCard
             key={option.id}
@@ -43,7 +43,7 @@ export function QuestionCard({ question }: QuestionCardProps) {
   const renderMultiSelect = () => {
     const selectedIds = Array.isArray(currentValue) ? currentValue : [];
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         {question.options?.map((option) => (
           <OptionCard
             key={option.id}
@@ -68,19 +68,19 @@ export function QuestionCard({ question }: QuestionCardProps) {
     const value = typeof currentValue === 'number' ? currentValue : min;
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <input
           type="range"
           min={min}
           max={max}
           value={value}
           onChange={(e) => setAnswer(question.id, parseInt(e.target.value, 10))}
-          className="w-full"
+          className="w-full accent-primary-600 cursor-pointer h-2 rounded-lg appearance-none bg-secondary-200"
         />
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>{min}</span>
-          <span className="font-semibold text-blue-600">{value}</span>
-          <span>{max}</span>
+        <div className="flex justify-between items-center">
+          <span className="text-body-sm text-secondary-600">{min}</span>
+          <span className="text-heading-md font-semibold text-primary-600">{value}</span>
+          <span className="text-body-sm text-secondary-600">{max}</span>
         </div>
       </div>
     );
@@ -95,14 +95,11 @@ export function QuestionCard({ question }: QuestionCardProps) {
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
         setAnswer(question.id, e.target.value),
       placeholder: t(`${question.id}.placeholder`) || '',
-      className: cn(
-        'w-full rounded-lg border border-gray-300 px-4 py-2',
-        'focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20'
-      ),
+      className: cn('input w-full'),
     };
 
     return isTextArea ? (
-      <textarea {...baseProps} rows={4} />
+      <textarea {...baseProps} rows={5} />
     ) : (
       <input type="text" {...baseProps} />
     );
@@ -124,14 +121,14 @@ export function QuestionCard({ question }: QuestionCardProps) {
   };
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-sm">
-      <div className="mb-4">
-        <label className="flex items-baseline gap-1">
-          <span className="text-lg font-semibold text-gray-900">{t(question.labelKey)}</span>
-          {isRequired && <span className="text-red-500">*</span>}
+    <div className="card p-6">
+      <div className="mb-6">
+        <label className="flex items-baseline gap-2">
+          <span className="heading-lg text-secondary-900">{t(question.labelKey)}</span>
+          {isRequired && <span className="text-error-600 text-lg font-bold">*</span>}
         </label>
         {question.descriptionKey && (
-          <p className="mt-2 text-sm text-gray-600">{t(question.descriptionKey)}</p>
+          <p className="mt-3 text-body-md text-secondary-600">{t(question.descriptionKey)}</p>
         )}
       </div>
       <div>{renderContent()}</div>

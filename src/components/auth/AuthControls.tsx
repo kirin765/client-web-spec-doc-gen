@@ -15,17 +15,17 @@ export function AuthControls({ redirectTo = '/mypage' }: AuthControlsProps) {
 
   if (!import.meta.env.VITE_GOOGLE_CLIENT_ID) {
     return (
-      <span className="text-xs font-medium text-amber-700">
+      <span className="text-body-xs font-semibold text-warning-700">
         VITE_GOOGLE_CLIENT_ID 설정 필요
       </span>
     );
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       {isAuthenticating ? (
         <div
-          className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700"
+          className="inline-flex min-h-[40px] items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-body-sm font-semibold text-primary-700"
           aria-live="polite"
           aria-busy="true"
         >
@@ -53,7 +53,7 @@ export function AuthControls({ redirectTo = '/mypage' }: AuthControlsProps) {
         />
       )}
       {errorMessage ? (
-        <p className="text-xs font-medium text-rose-600">{errorMessage}</p>
+        <p className="text-body-xs font-semibold text-error-600">{errorMessage}</p>
       ) : null}
     </div>
   );

@@ -15,7 +15,6 @@ import {
 import { useQuoteStore } from '@/store/useQuoteStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { AuthControls } from '@/components/auth/AuthControls';
-import { Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function Header() {
@@ -80,13 +79,34 @@ export function Header() {
 
   const avatarLabel = user?.email?.slice(0, 1).toUpperCase() || 'G';
 
+  const isHome = location.pathname === '/';
+
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-sm">
-      <div className="mx-auto max-w-7xl px-6 py-4">
+    <header
+      className={cn(
+        'sticky top-0 z-40 border-b backdrop-blur-sm transition-colors duration-base',
+        isHome
+          ? 'border-white/10 bg-navy-950/95'
+          : 'border-secondary-200 bg-white/95',
+      )}
+    >
+      <div className="container-base py-4">
         <div className="flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2">
-            <Zap className="h-6 w-6 text-blue-600" />
-            <h1 className="text-lg font-bold text-gray-900">{t('app.title')}</h1>
+          <Link to="/" className="flex items-center gap-3">
+            <img
+              src="/favicon.svg"
+              alt=""
+              aria-hidden="true"
+              className="h-7 w-7 shrink-0"
+            />
+            <h1
+              className={cn(
+                'heading-lg transition-colors duration-base',
+                isHome ? 'text-white' : 'text-secondary-900',
+              )}
+            >
+              {t('app.title')}
+            </h1>
           </Link>
 
           <div className="flex items-center gap-3">
@@ -96,32 +116,32 @@ export function Header() {
                   type="button"
                   onClick={() => setMenuOpen((value) => !value)}
                   className={cn(
-                    'flex items-center gap-3 rounded-full border border-slate-200 bg-white px-2 py-1.5 shadow-sm transition-shadow hover:shadow-md',
-                    menuOpen && 'ring-2 ring-blue-200',
+                    'flex items-center gap-3 rounded-full border border-secondary-200 bg-white px-2 py-1.5 shadow-sm transition-all duration-base hover:shadow-md',
+                    menuOpen && 'ring-2 ring-primary-200',
                   )}
                 >
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-slate-900 text-sm font-semibold text-white">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-primary-600 to-secondary-900 text-sm font-semibold text-white">
                     {avatarLabel}
                   </span>
                   <span className="hidden max-w-[220px] flex-col items-start text-left md:flex">
-                    <span className="truncate text-sm font-semibold text-slate-900">{user.email}</span>
-                    <span className="text-xs text-slate-500">
+                    <span className="truncate text-body-sm font-semibold text-secondary-900">{user.email}</span>
+                    <span className="text-body-xs text-secondary-500">
                       {activeMode === 'expert' ? '전문가 모드' : '고객 모드'}
                     </span>
                   </span>
-                  <ChevronDown className="mr-1 h-4 w-4 text-slate-500" />
+                  <ChevronDown className="mr-1 h-4 w-4 text-secondary-500" />
                 </button>
 
                 {menuOpen ? (
-                  <div className="absolute right-0 mt-3 w-[340px] overflow-hidden rounded-[28px] border border-slate-200 bg-white p-3 shadow-[0_30px_60px_rgba(15,23,42,0.12)]">
-                    <div className="rounded-[22px] bg-slate-950 px-4 py-4 text-white">
+                  <div className="absolute right-0 mt-3 w-[340px] overflow-hidden rounded-2xl border border-secondary-200 bg-white shadow-modal">
+                    <div className="rounded-xl bg-secondary-900 px-4 py-4 text-white">
                       <div className="flex items-center gap-3">
                         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-sm font-semibold">
                           {avatarLabel}
                         </span>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{user.email}</p>
-                          <p className="mt-1 text-xs text-slate-300">
+                          <p className="truncate text-body-sm font-semibold">{user.email}</p>
+                          <p className="mt-1 text-body-xs text-secondary-300">
                             {activeMode === 'expert' ? '전문가' : '고객'}로 사용 중
                           </p>
                         </div>
@@ -132,32 +152,32 @@ export function Header() {
                           type="button"
                           onClick={() => setActiveMode('customer')}
                           className={cn(
-                            'rounded-2xl px-3 py-3 text-left transition-colors',
+                            'rounded-xl px-3 py-3 text-left transition-colors duration-base',
                             activeMode === 'customer'
-                              ? 'bg-white text-slate-950'
+                              ? 'bg-white text-secondary-900'
                               : 'bg-white/10 text-white hover:bg-white/15',
                           )}
                         >
-                          <p className="text-sm font-semibold">고객</p>
-                          <p className="mt-1 text-xs opacity-80">견적 요청과 리뷰 작성</p>
+                          <p className="text-body-sm font-semibold">고객</p>
+                          <p className="mt-1 text-body-xs opacity-80">견적 요청과 리뷰 작성</p>
                         </button>
                         <button
                           type="button"
                           onClick={() => setActiveMode('expert')}
                           className={cn(
-                            'rounded-2xl px-3 py-3 text-left transition-colors',
+                            'rounded-xl px-3 py-3 text-left transition-colors duration-base',
                             activeMode === 'expert'
-                              ? 'bg-white text-slate-950'
+                              ? 'bg-white text-secondary-900'
                               : 'bg-white/10 text-white hover:bg-white/15',
                           )}
                         >
-                          <p className="text-sm font-semibold">전문가</p>
-                          <p className="mt-1 text-xs opacity-80">프로필, FAQ, 포트폴리오</p>
+                          <p className="text-body-sm font-semibold">전문가</p>
+                          <p className="mt-1 text-body-xs opacity-80">프로필, FAQ, 포트폴리오</p>
                         </button>
                       </div>
                     </div>
 
-                    <div className="mt-3 space-y-1">
+                    <div className="mt-3 space-y-1 px-3">
                       {!isExpertMode ? (
                         <MenuItem
                           icon={<LayoutGrid className="h-4 w-4" />}
@@ -193,14 +213,14 @@ export function Header() {
                       ) : null}
                     </div>
 
-                    <div className="mt-3 border-t border-slate-200 pt-3">
+                    <div className="mt-3 border-t border-secondary-200 px-3 pt-3 pb-3">
                       <button
                         type="button"
                         onClick={() => {
                           setMenuOpen(false);
                           clearSession();
                         }}
-                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+                        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-body-sm font-semibold text-secondary-700 transition-colors duration-base hover:bg-secondary-100"
                       >
                         <LogOut className="h-4 w-4" />
                         로그아웃
@@ -232,9 +252,9 @@ function MenuItem({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100"
+      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-body-sm font-semibold text-secondary-700 transition-colors duration-base hover:bg-secondary-100"
     >
-      <span className="text-slate-500">{icon}</span>
+      <span className="text-secondary-500">{icon}</span>
       <span>{label}</span>
     </button>
   );
