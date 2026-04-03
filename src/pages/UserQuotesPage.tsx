@@ -5,12 +5,14 @@ import { Seo } from '@/components/seo/Seo';
 import { LoadingButton } from '@/components/common/LoadingButton';
 import {
   cancelQuoteShareByUser,
+  getMyProjectRequestDetail,
   getQuoteShareDetail,
   listMyProjectRequests,
   listSentQuoteShares,
 } from '@/lib/api';
-import type { ProjectRequestSummary, QuoteShareItem } from '@/types/api';
+import type { ProjectRequestDetail, ProjectRequestSummary, QuoteShareItem } from '@/types/api';
 import { useAuthStore } from '@/store/useAuthStore';
+import { formatRange } from '@/lib/utils';
 
 function formatDate(value: string | null | undefined) {
   if (!value) return '-';
@@ -28,16 +30,29 @@ function toStatusLabel(status: QuoteShareItem['status']) {
   return '전문가 취소';
 }
 
+function toProjectStatusLabel(status: string) {
+  if (status === 'DRAFT') return '임시 저장';
+  if (status === 'SUBMITTED') return '제출됨';
+  if (status === 'CALCULATING') return '비용 계산 중';
+  if (status === 'GENERATING_DOCUMENT') return '문서 생성 중';
+  if (status === 'MATCHING') return '전문가 매칭 중';
+  if (status === 'COMPLETED') return '완료';
+  if (status === 'ARCHIVED') return '보관됨';
+  return status;
+}
+
 export function UserQuotesPage() {
   const token = useAuthStore((state) => state.token);
   const activeMode = useAuthStore((state) => state.activeMode);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadingProjectDetailId, setLoadingProjectDetailId] = useState<string | null>(null);
   const [loadingDetailId, setLoadingDetailId] = useState<string | null>(null);
   const [cancelingShareId, setCancelingShareId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [projectRequests, setProjectRequests] = useState<ProjectRequestSummary[]>([]);
   const [sentShares, setSentShares] = useState<QuoteShareItem[]>([]);
+  const [selectedProjectDetail, setSelectedProjectDetail] = useState<ProjectRequestDetail | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<QuoteShareItem | null>(null);
 
   const loadData = useCallback(async () => {
@@ -143,15 +158,114 @@ export function UserQuotesPage() {
                         {project.contactMethod || '미입력'}
                       </p>
                     </div>
-                    <span className="rounded-full bg-primary-50 px-3 py-1 text-caption-sm font-semibold text-primary-700">
-                      발송 {sentCountByProject[project.id] ?? 0}건
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-primary-50 px-3 py-1 text-caption-sm font-semibold text-primary-700">
+                        발송 {sentCountByProject[project.id] ?? 0}건
+                      </span>
+                      <LoadingButton
+                        loading={loadingProjectDetailId === project.id}
+                        loadingLabel="불러오는 중..."
+                        onClick={async () => {
+                          if (!token) return;
+                          setLoadingProjectDetailId(project.id);
+                          try {
+                            const detail = await getMyProjectRequestDetail(token, project.id);
+                            setSelectedProjectDetail(detail);
+                          } finally {
+                            setLoadingProjectDetailId(null);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-secondary-300 px-3 py-2 text-body-sm font-semibold text-secondary-700"
+                      >
+                        <FileText className="h-4 w-4" />
+                        상세
+                      </LoadingButton>
+                    </div>
                   </div>
                 </article>
               ))
             )}
           </div>
         </section>
+
+        {selectedProjectDetail ? (
+          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-secondary-100">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="text-heading-sm font-bold text-secondary-900">저장한 견적서 상세</h2>
+                <p className="mt-1 text-body-sm text-secondary-500">
+                  {selectedProjectDetail.projectName || '이름 없는 견적서'} · 생성{' '}
+                  {formatDate(selectedProjectDetail.createdAt)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedProjectDetail(null)}
+                className="rounded-lg border border-secondary-300 px-3 py-2 text-body-sm font-semibold text-secondary-700"
+              >
+                닫기
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              <section className="rounded-xl border border-secondary-200 p-4">
+                <h3 className="text-body-sm font-semibold text-secondary-900">프로젝트 정보</h3>
+                <div className="mt-3 space-y-2 text-body-sm text-secondary-700">
+                  <p>상태: {toProjectStatusLabel(selectedProjectDetail.status)}</p>
+                  <p>사이트 유형: {selectedProjectDetail.siteType || '-'}</p>
+                  <p>연락방법: {selectedProjectDetail.contactMethod || '-'}</p>
+                  <p>제출 시각: {formatDate(selectedProjectDetail.submittedAt)}</p>
+                  <p>가격 정책 버전: {selectedProjectDetail.pricingVersion || '-'}</p>
+                </div>
+              </section>
+
+              <section className="rounded-xl border border-secondary-200 p-4">
+                <h3 className="text-body-sm font-semibold text-secondary-900">예상 비용</h3>
+                {selectedProjectDetail.costEstimate ? (
+                  <div className="mt-3 space-y-2 text-body-sm text-secondary-700">
+                    <p className="text-body-lg font-bold text-primary-600">
+                      {formatRange(
+                        selectedProjectDetail.costEstimate.totalMin,
+                        selectedProjectDetail.costEstimate.totalMax,
+                      )}
+                    </p>
+                    <p>기본 티어: {selectedProjectDetail.costEstimate.baseTier.id}</p>
+                    <p>디자인 승수: ×{selectedProjectDetail.costEstimate.designMultiplier}</p>
+                    <p>일정 승수: ×{selectedProjectDetail.costEstimate.timelineMultiplier}</p>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-body-sm text-secondary-500">비용 정보가 아직 없습니다.</p>
+                )}
+              </section>
+
+              <section className="rounded-xl border border-secondary-200 p-4">
+                <h3 className="text-body-sm font-semibold text-secondary-900">문서 및 매칭</h3>
+                <div className="mt-3 space-y-2 text-body-sm text-secondary-700">
+                  <p>생성된 문서: {selectedProjectDetail.documents.length}개</p>
+                  <p>매칭 결과: {selectedProjectDetail.matches.length}명</p>
+                  <p>발송: {selectedProjectDetail.quoteSharesSummary.sent}건</p>
+                  <p>진행 중: {selectedProjectDetail.quoteSharesSummary.inProgress}건</p>
+                  <p>완료: {selectedProjectDetail.quoteSharesSummary.completed}건</p>
+                  <p>취소: {selectedProjectDetail.quoteSharesSummary.canceled}건</p>
+                </div>
+              </section>
+
+              <section className="rounded-xl border border-secondary-200 p-4">
+                <h3 className="text-body-sm font-semibold text-secondary-900">정리된 요구사항</h3>
+                <pre className="mt-3 max-h-64 overflow-auto rounded-lg bg-secondary-50 p-4 text-caption-sm leading-6 text-secondary-700">
+                  {JSON.stringify(selectedProjectDetail.normalizedSpec ?? {}, null, 2)}
+                </pre>
+              </section>
+            </div>
+
+            <section className="mt-6 rounded-xl border border-secondary-200 p-4">
+              <h3 className="text-body-sm font-semibold text-secondary-900">원본 답변</h3>
+              <pre className="mt-3 max-h-80 overflow-auto rounded-lg bg-secondary-50 p-4 text-caption-sm leading-6 text-secondary-700">
+                {JSON.stringify(selectedProjectDetail.rawAnswers ?? {}, null, 2)}
+              </pre>
+            </section>
+          </section>
+        ) : null}
 
         <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-secondary-100">
           <h2 className="text-heading-sm font-bold text-secondary-900">보낸 견적서</h2>
