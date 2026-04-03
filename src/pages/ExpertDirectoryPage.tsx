@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Briefcase, Mail, RefreshCw } from 'lucide-react';
 import { Seo } from '@/components/seo/Seo';
 import { LoadingButton } from '@/components/common/LoadingButton';
+import { RegionSelector } from '@/components/regions/RegionSelector';
 import { listDevelopers } from '@/lib/api';
 import type { DeveloperProfileApi, ListDevelopersFilters } from '@/types/api';
 import { formatRange } from '@/lib/utils';
@@ -55,6 +56,7 @@ export function ExpertDirectoryPage() {
   const [selectedCareerLevels, setSelectedCareerLevels] = useState<CareerLevel[]>([]);
   const [minCareerYears, setMinCareerYears] = useState('');
   const [maxCareerYears, setMaxCareerYears] = useState('');
+  const [selectedRegionCode, setSelectedRegionCode] = useState('');
   const [appliedFilters, setAppliedFilters] = useState<ListDevelopersFilters>({});
 
   const loadDevelopers = useCallback(async (filters: ListDevelopersFilters) => {
@@ -91,6 +93,7 @@ export function ExpertDirectoryPage() {
       careerLevels: selectedCareerLevels,
       minCareerYears: nextMinCareerYears,
       maxCareerYears: nextMaxCareerYears,
+      regionCode: selectedRegionCode || undefined,
     });
   };
 
@@ -212,6 +215,15 @@ export function ExpertDirectoryPage() {
               >
                 검색
               </LoadingButton>
+            </div>
+
+            <div className="mt-4">
+              <RegionSelector
+                value={selectedRegionCode}
+                onChange={setSelectedRegionCode}
+                label="활동 지역 필터"
+                helperText="선택한 지역과 그 하위 지역 전문가만 표시합니다."
+              />
             </div>
           </div>
 

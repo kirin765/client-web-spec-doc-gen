@@ -19,6 +19,7 @@ interface DeveloperSearchFilters {
   careerLevels?: string[];
   minCareerYears?: number;
   maxCareerYears?: number;
+  regionCode?: string;
 }
 
 function toStringArray(value: unknown): string[] {
@@ -514,10 +515,16 @@ export class DevelopersService {
           : filters.supportedProjectTypes.some((projectType) =>
               projectTypes.includes(projectType),
             );
+      const matchesRegion =
+        !filters.regionCode
+          ? true
+          : developer.regionCode === filters.regionCode ||
+            developer.regionCode?.startsWith(`${filters.regionCode}-`) === true;
 
       return (
         matchesSkills &&
         matchesProjectTypes &&
+        matchesRegion &&
         this.matchesCareerFilters(developer, filters)
       );
     });

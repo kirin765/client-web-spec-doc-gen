@@ -378,7 +378,11 @@ export function ChatPage() {
                                 : 'bg-white text-secondary-800 ring-1 ring-secondary-200'
                             }`}
                           >
-                            <p className="whitespace-pre-wrap break-words text-body-sm leading-6">
+                            <p
+                              className={`whitespace-pre-wrap break-words text-body-sm leading-6 ${
+                                message.isMine ? 'text-white' : 'text-secondary-800'
+                              }`}
+                            >
                               {message.body}
                             </p>
                             <p

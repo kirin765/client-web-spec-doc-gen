@@ -68,6 +68,19 @@ npm run dev:infra
 npm run e2e:web
 ```
 
+Run the protected staging smoke flow:
+
+```bash
+npm run e2e:web:staging:setup
+npm run e2e:web:staging
+```
+
+Staging smoke notes:
+
+- `npm run e2e:web:staging:setup` opens a real browser and waits for you to finish the Vercel access flow manually.
+- The saved Playwright storage state is written to `.playwright/staging-auth/storage-state.json` and reused by `npm run e2e:web:staging`.
+- Override the target URL with `E2E_STAGING_BASE_URL` and the storage-state path with `PLAYWRIGHT_STORAGE_STATE` when needed.
+
 Run real Google OAuth E2E setup once locally:
 
 ```bash

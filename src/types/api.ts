@@ -349,6 +349,7 @@ export interface ListDevelopersFilters {
   careerLevels?: Array<'newcomer' | 'senior' | 'veteran'>;
   minCareerYears?: number;
   maxCareerYears?: number;
+  regionCode?: string;
 }
 
 export interface UpsertCustomerProfilePayload {
