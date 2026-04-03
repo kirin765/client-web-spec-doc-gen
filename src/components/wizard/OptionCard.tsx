@@ -54,24 +54,29 @@ export function OptionCard({ option, selected, onSelect }: OptionCardProps) {
       role="option"
       aria-selected={selected}
       className={cn(
-        'rounded-lg border-2 p-4 text-left transition-all duration-200',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+        'rounded-lg border-2 p-5 text-left transition-all duration-base',
+        'focus-ring',
         selected
-          ? 'border-blue-500 bg-blue-50 shadow-md'
-          : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
+          ? 'border-primary-600 bg-primary-50 shadow-card-hover'
+          : 'border-secondary-200 bg-white hover:border-primary-300 hover:shadow-card',
       )}
     >
-      <div className="flex gap-3">
+      <div className="flex gap-4">
         <div className="flex-shrink-0">
-          {IconComponent && <IconComponent className="h-5 w-5 text-blue-600" />}
-        </div>
-        <div className="flex-1">
-          <div className="font-semibold text-gray-900">{t(option.labelKey)}</div>
-          {option.descriptionKey && (
-            <div className="mt-1 text-sm text-gray-600">{t(option.descriptionKey)}</div>
+          {IconComponent && (
+            <IconComponent className={cn(
+              'h-6 w-6 transition-colors duration-base',
+              selected ? 'text-primary-600' : 'text-primary-500'
+            )} />
           )}
         </div>
-        {selected && <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-blue-600" />}
+        <div className="flex-1 min-w-0">
+          <div className="heading-sm text-secondary-900">{t(option.labelKey)}</div>
+          {option.descriptionKey && (
+            <div className="mt-1.5 text-body-sm text-secondary-600">{t(option.descriptionKey)}</div>
+          )}
+        </div>
+        {selected && <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-primary-600" />}
       </div>
     </button>
   );

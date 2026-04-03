@@ -28,11 +28,78 @@ const quoteShareInclude = {
       },
     },
   },
+  chatRoom: {
+    select: {
+      id: true,
+      status: true,
+    },
+  },
 } as const;
 
 @Injectable()
 export class QuoteSharesService {
   constructor(private prisma: PrismaService) {}
+
+  private async ensureChatRoom(quoteShareId: string) {
+    const quoteShare = await this.prisma.quoteShare.findUnique({
+      where: { id: quoteShareId },
+      include: {
+        projectRequest: {
+          select: { userId: true },
+        },
+        developer: {
+          select: { userId: true },
+        },
+        chatRoom: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!quoteShare?.projectRequest.userId || !quoteShare.developer.userId) {
+      return null;
+    }
+
+    const room =
+      quoteShare.chatRoom ??
+      (await this.prisma.chatRoom.create({
+        data: {
+          quoteShareId,
+          customerUserId: quoteShare.projectRequest.userId,
+          developerUserId: quoteShare.developer.userId,
+          participantStates: {
+            create: [{ userId: quoteShare.projectRequest.userId }, { userId: quoteShare.developer.userId }],
+          },
+        },
+      }));
+
+    return room;
+  }
+
+  private async addSystemMessage(quoteShareId: string, body: string, status?: 'OPEN' | 'CLOSED' | 'ARCHIVED') {
+    const room = await this.ensureChatRoom(quoteShareId);
+
+    if (!room) {
+      return;
+    }
+
+    const created = await this.prisma.chatMessage.create({
+      data: {
+        roomId: room.id,
+        senderRole: 'SYSTEM',
+        type: 'SYSTEM',
+        body,
+      },
+    });
+
+    await this.prisma.chatRoom.update({
+      where: { id: room.id },
+      data: {
+        status,
+        lastMessageAt: created.createdAt,
+      },
+    });
+  }
 
   private shouldRevealContact(status: string) {
     return status === 'IN_PROGRESS' || status === 'COMPLETED';
@@ -75,6 +142,8 @@ export class QuoteSharesService {
         actor === 'user' &&
         quoteShare.status === 'COMPLETED' &&
         reviewId === null,
+      canChat: Boolean(quoteShare.chatRoom?.id) && !String(quoteShare.status).startsWith('CANCELED_'),
+      chatRoomId: quoteShare.chatRoom?.id ?? null,
       reviewId,
       contactMethod,
       counterpartyEmail,
@@ -151,7 +220,7 @@ export class QuoteSharesService {
 
     if (developer.userId && developer.userId === userId) {
       throw new BadRequestException(
-        'Cannot share a quote to your own developer profile',
+        '자기 자신에게는 견적서를 보낼 수 없습니다.',
       );
     }
 
@@ -177,7 +246,14 @@ export class QuoteSharesService {
       include: quoteShareInclude,
     });
 
-    return this.mapQuoteShare(created, 'user', false);
+    await this.addSystemMessage(created.id, '고객이 견적 상담을 시작했습니다.');
+
+    const withRoom = await this.prisma.quoteShare.findUnique({
+      where: { id: created.id },
+      include: quoteShareInclude,
+    });
+
+    return this.mapQuoteShare(withRoom ?? created, 'user', false);
   }
 
   async listSentByUser(userId: string) {
@@ -262,6 +338,8 @@ export class QuoteSharesService {
       include: quoteShareInclude,
     });
 
+    await this.addSystemMessage(updated.id, '고객이 상담 요청을 취소했습니다.', 'CLOSED');
+
     return this.mapQuoteShare(updated, 'user', false);
   }
 
@@ -296,6 +374,8 @@ export class QuoteSharesService {
       },
       include: quoteShareInclude,
     });
+
+    await this.addSystemMessage(updated.id, '개발자가 상담 진행을 수락했습니다.', 'OPEN');
 
     return this.mapQuoteShare(updated, 'developer', false);
   }
@@ -333,6 +413,8 @@ export class QuoteSharesService {
       include: quoteShareInclude,
     });
 
+    await this.addSystemMessage(updated.id, '개발자가 상담을 완료 처리했습니다.', 'OPEN');
+
     return this.mapQuoteShare(updated, 'developer', false);
   }
 
@@ -365,6 +447,8 @@ export class QuoteSharesService {
       },
       include: quoteShareInclude,
     });
+
+    await this.addSystemMessage(updated.id, '개발자가 상담 요청을 거절했습니다.', 'CLOSED');
 
     return this.mapQuoteShare(updated, 'developer', false);
   }

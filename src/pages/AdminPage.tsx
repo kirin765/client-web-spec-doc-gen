@@ -98,34 +98,34 @@ export function AdminPage() {
   };
 
   return (
-    <div className="bg-gray-50 px-6 py-10">
+    <div className="bg-slate-50 px-6 py-10">
       <Seo
         title="관리자 대시보드 | 웹사이트 견적 자동 생성기"
         description="프로젝트 목록, 전문가 승인, 가격 룰을 관리하는 관리자 화면입니다."
         noIndex
       />
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
-          <p className="text-sm font-semibold text-blue-600">관리자 대시보드</p>
-          <h1 className="mt-2 text-3xl font-bold text-gray-900">프로젝트, 전문가, 가격 룰 관리</h1>
+        <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-secondary-100">
+          <p className="text-body-sm font-semibold text-primary-600">관리자 대시보드</p>
+          <h1 className="mt-2 text-heading-lg font-bold text-secondary-900">프로젝트, 전문가, 가격 룰 관리</h1>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl bg-gray-50 p-5">
-              <p className="text-sm text-gray-500">총 프로젝트</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{projects.length}</p>
+            <div className="rounded-xl bg-secondary-50 p-5">
+              <p className="text-body-sm text-secondary-500">총 프로젝트</p>
+              <p className="mt-2 text-heading-lg font-bold text-secondary-900">{projects.length}</p>
             </div>
-            <div className="rounded-xl bg-gray-50 p-5">
-              <p className="text-sm text-gray-500">승인 대기 전문가</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{pendingDevelopers.length}</p>
+            <div className="rounded-xl bg-secondary-50 p-5">
+              <p className="text-body-sm text-secondary-500">승인 대기 전문가</p>
+              <p className="mt-2 text-heading-lg font-bold text-secondary-900">{pendingDevelopers.length}</p>
             </div>
-            <div className="rounded-xl bg-gray-50 p-5">
-              <p className="text-sm text-gray-500">비교 가능한 제안 흐름</p>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{completedProjects}</p>
+            <div className="rounded-xl bg-secondary-50 p-5">
+              <p className="text-body-sm text-secondary-500">비교 가능한 제안 흐름</p>
+              <p className="mt-2 text-heading-lg font-bold text-secondary-900">{completedProjects}</p>
             </div>
           </div>
         </section>
 
         {isLoading ? (
-          <section className="rounded-2xl bg-white p-8 text-gray-600 shadow-sm ring-1 ring-gray-100">
+          <section className="rounded-2xl bg-white p-8 text-secondary-600 shadow-sm ring-1 ring-secondary-100">
             불러오는 중...
           </section>
         ) : null}
@@ -137,9 +137,9 @@ export function AdminPage() {
         ) : null}
 
         <section className="grid gap-8 xl:grid-cols-2">
-          <article className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
+          <article className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-secondary-100">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xl font-bold text-gray-900">전문가 승인</h2>
+              <h2 className="text-heading-sm font-bold text-secondary-900">전문가 승인</h2>
               <LoadingButton
                 type="button"
                 loading={isRefreshing}
@@ -152,24 +152,24 @@ export function AdminPage() {
                     setIsRefreshing(false);
                   }
                 }}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700"
+                className="rounded-lg border border-secondary-300 px-4 py-2 text-body-sm font-semibold text-secondary-700"
               >
                 새로고침
               </LoadingButton>
             </div>
             <div className="mt-6 space-y-4">
               {pendingDevelopers.length === 0 ? (
-                <p className="text-gray-600">승인 대기 중인 전문가가 없습니다.</p>
+                <p className="text-secondary-600">승인 대기 중인 전문가가 없습니다.</p>
               ) : (
                 pendingDevelopers.map((developer) => (
                   <div
                     key={developer.id}
-                    className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gray-200 p-4"
+                    className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-secondary-200 p-4"
                   >
                     <div>
-                      <p className="font-semibold text-gray-900">{developer.displayName}</p>
-                      <p className="mt-1 text-sm text-gray-500">{developer.headline}</p>
-                      <p className="mt-1 text-xs text-gray-400">
+                      <p className="font-semibold text-secondary-900">{developer.displayName}</p>
+                      <p className="mt-1 text-body-sm text-secondary-500">{developer.headline}</p>
+                      <p className="mt-1 text-caption-sm text-secondary-400">
                         {developer.type} · {developer.availabilityStatus} · 생성 {formatDate(developer.createdAt)}
                       </p>
                     </div>
@@ -178,7 +178,7 @@ export function AdminPage() {
                       loading={approvingDeveloperId === developer.id}
                       loadingLabel="승인 중..."
                       onClick={() => void handleApprove(developer.id)}
-                      className="rounded-lg bg-blue-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+                      className="rounded-lg bg-primary-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:bg-secondary-300"
                     >
                       승인
                     </LoadingButton>
@@ -188,31 +188,31 @@ export function AdminPage() {
             </div>
           </article>
 
-          <article className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
-            <h2 className="text-xl font-bold text-gray-900">최근 프로젝트</h2>
+          <article className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-secondary-100">
+            <h2 className="text-heading-sm font-bold text-secondary-900">최근 프로젝트</h2>
             <div className="mt-6 space-y-4">
               {projects.length === 0 ? (
-                <p className="text-gray-600">프로젝트가 없습니다.</p>
+                <p className="text-secondary-600">프로젝트가 없습니다.</p>
               ) : (
                 projects.map((project) => (
                   <div
                     key={project.id}
-                    className="grid gap-3 rounded-xl border border-gray-200 p-4 md:grid-cols-[1.4fr_1fr_0.8fr]"
+                    className="grid gap-3 rounded-xl border border-secondary-200 p-4 md:grid-cols-[1.4fr_1fr_0.8fr]"
                   >
                     <div>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-secondary-900">
                         {project.projectName || '이름 없는 프로젝트'}
                       </p>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-1 text-body-sm text-secondary-500">
                         {project.siteType || '-'} · 연락방법: {project.contactMethod || '미입력'}
                       </p>
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-body-sm text-secondary-600">
                       {project.costEstimate
                         ? formatRange(project.costEstimate.totalMin, project.costEstimate.totalMax)
                         : '비용 정보 없음'}
                     </div>
-                    <div className="text-sm font-semibold uppercase text-gray-700">
+                    <div className="text-body-sm font-semibold uppercase text-secondary-700">
                       {getProjectStatusLabel(project.status)}
                     </div>
                   </div>

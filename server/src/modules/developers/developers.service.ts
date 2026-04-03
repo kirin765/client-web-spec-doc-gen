@@ -1,18 +1,43 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../common/db/prisma.service';
 import {
   normalizeEnumFromApi,
   normalizeEnumToApi,
 } from '../../common/utils/enum-normalizer';
-import { StorageService } from '../../common/storage/storage.service';
 import { CreateDeveloperDto } from './dto/create-developer.dto';
 import { UpdateDeveloperDto } from './dto/update-developer.dto';
+import { getCareerLevel } from './developer-career';
+import { UpsertExpertFaqDto } from './dto/upsert-expert-faq.dto';
+import { UpsertExpertPortfolioDto } from './dto/upsert-expert-portfolio.dto';
 
-function asArray(value: unknown): string[] {
-  return Array.isArray(value) ? (value as string[]) : [];
+interface DeveloperSearchFilters {
+  skills?: string[];
+  supportedProjectTypes?: string[];
+  minBudget?: number;
+  maxBudget?: number;
+  availabilityStatus?: string;
+  careerLevels?: string[];
+  minCareerYears?: number;
+  maxCareerYears?: number;
+  regionCode?: string;
 }
 
-function mapRegion(region: any) {
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.map(String).filter(Boolean) : [];
+}
+
+function mapRegion(
+  region:
+    | {
+        code: string;
+        name: string;
+        depth: number;
+        parentCode: string | null;
+        sortOrder: number;
+      }
+    | null
+    | undefined,
+) {
   if (!region) {
     return null;
   }
@@ -22,208 +47,399 @@ function mapRegion(region: any) {
     name: region.name,
     depth: region.depth,
     parentCode: region.parentCode ?? null,
+    sortOrder: region.sortOrder,
   };
 }
 
-function normalizeRegionCode(value: unknown) {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
+function mapSignedImage(storageUrl: string) {
+  return {
+    storageUrl,
+    url: storageUrl,
+  };
 }
 
 @Injectable()
 export class DevelopersService {
-  constructor(
-    private prisma: PrismaService,
-    private storageService: StorageService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  private mapWriteData(data: Partial<CreateDeveloperDto | UpdateDeveloperDto>) {
-    const next: Record<string, unknown> = { ...data };
+  private matchesCareerFilters(
+    developer: { totalCareerYears: number | null },
+    filters: DeveloperSearchFilters,
+  ) {
+    const hasCareerFilter =
+      (Array.isArray(filters.careerLevels) && filters.careerLevels.length > 0) ||
+      (typeof filters.minCareerYears === 'number' && Number.isFinite(filters.minCareerYears)) ||
+      (typeof filters.maxCareerYears === 'number' && Number.isFinite(filters.maxCareerYears));
 
-    if (typeof data.type === 'string') {
-      next.type = normalizeEnumFromApi(data.type) as any;
+    if (!hasCareerFilter) {
+      return true;
     }
 
-    if (typeof data.availabilityStatus === 'string') {
-      next.availabilityStatus = normalizeEnumFromApi(data.availabilityStatus) as any;
+    const totalCareerYears = developer.totalCareerYears;
+    if (!Number.isFinite(totalCareerYears) || totalCareerYears == null || totalCareerYears <= 0) {
+      return false;
     }
 
-    const normalizedRegionCode = normalizeRegionCode(data.regionCode);
-    if (normalizedRegionCode) {
-      next.regionCode = normalizedRegionCode;
-      next.regions = [normalizedRegionCode];
-    } else if (Array.isArray(data.regions) && data.regions.length > 0) {
-      next.regionCode = data.regions[0];
-      next.regions = [data.regions[0]];
+    if (
+      typeof filters.minCareerYears === 'number' &&
+      Number.isFinite(filters.minCareerYears) &&
+      totalCareerYears < filters.minCareerYears
+    ) {
+      return false;
     }
 
-    return next;
+    if (
+      typeof filters.maxCareerYears === 'number' &&
+      Number.isFinite(filters.maxCareerYears) &&
+      totalCareerYears > filters.maxCareerYears
+    ) {
+      return false;
+    }
+
+    if (Array.isArray(filters.careerLevels) && filters.careerLevels.length > 0) {
+      const careerLevel = getCareerLevel(totalCareerYears);
+      if (!careerLevel || !filters.careerLevels.includes(careerLevel)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
-  private async signStorageUrls(urls: string[]) {
-    return Promise.all(
-      urls.map(async (storageUrl) => ({
-        storageUrl,
-        url: await this.storageService.getSignedUrlFromStorageUrl(storageUrl),
-      })),
-    );
-  }
-
-  private async mapPortfolioPreview(portfolios: any[]) {
-    const preview = portfolios.slice(0, 3);
-
-    return Promise.all(
-      preview.map(async (portfolio) => {
-        const imageUrls = asArray(portfolio.imageUrls);
-        const signedImages = await this.signStorageUrls(imageUrls);
-
-        return {
-          id: portfolio.id,
-          description: portfolio.description,
-          imageCount: imageUrls.length,
-          previewImage: signedImages[0] ?? null,
-        };
-      }),
-    );
-  }
-
-  private async mapPortfolio(portfolio: any) {
+  private buildDeveloperMutationData(
+    data: Partial<CreateDeveloperDto> & { regionCode?: string },
+  ) {
     return {
-      id: portfolio.id,
-      developerId: portfolio.developerId,
-      description: portfolio.description,
-      imageUrls: await this.signStorageUrls(asArray(portfolio.imageUrls)),
-      sortOrder: portfolio.sortOrder,
-      createdAt: portfolio.createdAt.toISOString(),
-      updatedAt: portfolio.updatedAt.toISOString(),
+      ...(data.displayName !== undefined ? { displayName: data.displayName } : {}),
+      ...(data.type !== undefined
+        ? { type: normalizeEnumFromApi(data.type) as 'FREELANCER' | 'AGENCY' }
+        : {}),
+      ...(data.headline !== undefined ? { headline: data.headline } : {}),
+      ...(data.introduction !== undefined ? { introduction: data.introduction } : {}),
+      ...(data.skills !== undefined ? { skills: data.skills } : {}),
+      ...(data.specialties !== undefined ? { specialties: data.specialties } : {}),
+      ...(data.supportedProjectTypes !== undefined
+        ? { supportedProjectTypes: data.supportedProjectTypes }
+        : {}),
+      ...(data.supportedCoreFeatures !== undefined
+        ? { supportedCoreFeatures: data.supportedCoreFeatures }
+        : {}),
+      ...(data.supportedEcommerceFeatures !== undefined
+        ? { supportedEcommerceFeatures: data.supportedEcommerceFeatures }
+        : {}),
+      ...(data.supportedDesignStyles !== undefined
+        ? { supportedDesignStyles: data.supportedDesignStyles }
+        : {}),
+      ...(data.supportedDesignComplexities !== undefined
+        ? { supportedDesignComplexities: data.supportedDesignComplexities }
+        : {}),
+      ...(data.supportedTimelines !== undefined
+        ? { supportedTimelines: data.supportedTimelines }
+        : {}),
+      ...(data.budgetMin !== undefined ? { budgetMin: data.budgetMin } : {}),
+      ...(data.budgetMax !== undefined ? { budgetMax: data.budgetMax } : {}),
+      ...(data.totalCareerYears !== undefined
+        ? { totalCareerYears: data.totalCareerYears ?? null }
+        : {}),
+      ...(data.availabilityStatus !== undefined
+        ? {
+            availabilityStatus: normalizeEnumFromApi(data.availabilityStatus) as
+              | 'AVAILABLE'
+              | 'BUSY'
+              | 'LIMITED',
+          }
+        : {}),
+      ...(data.avgResponseHours !== undefined ? { avgResponseHours: data.avgResponseHours } : {}),
+      ...(data.portfolioLinks !== undefined ? { portfolioLinks: data.portfolioLinks } : {}),
+      ...(data.regions !== undefined ? { regions: data.regions } : {}),
+      ...(data.languages !== undefined ? { languages: data.languages } : {}),
+      ...(data.regionCode !== undefined ? { regionCode: data.regionCode || null } : {}),
     };
   }
 
-  private mapFaq(faq: any) {
-    return {
-      id: faq.id,
-      developerId: faq.developerId,
-      question: faq.question,
-      answer: faq.answer,
-      sortOrder: faq.sortOrder,
-      createdAt: faq.createdAt.toISOString(),
-      updatedAt: faq.updatedAt.toISOString(),
-    };
-  }
-
-  private async mapDeveloper(developer: any, includeEmail = false) {
-    const reviewRatings = Array.isArray(developer.reviews)
-      ? developer.reviews.map((review: any) => review.rating)
-      : [];
-    const reviewCount = reviewRatings.length;
-    const reviewAverage =
-      reviewCount === 0
-        ? 0
-        : Number(
-            (reviewRatings.reduce((sum: number, rating: number) => sum + rating, 0) / reviewCount).toFixed(1),
-          );
+  private async mapDeveloperProfile(
+    developer: {
+      id: string;
+      userId: string | null;
+      type: string;
+      displayName: string;
+      headline: string;
+      introduction: string | null;
+      skills: unknown;
+      specialties: unknown;
+      supportedProjectTypes: unknown;
+      supportedCoreFeatures: unknown;
+      supportedEcommerceFeatures: unknown;
+      supportedDesignStyles: unknown;
+      supportedDesignComplexities: unknown;
+      supportedTimelines: unknown;
+      budgetMin: number;
+      budgetMax: number;
+      totalCareerYears: number | null;
+      availabilityStatus: string;
+      avgResponseHours: number;
+      portfolioLinks: unknown;
+      regionCode: string | null;
+      regions: unknown;
+      languages: unknown;
+      active: boolean;
+      createdAt: Date;
+      updatedAt: Date;
+      region?: {
+        code: string;
+        name: string;
+        depth: number;
+        parentCode: string | null;
+        sortOrder: number;
+      } | null;
+      faqs?: { id: string }[];
+      portfolios?: { id: string; description: string; imageUrls: unknown }[];
+      reviews?: { rating: number }[];
+      user?: { email: string | null } | null;
+    },
+    options: { includeContactEmail?: boolean } = {},
+  ) {
+    const reviews = developer.reviews ?? [];
+    const portfolioPreview = (developer.portfolios ?? []).slice(0, 3).map((portfolio) => {
+      const imageUrls = toStringArray(portfolio.imageUrls);
+      return {
+        id: portfolio.id,
+        description: portfolio.description,
+        imageCount: imageUrls.length,
+        previewImage: imageUrls[0] ? mapSignedImage(imageUrls[0]) : null,
+      };
+    });
 
     return {
       id: developer.id,
       type: normalizeEnumToApi(developer.type),
       displayName: developer.displayName,
       headline: developer.headline,
-      introduction: developer.introduction,
-      skills: asArray(developer.skills),
-      specialties: asArray(developer.specialties),
-      supportedProjectTypes: asArray(developer.supportedProjectTypes),
-      supportedCoreFeatures: asArray(developer.supportedCoreFeatures),
-      supportedEcommerceFeatures: asArray(developer.supportedEcommerceFeatures),
-      supportedDesignStyles: asArray(developer.supportedDesignStyles),
-      supportedDesignComplexities: asArray(developer.supportedDesignComplexities),
-      supportedTimelines: asArray(developer.supportedTimelines),
+      introduction: developer.introduction ?? null,
+      skills: toStringArray(developer.skills),
+      specialties: toStringArray(developer.specialties),
+      supportedProjectTypes: toStringArray(developer.supportedProjectTypes),
+      supportedCoreFeatures: toStringArray(developer.supportedCoreFeatures),
+      supportedEcommerceFeatures: toStringArray(developer.supportedEcommerceFeatures),
+      supportedDesignStyles: toStringArray(developer.supportedDesignStyles),
+      supportedDesignComplexities: toStringArray(developer.supportedDesignComplexities),
+      supportedTimelines: toStringArray(developer.supportedTimelines),
       budgetMin: developer.budgetMin,
       budgetMax: developer.budgetMax,
+      totalCareerYears: developer.totalCareerYears ?? null,
       availabilityStatus: normalizeEnumToApi(developer.availabilityStatus),
+      careerLevel: getCareerLevel(developer.totalCareerYears),
       avgResponseHours: developer.avgResponseHours,
-      portfolioLinks: asArray(developer.portfolioLinks),
+      portfolioLinks: toStringArray(developer.portfolioLinks),
       regionCode: developer.regionCode ?? null,
       region: mapRegion(developer.region),
-      regions: asArray(developer.regions),
-      languages: asArray(developer.languages),
+      regions: toStringArray(developer.regions),
+      languages: toStringArray(developer.languages),
       active: developer.active,
-      faqCount: Array.isArray(developer.faqs) ? developer.faqs.length : 0,
-      reviewCount,
-      reviewAverage,
-      portfolioPreview: await this.mapPortfolioPreview(
-        Array.isArray(developer.portfolios) ? developer.portfolios : [],
-      ),
-      createdAt:
-        developer.createdAt instanceof Date
-          ? developer.createdAt.toISOString()
-          : developer.createdAt,
-      updatedAt:
-        developer.updatedAt instanceof Date
-          ? developer.updatedAt.toISOString()
-          : developer.updatedAt,
-      ...(includeEmail
-        ? {
-            contactEmail: developer.user?.email ?? null,
-          }
-        : {}),
+      faqCount: developer.faqs?.length ?? 0,
+      reviewCount: reviews.length,
+      reviewAverage:
+        reviews.length === 0
+          ? 0
+          : Number(
+              (
+                reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+              ).toFixed(1),
+            ),
+      portfolioPreview,
+      createdAt: developer.createdAt.toISOString(),
+      updatedAt: developer.updatedAt.toISOString(),
+      contactEmail: options.includeContactEmail ? developer.user?.email ?? null : undefined,
     };
   }
 
-  async create(data: CreateDeveloperDto) {
-    return this.prisma.developer.create({
-      data: {
-        ...(this.mapWriteData(data) as any),
-        active: false,
-      },
-    });
-  }
-
-  async update(id: string, data: UpdateDeveloperDto) {
-    const updated = await this.prisma.developer.update({
-      where: { id },
-      data: this.mapWriteData(data) as any,
+  private async getDeveloperEntityByUserId(userId: string) {
+    const developer = await this.prisma.developer.findUnique({
+      where: { userId },
       include: {
-        user: {
-          select: { email: true },
-        },
         region: true,
         faqs: {
           select: { id: true },
         },
         portfolios: {
+          select: { id: true, description: true, imageUrls: true },
           orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-          take: 3,
         },
         reviews: {
           select: { rating: true },
         },
+        user: {
+          select: { email: true },
+        },
       },
     });
 
-    return this.mapDeveloper(updated, true);
+    if (!developer) {
+      throw new NotFoundException('Developer profile not found');
+    }
+
+    return developer;
+  }
+
+  async create(data: CreateDeveloperDto) {
+    return this.prisma.developer.create({
+      data: {
+        displayName: data.displayName,
+        type: normalizeEnumFromApi(data.type) as 'FREELANCER' | 'AGENCY',
+        headline: data.headline,
+        introduction: data.introduction,
+        skills: data.skills,
+        specialties: data.specialties ?? [],
+        supportedProjectTypes: data.supportedProjectTypes,
+        supportedCoreFeatures: data.supportedCoreFeatures ?? [],
+        supportedEcommerceFeatures: data.supportedEcommerceFeatures ?? [],
+        supportedDesignStyles: data.supportedDesignStyles ?? [],
+        supportedDesignComplexities: data.supportedDesignComplexities ?? [],
+        supportedTimelines: data.supportedTimelines ?? [],
+        budgetMin: data.budgetMin,
+        budgetMax: data.budgetMax,
+        totalCareerYears: data.totalCareerYears ?? null,
+        availabilityStatus: normalizeEnumFromApi(
+          data.availabilityStatus ?? 'available',
+        ) as 'AVAILABLE' | 'BUSY' | 'LIMITED',
+        avgResponseHours: data.avgResponseHours ?? 24,
+        portfolioLinks: data.portfolioLinks ?? [],
+        regions: data.regions ?? [],
+        languages: data.languages ?? [],
+        active: false,
+      },
+    });
+  }
+
+  async upsertByUserId(userId: string, data: CreateDeveloperDto & { regionCode?: string }) {
+    const developer = await this.prisma.developer.upsert({
+      where: { userId },
+      update: {
+        displayName: data.displayName,
+        type: normalizeEnumFromApi(data.type) as 'FREELANCER' | 'AGENCY',
+        headline: data.headline,
+        introduction: data.introduction,
+        skills: data.skills,
+        specialties: data.specialties ?? [],
+        supportedProjectTypes: data.supportedProjectTypes,
+        supportedCoreFeatures: data.supportedCoreFeatures ?? [],
+        supportedEcommerceFeatures: data.supportedEcommerceFeatures ?? [],
+        supportedDesignStyles: data.supportedDesignStyles ?? [],
+        supportedDesignComplexities: data.supportedDesignComplexities ?? [],
+        supportedTimelines: data.supportedTimelines ?? [],
+        budgetMin: data.budgetMin,
+        budgetMax: data.budgetMax,
+        totalCareerYears: data.totalCareerYears ?? null,
+        availabilityStatus: normalizeEnumFromApi(
+          data.availabilityStatus ?? 'available',
+        ) as 'AVAILABLE' | 'BUSY' | 'LIMITED',
+        avgResponseHours: data.avgResponseHours ?? 24,
+        portfolioLinks: data.portfolioLinks ?? [],
+        regions: data.regions ?? [],
+        languages: data.languages ?? [],
+        regionCode: data.regionCode ?? null,
+      },
+      create: {
+        userId,
+        displayName: data.displayName,
+        type: normalizeEnumFromApi(data.type) as 'FREELANCER' | 'AGENCY',
+        headline: data.headline,
+        introduction: data.introduction,
+        skills: data.skills,
+        specialties: data.specialties ?? [],
+        supportedProjectTypes: data.supportedProjectTypes,
+        supportedCoreFeatures: data.supportedCoreFeatures ?? [],
+        supportedEcommerceFeatures: data.supportedEcommerceFeatures ?? [],
+        supportedDesignStyles: data.supportedDesignStyles ?? [],
+        supportedDesignComplexities: data.supportedDesignComplexities ?? [],
+        supportedTimelines: data.supportedTimelines ?? [],
+        budgetMin: data.budgetMin,
+        budgetMax: data.budgetMax,
+        totalCareerYears: data.totalCareerYears ?? null,
+        availabilityStatus: normalizeEnumFromApi(
+          data.availabilityStatus ?? 'available',
+        ) as 'AVAILABLE' | 'BUSY' | 'LIMITED',
+        avgResponseHours: data.avgResponseHours ?? 24,
+        portfolioLinks: data.portfolioLinks ?? [],
+        regions: data.regions ?? [],
+        languages: data.languages ?? [],
+        regionCode: data.regionCode ?? null,
+        active: false,
+      },
+      include: {
+        region: true,
+        faqs: {
+          select: { id: true },
+        },
+        portfolios: {
+          select: { id: true, description: true, imageUrls: true },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+        },
+        reviews: {
+          select: { rating: true },
+        },
+        user: {
+          select: { email: true },
+        },
+      },
+    });
+
+    return this.mapDeveloperProfile(developer, { includeContactEmail: true });
+  }
+
+  async update(id: string, data: UpdateDeveloperDto) {
+    return this.prisma.developer.update({
+      where: { id },
+      data: this.buildDeveloperMutationData(data),
+    });
+  }
+
+  async patchByUserId(
+    userId: string,
+    data: Partial<CreateDeveloperDto> & { regionCode?: string },
+  ) {
+    const existing = await this.getDeveloperEntityByUserId(userId);
+    const developer = await this.prisma.developer.update({
+      where: { id: existing.id },
+      data: this.buildDeveloperMutationData(data),
+      include: {
+        region: true,
+        faqs: {
+          select: { id: true },
+        },
+        portfolios: {
+          select: { id: true, description: true, imageUrls: true },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+        },
+        reviews: {
+          select: { rating: true },
+        },
+        user: {
+          select: { email: true },
+        },
+      },
+    });
+
+    return this.mapDeveloperProfile(developer, { includeContactEmail: true });
   }
 
   async getById(id: string) {
     const developer = await this.prisma.developer.findUnique({
       where: { id },
       include: {
-        user: {
-          select: { email: true },
-        },
         region: true,
         faqs: {
           select: { id: true },
         },
         portfolios: {
+          select: { id: true, description: true, imageUrls: true },
           orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-          take: 3,
         },
         reviews: {
           select: { rating: true },
+        },
+        user: {
+          select: { email: true },
         },
       },
     });
@@ -232,159 +448,12 @@ export class DevelopersService {
       throw new NotFoundException('Developer not found');
     }
 
-    return developer;
-  }
-
-  async getPublicById(id: string) {
-    const developer = await this.prisma.developer.findUnique({
-      where: { id },
-      include: {
-        user: {
-          select: { email: true },
-        },
-        region: true,
-        faqs: {
-          select: { id: true },
-        },
-        portfolios: {
-          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-          take: 3,
-        },
-        reviews: {
-          select: { rating: true },
-        },
-      },
-    });
-
-    if (!developer || !developer.active) {
-      throw new NotFoundException('Developer not found');
-    }
-
-    return this.mapDeveloper(developer, false);
+    return this.mapDeveloperProfile(developer, { includeContactEmail: true });
   }
 
   async getByUserId(userId: string) {
-    const developer = await this.prisma.developer.findUnique({
-      where: { userId },
-      include: {
-        user: {
-          select: { email: true },
-        },
-        region: true,
-        faqs: {
-          select: { id: true },
-        },
-        portfolios: {
-          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-          take: 3,
-        },
-        reviews: {
-          select: { rating: true },
-        },
-      },
-    });
-
-    if (!developer) {
-      throw new NotFoundException('Developer profile not found');
-    }
-
-    return this.mapDeveloper(developer, true);
-  }
-
-  async upsertByUser(userId: string, data: CreateDeveloperDto) {
-    const existing = await this.prisma.developer.findUnique({
-      where: { userId },
-      select: { id: true, active: true },
-    });
-
-    const developer = await this.prisma.developer.upsert({
-      where: { userId },
-      update: {
-        ...(this.mapWriteData(data) as any),
-        userId,
-      },
-      create: {
-        ...(this.mapWriteData(data) as any),
-        userId,
-        active: false,
-      },
-      include: {
-        user: {
-          select: { email: true },
-        },
-        region: true,
-        faqs: {
-          select: { id: true },
-        },
-        portfolios: {
-          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-          take: 3,
-        },
-        reviews: {
-          select: { rating: true },
-        },
-      },
-    });
-
-    if (existing?.active) {
-      const refreshed = await this.prisma.developer.update({
-        where: { id: developer.id },
-        data: { active: true },
-        include: {
-          user: {
-            select: { email: true },
-          },
-          region: true,
-          faqs: {
-            select: { id: true },
-          },
-          portfolios: {
-            orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-            take: 3,
-          },
-          reviews: {
-            select: { rating: true },
-          },
-        },
-      });
-      return this.mapDeveloper(refreshed, true);
-    }
-
-    return this.mapDeveloper(developer, true);
-  }
-
-  async patchByUser(userId: string, data: UpdateDeveloperDto) {
-    const existing = await this.prisma.developer.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
-
-    if (!existing) {
-      throw new NotFoundException('Developer profile not found');
-    }
-
-    const updated = await this.prisma.developer.update({
-      where: { id: existing.id },
-      data: this.mapWriteData(data) as any,
-      include: {
-        user: {
-          select: { email: true },
-        },
-        region: true,
-        faqs: {
-          select: { id: true },
-        },
-        portfolios: {
-          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-          take: 3,
-        },
-        reviews: {
-          select: { rating: true },
-        },
-      },
-    });
-
-    return this.mapDeveloper(updated, true);
+    const developer = await this.getDeveloperEntityByUserId(userId);
+    return this.mapDeveloperProfile(developer, { includeContactEmail: true });
   }
 
   async getActiveDevelopers() {
@@ -398,98 +467,274 @@ export class DevelopersService {
     });
   }
 
-  async search(filters: any) {
-    const activeDevelopers = await this.prisma.developer.findMany({
-      where: { active: true },
+  async search(filters: DeveloperSearchFilters) {
+    const developers = await this.prisma.developer.findMany({
+      where: {
+        active: true,
+        ...(filters.availabilityStatus
+          ? {
+              availabilityStatus: normalizeEnumFromApi(filters.availabilityStatus) as
+                | 'AVAILABLE'
+                | 'BUSY'
+                | 'LIMITED',
+            }
+          : {}),
+        ...(filters.minBudget !== undefined ? { budgetMax: { gte: filters.minBudget } } : {}),
+        ...(filters.maxBudget !== undefined ? { budgetMin: { lte: filters.maxBudget } } : {}),
+      },
       include: {
-        user: {
-          select: { email: true },
-        },
         region: true,
         faqs: {
           select: { id: true },
         },
         portfolios: {
+          select: { id: true, description: true, imageUrls: true },
           orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-          take: 3,
         },
         reviews: {
           select: { rating: true },
         },
+        user: {
+          select: { email: true },
+        },
+      },
+      orderBy: [{ active: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    const filtered = developers.filter((developer) => {
+      const skills = toStringArray(developer.skills);
+      const projectTypes = toStringArray(developer.supportedProjectTypes);
+
+      const matchesSkills =
+        !filters.skills || filters.skills.length === 0
+          ? true
+          : filters.skills.every((skill) => skills.includes(skill));
+      const matchesProjectTypes =
+        !filters.supportedProjectTypes || filters.supportedProjectTypes.length === 0
+          ? true
+          : filters.supportedProjectTypes.some((projectType) =>
+              projectTypes.includes(projectType),
+            );
+      const matchesRegion =
+        !filters.regionCode
+          ? true
+          : developer.regionCode === filters.regionCode ||
+            developer.regionCode?.startsWith(`${filters.regionCode}-`) === true;
+
+      return (
+        matchesSkills &&
+        matchesProjectTypes &&
+        matchesRegion &&
+        this.matchesCareerFilters(developer, filters)
+      );
+    });
+
+    return Promise.all(filtered.map((developer) => this.mapDeveloperProfile(developer)));
+  }
+
+  async listFaqsByDeveloperId(developerId: string) {
+    const faqs = await this.prisma.expertFaq.findMany({
+      where: { developerId },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+
+    return faqs.map((faq) => ({
+      id: faq.id,
+      developerId: faq.developerId,
+      question: faq.question,
+      answer: faq.answer,
+      sortOrder: faq.sortOrder,
+      createdAt: faq.createdAt.toISOString(),
+      updatedAt: faq.updatedAt.toISOString(),
+    }));
+  }
+
+  async listFaqsByUserId(userId: string) {
+    const developer = await this.getDeveloperEntityByUserId(userId);
+    return this.listFaqsByDeveloperId(developer.id);
+  }
+
+  async createFaq(userId: string, dto: UpsertExpertFaqDto) {
+    const developer = await this.getDeveloperEntityByUserId(userId);
+    const faq = await this.prisma.expertFaq.create({
+      data: {
+        developerId: developer.id,
+        question: dto.question,
+        answer: dto.answer,
+        sortOrder: dto.sortOrder ?? 0,
       },
     });
 
-    const availabilityStatus = filters?.availabilityStatus
-      ? normalizeEnumFromApi(filters.availabilityStatus)
-      : undefined;
+    return {
+      id: faq.id,
+      developerId: faq.developerId,
+      question: faq.question,
+      answer: faq.answer,
+      sortOrder: faq.sortOrder,
+      createdAt: faq.createdAt.toISOString(),
+      updatedAt: faq.updatedAt.toISOString(),
+    };
+  }
 
-    const filtered = activeDevelopers.filter((developer) => {
-      if (availabilityStatus && developer.availabilityStatus !== availabilityStatus) {
-        return false;
-      }
-
-      if (
-        typeof filters?.minBudget === 'number' &&
-        Number.isFinite(filters.minBudget) &&
-        developer.budgetMax < filters.minBudget
-      ) {
-        return false;
-      }
-
-      if (
-        typeof filters?.maxBudget === 'number' &&
-        Number.isFinite(filters.maxBudget) &&
-        developer.budgetMin > filters.maxBudget
-      ) {
-        return false;
-      }
-
-      if (Array.isArray(filters?.skills) && filters.skills.length > 0) {
-        const hasSkill = filters.skills.some((skill: string) =>
-          asArray(developer.skills).includes(skill),
-        );
-        if (!hasSkill) return false;
-      }
-
-      if (
-        Array.isArray(filters?.supportedProjectTypes) &&
-        filters.supportedProjectTypes.length > 0
-      ) {
-        const hasProjectType = filters.supportedProjectTypes.some((projectType: string) =>
-          asArray(developer.supportedProjectTypes).includes(projectType),
-        );
-        if (!hasProjectType) return false;
-      }
-
-      return true;
+  async updateFaq(userId: string, faqId: string, dto: Partial<UpsertExpertFaqDto>) {
+    const developer = await this.getDeveloperEntityByUserId(userId);
+    const existing = await this.prisma.expertFaq.findFirst({
+      where: {
+        id: faqId,
+        developerId: developer.id,
+      },
     });
 
-    return Promise.all(filtered.map((developer) => this.mapDeveloper(developer, false)));
+    if (!existing) {
+      throw new NotFoundException('FAQ not found');
+    }
+
+    const faq = await this.prisma.expertFaq.update({
+      where: { id: faqId },
+      data: {
+        ...(dto.question !== undefined ? { question: dto.question } : {}),
+        ...(dto.answer !== undefined ? { answer: dto.answer } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+      },
+    });
+
+    return {
+      id: faq.id,
+      developerId: faq.developerId,
+      question: faq.question,
+      answer: faq.answer,
+      sortOrder: faq.sortOrder,
+      createdAt: faq.createdAt.toISOString(),
+      updatedAt: faq.updatedAt.toISOString(),
+    };
+  }
+
+  async deleteFaq(userId: string, faqId: string) {
+    const developer = await this.getDeveloperEntityByUserId(userId);
+    const existing = await this.prisma.expertFaq.findFirst({
+      where: {
+        id: faqId,
+        developerId: developer.id,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('FAQ not found');
+    }
+
+    await this.prisma.expertFaq.delete({
+      where: { id: faqId },
+    });
+
+    return { success: true as const };
+  }
+
+  async listPortfoliosByDeveloperId(developerId: string) {
+    const portfolios = await this.prisma.expertPortfolio.findMany({
+      where: { developerId },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+
+    return portfolios.map((portfolio) => ({
+      id: portfolio.id,
+      developerId: portfolio.developerId,
+      description: portfolio.description,
+      imageUrls: toStringArray(portfolio.imageUrls).map(mapSignedImage),
+      sortOrder: portfolio.sortOrder,
+      createdAt: portfolio.createdAt.toISOString(),
+      updatedAt: portfolio.updatedAt.toISOString(),
+    }));
+  }
+
+  async listPortfoliosByUserId(userId: string) {
+    const developer = await this.getDeveloperEntityByUserId(userId);
+    return this.listPortfoliosByDeveloperId(developer.id);
+  }
+
+  async createPortfolio(userId: string, dto: UpsertExpertPortfolioDto) {
+    const developer = await this.getDeveloperEntityByUserId(userId);
+    const portfolio = await this.prisma.expertPortfolio.create({
+      data: {
+        developerId: developer.id,
+        description: dto.description,
+        imageUrls: dto.imageUrls,
+        sortOrder: dto.sortOrder ?? 0,
+      },
+    });
+
+    return {
+      id: portfolio.id,
+      developerId: portfolio.developerId,
+      description: portfolio.description,
+      imageUrls: toStringArray(portfolio.imageUrls).map(mapSignedImage),
+      sortOrder: portfolio.sortOrder,
+      createdAt: portfolio.createdAt.toISOString(),
+      updatedAt: portfolio.updatedAt.toISOString(),
+    };
+  }
+
+  async updatePortfolio(
+    userId: string,
+    portfolioId: string,
+    dto: Partial<UpsertExpertPortfolioDto>,
+  ) {
+    const developer = await this.getDeveloperEntityByUserId(userId);
+    const existing = await this.prisma.expertPortfolio.findFirst({
+      where: {
+        id: portfolioId,
+        developerId: developer.id,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Portfolio not found');
+    }
+
+    const portfolio = await this.prisma.expertPortfolio.update({
+      where: { id: portfolioId },
+      data: {
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.imageUrls !== undefined ? { imageUrls: dto.imageUrls } : {}),
+        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
+      },
+    });
+
+    return {
+      id: portfolio.id,
+      developerId: portfolio.developerId,
+      description: portfolio.description,
+      imageUrls: toStringArray(portfolio.imageUrls).map(mapSignedImage),
+      sortOrder: portfolio.sortOrder,
+      createdAt: portfolio.createdAt.toISOString(),
+      updatedAt: portfolio.updatedAt.toISOString(),
+    };
+  }
+
+  async deletePortfolio(userId: string, portfolioId: string) {
+    const developer = await this.getDeveloperEntityByUserId(userId);
+    const existing = await this.prisma.expertPortfolio.findFirst({
+      where: {
+        id: portfolioId,
+        developerId: developer.id,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Portfolio not found');
+    }
+
+    await this.prisma.expertPortfolio.delete({
+      where: { id: portfolioId },
+    });
+
+    return { success: true as const };
   }
 
   async updateAvailability(id: string, status: 'AVAILABLE' | 'BUSY' | 'LIMITED') {
-    const updated = await this.prisma.developer.update({
+    return this.prisma.developer.update({
       where: { id },
       data: { availabilityStatus: status },
-      include: {
-        user: {
-          select: { email: true },
-        },
-        region: true,
-        faqs: {
-          select: { id: true },
-        },
-        portfolios: {
-          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-          take: 3,
-        },
-        reviews: {
-          select: { rating: true },
-        },
-      },
     });
-
-    return this.mapDeveloper(updated, true);
   }
 
   async getMatches(developerId: string) {
@@ -525,195 +770,5 @@ export class DevelopersService {
         submittedAt: match.projectRequest.submittedAt?.toISOString() ?? null,
       },
     }));
-  }
-
-  private async getDeveloperIdByUserId(userId: string) {
-    const developer = await this.prisma.developer.findUnique({
-      where: { userId },
-      select: { id: true, active: true },
-    });
-
-    if (!developer) {
-      throw new NotFoundException('Developer profile not found');
-    }
-
-    return developer.id;
-  }
-
-  private async assertFaqOwner(userId: string, faqId: string) {
-    const developerId = await this.getDeveloperIdByUserId(userId);
-    const faq = await this.prisma.expertFaq.findUnique({
-      where: { id: faqId },
-      select: { id: true, developerId: true },
-    });
-
-    if (!faq) {
-      throw new NotFoundException('FAQ not found');
-    }
-
-    if (faq.developerId !== developerId) {
-      throw new ForbiddenException('Cannot modify another developer\'s FAQ');
-    }
-
-    return developerId;
-  }
-
-  private async assertPortfolioOwner(userId: string, portfolioId: string) {
-    const developerId = await this.getDeveloperIdByUserId(userId);
-    const portfolio = await this.prisma.expertPortfolio.findUnique({
-      where: { id: portfolioId },
-      select: { id: true, developerId: true },
-    });
-
-    if (!portfolio) {
-      throw new NotFoundException('Portfolio not found');
-    }
-
-    if (portfolio.developerId !== developerId) {
-      throw new ForbiddenException('Cannot modify another developer\'s portfolio');
-    }
-
-    return developerId;
-  }
-
-  async listPublicFaqs(developerId: string) {
-    const developer = await this.prisma.developer.findUnique({
-      where: { id: developerId },
-      select: { active: true },
-    });
-
-    if (!developer || !developer.active) {
-      throw new NotFoundException('Developer not found');
-    }
-
-    const faqs = await this.prisma.expertFaq.findMany({
-      where: { developerId },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-    });
-
-    return faqs.map((faq) => this.mapFaq(faq));
-  }
-
-  async listMyFaqs(userId: string) {
-    const developerId = await this.getDeveloperIdByUserId(userId);
-    const faqs = await this.prisma.expertFaq.findMany({
-      where: { developerId },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-    });
-
-    return faqs.map((faq) => this.mapFaq(faq));
-  }
-
-  async createFaq(userId: string, dto: { question: string; answer: string; sortOrder?: number }) {
-    const developerId = await this.getDeveloperIdByUserId(userId);
-    const faq = await this.prisma.expertFaq.create({
-      data: {
-        developerId,
-        question: dto.question,
-        answer: dto.answer,
-        sortOrder: dto.sortOrder ?? 0,
-      },
-    });
-
-    return this.mapFaq(faq);
-  }
-
-  async updateFaq(
-    userId: string,
-    faqId: string,
-    dto: { question?: string; answer?: string; sortOrder?: number },
-  ) {
-    await this.assertFaqOwner(userId, faqId);
-    const faq = await this.prisma.expertFaq.update({
-      where: { id: faqId },
-      data: {
-        ...(dto.question !== undefined ? { question: dto.question } : {}),
-        ...(dto.answer !== undefined ? { answer: dto.answer } : {}),
-        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
-      },
-    });
-
-    return this.mapFaq(faq);
-  }
-
-  async deleteFaq(userId: string, faqId: string) {
-    await this.assertFaqOwner(userId, faqId);
-    await this.prisma.expertFaq.delete({
-      where: { id: faqId },
-    });
-
-    return { success: true };
-  }
-
-  async listPublicPortfolios(developerId: string) {
-    const developer = await this.prisma.developer.findUnique({
-      where: { id: developerId },
-      select: { active: true },
-    });
-
-    if (!developer || !developer.active) {
-      throw new NotFoundException('Developer not found');
-    }
-
-    const portfolios = await this.prisma.expertPortfolio.findMany({
-      where: { developerId },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-    });
-
-    return Promise.all(portfolios.map((portfolio) => this.mapPortfolio(portfolio)));
-  }
-
-  async listMyPortfolios(userId: string) {
-    const developerId = await this.getDeveloperIdByUserId(userId);
-    const portfolios = await this.prisma.expertPortfolio.findMany({
-      where: { developerId },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-    });
-
-    return Promise.all(portfolios.map((portfolio) => this.mapPortfolio(portfolio)));
-  }
-
-  async createPortfolio(
-    userId: string,
-    dto: { description: string; imageUrls: string[]; sortOrder?: number },
-  ) {
-    const developerId = await this.getDeveloperIdByUserId(userId);
-    const portfolio = await this.prisma.expertPortfolio.create({
-      data: {
-        developerId,
-        description: dto.description,
-        imageUrls: dto.imageUrls,
-        sortOrder: dto.sortOrder ?? 0,
-      },
-    });
-
-    return this.mapPortfolio(portfolio);
-  }
-
-  async updatePortfolio(
-    userId: string,
-    portfolioId: string,
-    dto: { description?: string; imageUrls?: string[]; sortOrder?: number },
-  ) {
-    await this.assertPortfolioOwner(userId, portfolioId);
-    const portfolio = await this.prisma.expertPortfolio.update({
-      where: { id: portfolioId },
-      data: {
-        ...(dto.description !== undefined ? { description: dto.description } : {}),
-        ...(dto.imageUrls !== undefined ? { imageUrls: dto.imageUrls } : {}),
-        ...(dto.sortOrder !== undefined ? { sortOrder: dto.sortOrder } : {}),
-      },
-    });
-
-    return this.mapPortfolio(portfolio);
-  }
-
-  async deletePortfolio(userId: string, portfolioId: string) {
-    await this.assertPortfolioOwner(userId, portfolioId);
-    await this.prisma.expertPortfolio.delete({
-      where: { id: portfolioId },
-    });
-
-    return { success: true };
   }
 }

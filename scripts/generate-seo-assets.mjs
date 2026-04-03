@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -6,8 +6,36 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const publicDir = path.join(rootDir, 'public');
+const envLocalPath = path.join(rootDir, '.env.local');
 
-const env = globalThis.process?.env ?? {};
+async function loadRootEnvLocal() {
+  try {
+    const raw = await readFile(envLocalPath, 'utf8');
+    const parsed = Object.create(null);
+
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+
+      const separatorIndex = trimmed.indexOf('=');
+      if (separatorIndex < 0) continue;
+
+      const key = trimmed.slice(0, separatorIndex).trim();
+      const value = trimmed.slice(separatorIndex + 1).trim().replace(/^['"]|['"]$/g, '');
+      parsed[key] = value;
+    }
+
+    return parsed;
+  } catch {
+    return {};
+  }
+}
+
+const envLocal = await loadRootEnvLocal();
+const env = {
+  ...envLocal,
+  ...(globalThis.process?.env ?? {}),
+};
 const siteUrl = (env.SITE_URL || env.VITE_SITE_URL || 'https://webbrief.co.kr').replace(/\/+$/, '');
 
 const routes = ['/', '/experts'];

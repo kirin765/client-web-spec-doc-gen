@@ -6,4 +6,4 @@ Disallow: /projects/
 Disallow: /wizard
 Disallow: /result
 
-Sitemap: https://webbrief.co.kr/sitemap.xml
+Sitemap: http://localhost:5173/sitemap.xml

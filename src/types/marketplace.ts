@@ -52,6 +52,7 @@ export interface DeveloperDraftInput {
   supportedTimelines: string[];
   budgetMin: number;
   budgetMax: number;
+  totalCareerYears: number | null;
   avgResponseHours: number;
   availabilityStatus: DeveloperProfile['availabilityStatus'];
   portfolioLinks: string[];
