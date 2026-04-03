@@ -1,14 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   CheckCircle2,
-  ChevronRight,
   ImagePlus,
   Mail,
   Pencil,
   RefreshCw,
   Save,
-  Star,
   Trash2,
   XCircle,
 } from 'lucide-react';
@@ -20,21 +18,16 @@ import {
   ApiError,
   approveQuoteShareByDeveloper,
   cancelQuoteShareByDeveloper,
-  cancelQuoteShareByUser,
   completeQuoteShareByDeveloper,
   createMyFaq,
   createMyPortfolio,
-  createReview,
   getMyCustomerProfile,
   getMyDeveloperProfile,
-  getMyProjectRequestDetail,
   getQuoteShareDetail,
   listInboxQuoteShares,
   listMyFaqs,
   listMyPortfolios,
-  listMyProjectRequests,
   listReceivedReviews,
-  listSentQuoteShares,
   updateMyFaq,
   updateMyPortfolio,
   uploadImages,
@@ -47,13 +40,11 @@ import type {
   CustomerProfileApi,
   ExpertFaqItem,
   ExpertPortfolioItem,
-  ProjectRequestDetail,
   QuoteShareItem,
   ReviewItem,
   SignedImage,
   UpsertDeveloperProfilePayload,
 } from '@/types/api';
-import { formatRange } from '@/lib/utils';
 
 function getCareerLevel(totalCareerYears: number | null | undefined) {
   if (!Number.isFinite(totalCareerYears) || totalCareerYears == null || totalCareerYears <= 0) {
@@ -83,10 +74,6 @@ function getCareerLevelLabel(level: ReturnType<typeof getCareerLevel>) {
       return '미설정';
   }
 }
-
-type SelectedDetail =
-  | { kind: 'project'; data: ProjectRequestDetail }
-  | { kind: 'quote'; data: QuoteShareItem };
 
 function splitCsv(value: string) {
   return value
@@ -120,27 +107,6 @@ function getQuoteStatusLabel(status: QuoteShareItem['status']) {
       return '고객 취소';
     case 'canceled_by_developer':
       return '전문가 취소';
-    default:
-      return status;
-  }
-}
-
-function getProjectStatusLabel(status: string) {
-  switch (status) {
-    case 'DRAFT':
-      return '임시 저장';
-    case 'SUBMITTED':
-      return '제출됨';
-    case 'CALCULATING':
-      return '비용 계산 중';
-    case 'GENERATING_DOCUMENT':
-      return '문서 생성 중';
-    case 'MATCHING':
-      return '전문가 매칭 중';
-    case 'COMPLETED':
-      return '완료';
-    case 'ARCHIVED':
-      return '보관됨';
     default:
       return status;
   }
@@ -234,13 +200,11 @@ export function MyPage() {
   const [faqForm, setFaqForm] = useState<FaqFormState>(INITIAL_FAQ_FORM);
   const [portfolioForm, setPortfolioForm] = useState<PortfolioFormState>(INITIAL_PORTFOLIO_FORM);
 
-  const [projectRequests, setProjectRequests] = useState<any[]>([]);
-  const [sentShares, setSentShares] = useState<QuoteShareItem[]>([]);
   const [inbox, setInbox] = useState<QuoteShareItem[]>([]);
   const [faqs, setFaqs] = useState<ExpertFaqItem[]>([]);
   const [portfolios, setPortfolios] = useState<ExpertPortfolioItem[]>([]);
   const [receivedReviews, setReceivedReviews] = useState<ReviewItem[]>([]);
-  const [selectedDetail, setSelectedDetail] = useState<SelectedDetail | null>(null);
+  const [selectedDetail, setSelectedDetail] = useState<QuoteShareItem | null>(null);
   const [selectedDetailLoading, setSelectedDetailLoading] = useState(false);
   const [selectedDetailError, setSelectedDetailError] = useState<string | null>(null);
 
@@ -251,9 +215,6 @@ export function MyPage() {
   const [isSavingPortfolio, setIsSavingPortfolio] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [reviewDrafts, setReviewDrafts] = useState<
-    Record<string, { rating: string; content: string }>
-  >({});
 
   const loadData = useCallback(async () => {
     if (!token) return;
@@ -265,8 +226,6 @@ export function MyPage() {
       const [
         nextCustomerProfile,
         nextDeveloperProfile,
-        nextProjectRequests,
-        nextSentShares,
         nextInbox,
         nextReceivedReviews,
         nextFaqs,
@@ -280,8 +239,6 @@ export function MyPage() {
           if (error instanceof ApiError && error.status === 404) return null;
           throw error;
         }),
-        listMyProjectRequests(token),
-        listSentQuoteShares(token),
         listInboxQuoteShares(token).catch((error) => {
           if (error instanceof ApiError && error.status === 404) return [];
           throw error;
@@ -341,8 +298,6 @@ export function MyPage() {
         });
       }
 
-      setProjectRequests(nextProjectRequests.data);
-      setSentShares(nextSentShares);
       setInbox(nextInbox);
       setReceivedReviews(nextReceivedReviews);
       setFaqs(nextFaqs);
@@ -357,13 +312,6 @@ export function MyPage() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
-
-  const sentCountByProject = useMemo(() => {
-    return sentShares.reduce<Record<string, number>>((acc, share) => {
-      acc[share.projectRequestId] = (acc[share.projectRequestId] ?? 0) + 1;
-      return acc;
-    }, {});
-  }, [sentShares]);
 
   if (!token || !user) {
     return null;
@@ -399,24 +347,7 @@ export function MyPage() {
     setSelectedDetail(null);
     try {
       const detail = await getQuoteShareDetail(token, quoteShareId);
-      setSelectedDetail({ kind: 'quote', data: detail });
-    } catch (error) {
-      setSelectedDetailError(error instanceof Error ? error.message : '상세 정보를 불러오지 못했습니다.');
-    } finally {
-      setSelectedDetailLoading(false);
-    }
-  };
-
-  const handleViewProjectDetail = async (projectRequestId: string) => {
-    if (!token) return;
-
-    setSelectedDetailLoading(true);
-    setSelectedDetailError(null);
-    setSelectedDetail(null);
-
-    try {
-      const detail = await getMyProjectRequestDetail(token, projectRequestId);
-      setSelectedDetail({ kind: 'project', data: detail });
+      setSelectedDetail(detail);
     } catch (error) {
       setSelectedDetailError(error instanceof Error ? error.message : '상세 정보를 불러오지 못했습니다.');
     } finally {
@@ -549,34 +480,6 @@ export function MyPage() {
     }
   };
 
-  const handleCreateReview = async (quoteShareId: string) => {
-    if (!token) return;
-
-    const draft = reviewDrafts[quoteShareId];
-    if (!draft) return;
-
-    setActionMessage(null);
-    setErrorMessage(null);
-
-    try {
-      await createReview(token, {
-        quoteShareId,
-        rating: Number(draft.rating || 5),
-        content: draft.content,
-      });
-
-      setReviewDrafts((current) => {
-        const next = { ...current };
-        delete next[quoteShareId];
-        return next;
-      });
-      setActionMessage('리뷰가 등록되었습니다.');
-      await loadData();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '리뷰 등록에 실패했습니다.');
-    }
-  };
-
   const renderSelectedDetailPanel = () => {
     if (selectedDetailLoading) {
       return (
@@ -598,102 +501,7 @@ export function MyPage() {
       return null;
     }
 
-    if (selectedDetail.kind === 'project') {
-      const project = selectedDetail.data;
-
-      return (
-        <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-secondary-100">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="text-heading-md font-bold text-secondary-900">견적 상세</h2>
-              <p className="mt-1 text-body-sm text-secondary-500">
-                {project.projectName || '이름 없는 견적서'} · 생성 {formatDate(project.createdAt)}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedDetail(null)}
-              className="rounded-lg border border-secondary-300 px-3 py-2 text-body-sm font-semibold text-secondary-700"
-            >
-              닫기
-            </button>
-          </div>
-
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <section className="rounded-xl border border-secondary-200 p-4">
-              <h3 className="text-body-sm font-semibold text-secondary-900">프로젝트 정보</h3>
-              <div className="mt-3 space-y-2 text-body-sm text-secondary-700">
-                <p>상태: {getProjectStatusLabel(project.status)}</p>
-                <p>사이트 유형: {project.siteType || '-'}</p>
-                <p>연락방법: {project.contactMethod || '-'}</p>
-                <p>제출 시각: {formatDate(project.submittedAt)}</p>
-                <p>가격 정책 버전: {project.pricingVersion || '-'}</p>
-              </div>
-            </section>
-
-            <section className="rounded-xl border border-secondary-200 p-4">
-              <h3 className="text-body-sm font-semibold text-secondary-900">예상 비용</h3>
-              {project.costEstimate ? (
-                <div className="mt-3 space-y-2 text-body-sm text-secondary-700">
-                  <p className="text-body-lg font-bold text-primary-600">
-                    {formatRange(project.costEstimate.totalMin, project.costEstimate.totalMax)}
-                  </p>
-                  <p>기본 티어: {project.costEstimate.baseTier.id}</p>
-                  <p>디자인 승수: ×{project.costEstimate.designMultiplier}</p>
-                  <p>일정 승수: ×{project.costEstimate.timelineMultiplier}</p>
-                </div>
-              ) : (
-                <p className="mt-3 text-body-sm text-secondary-500">비용 정보가 아직 없습니다.</p>
-              )}
-            </section>
-
-            <section className="rounded-xl border border-secondary-200 p-4">
-              <h3 className="text-body-sm font-semibold text-secondary-900">문서 및 매칭</h3>
-              <div className="mt-3 space-y-2 text-body-sm text-secondary-700">
-                <p>생성된 문서: {project.documents.length}개</p>
-                <p>매칭 결과: {project.matches.length}명</p>
-                <p>발송: {project.quoteSharesSummary.sent}건</p>
-                <p>진행 중: {project.quoteSharesSummary.inProgress}건</p>
-                <p>완료: {project.quoteSharesSummary.completed}건</p>
-                <p>취소: {project.quoteSharesSummary.canceled}건</p>
-              </div>
-            </section>
-
-            <section className="rounded-xl border border-secondary-200 p-4">
-              <h3 className="text-body-sm font-semibold text-secondary-900">주요 매칭</h3>
-              {project.matches.length > 0 ? (
-                <ul className="mt-3 space-y-2 text-body-sm text-secondary-700">
-                  {project.matches.slice(0, 3).map((match) => (
-                    <li key={match.id} className="rounded-lg bg-secondary-50 px-3 py-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-secondary-900">
-                          {match.developer?.displayName || '전문가'}
-                        </span>
-                        <span className="text-primary-600">{Math.round(match.score)}점</span>
-                      </div>
-                      <p className="mt-1 text-caption-sm text-secondary-500">
-                        {match.developer?.headline || '-'} · {match.status}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="mt-3 text-body-sm text-secondary-500">매칭된 전문가가 없습니다.</p>
-              )}
-            </section>
-          </div>
-
-          <section className="mt-6 rounded-xl border border-secondary-200 p-4">
-            <h3 className="text-body-sm font-semibold text-secondary-900">원본 답변</h3>
-            <pre className="mt-3 max-h-80 overflow-auto rounded-lg bg-secondary-50 p-4 text-caption-sm leading-6 text-secondary-700">
-              {JSON.stringify(project.rawAnswers, null, 2)}
-            </pre>
-          </section>
-        </section>
-      );
-    }
-
-    const share = selectedDetail.data;
+    const share = selectedDetail;
 
     return (
       <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-secondary-100">
@@ -737,7 +545,7 @@ export function MyPage() {
         <p className="text-body-sm font-semibold text-primary-600">고객 마이페이지</p>
         <h1 className="mt-2 text-display-sm font-bold text-secondary-900">프로필과 내 견적 흐름 관리</h1>
         <p className="mt-3 text-secondary-600">
-          프로필을 저장하고, 작성한 견적 리스트와 전문가에게 보낸 요청 상태를 확인할 수 있습니다.
+          프로필과 활동 지역을 관리할 수 있습니다. 견적 이력과 요청 관리는 `/quotes`에서 확인하세요.
         </p>
       </section>
 
@@ -800,155 +608,6 @@ export function MyPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-secondary-100">
-        <h2 className="text-heading-md font-bold text-secondary-900">작성한 견적 리스트</h2>
-        <div className="mt-4 space-y-3">
-          {projectRequests.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-secondary-300 p-8 text-center text-secondary-600">
-              아직 저장된 견적서가 없습니다.
-            </div>
-          ) : (
-            projectRequests.map((project) => (
-              <button
-                key={project.id}
-                type="button"
-                onClick={() => void handleViewProjectDetail(project.id)}
-                aria-pressed={selectedDetail?.kind === 'project' && selectedDetail.data.id === project.id}
-                className={`w-full rounded-xl border p-4 text-left transition hover:border-primary-300 hover:bg-primary-50/40 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                  selectedDetail?.kind === 'project' && selectedDetail.data.id === project.id
-                    ? 'border-primary-300 bg-primary-50/60'
-                    : 'border-secondary-200'
-                }`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-secondary-900">
-                      {project.projectName || '이름 없는 견적서'}
-                    </p>
-                    <p className="mt-1 text-body-sm text-secondary-500">
-                      {project.siteType || '-'} · 연락방법: {project.contactMethod || '미입력'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-primary-50 px-3 py-1 text-caption-sm font-semibold text-primary-700">
-                      발송 {sentCountByProject[project.id] ?? 0}건
-                    </span>
-                    <ChevronRight className="h-4 w-4 text-secondary-400" />
-                  </div>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-      </section>
-
-      <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-secondary-100">
-        <h2 className="text-heading-md font-bold text-secondary-900">견적 요청 리스트</h2>
-        <div className="mt-4 space-y-3">
-          {sentShares.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-secondary-300 p-8 text-center text-secondary-600">
-              아직 전문가에게 보낸 견적이 없습니다.
-            </div>
-          ) : (
-            sentShares.map((share) => {
-              const draft = reviewDrafts[share.id] ?? { rating: '5', content: '' };
-
-              return (
-                <article key={share.id} className="rounded-xl border border-secondary-200 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-secondary-900">
-                        {share.projectRequest?.projectName || '견적서'}
-                      </p>
-                      <p className="mt-1 text-body-sm text-secondary-500">
-                        전문가: {share.developer?.displayName || '-'} · 상태: {getQuoteStatusLabel(share.status)}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void handleViewDetail(share.id)}
-                        className="rounded-lg border border-secondary-300 px-3 py-2 text-body-sm font-semibold text-secondary-700"
-                      >
-                        상세
-                      </button>
-                      {share.chatRoomId && share.canChat ? (
-                        <Link
-                          to={`/chat/${share.chatRoomId}`}
-                          className="rounded-lg bg-primary-600 px-3 py-2 text-body-sm font-semibold text-white"
-                        >
-                          채팅
-                        </Link>
-                      ) : null}
-                      {share.status === 'sent' ? (
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            await cancelQuoteShareByUser(token, share.id);
-                            await loadData();
-                          }}
-                          className="inline-flex items-center gap-1 rounded-lg border border-error-200 px-3 py-2 text-body-sm font-semibold text-error-700"
-                        >
-                          <XCircle className="h-4 w-4" />
-                          취소
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <p className="mt-3 text-body-sm text-secondary-600">
-                    내 연락방법: {share.contactMethod || '미입력'}
-                  </p>
-
-                  {share.canReview ? (
-                    <div className="mt-4 rounded-xl bg-amber-50 p-4">
-                      <p className="text-body-sm font-semibold text-amber-900">완료된 견적입니다. 리뷰를 남겨주세요.</p>
-                      <div className="mt-3 grid gap-3 md:grid-cols-[120px,1fr]">
-                        <select
-                          value={draft.rating}
-                          onChange={(event) =>
-                            setReviewDrafts((current) => ({
-                              ...current,
-                              [share.id]: { ...draft, rating: event.target.value },
-                            }))
-                          }
-                          className="rounded-xl border border-amber-200 px-4 py-3"
-                        >
-                          {[5, 4, 3, 2, 1].map((rating) => (
-                            <option key={rating} value={String(rating)}>
-                              {rating}점
-                            </option>
-                          ))}
-                        </select>
-                        <textarea
-                          value={draft.content}
-                          onChange={(event) =>
-                            setReviewDrafts((current) => ({
-                              ...current,
-                              [share.id]: { ...draft, content: event.target.value },
-                            }))
-                          }
-                          rows={3}
-                          placeholder="협업 경험과 결과를 간단히 남겨주세요."
-                          className="rounded-xl border border-amber-200 px-4 py-3"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void handleCreateReview(share.id)}
-                        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-body-sm font-semibold text-white"
-                      >
-                        <Star className="h-4 w-4" />
-                        리뷰 등록
-                      </button>
-                    </div>
-                  ) : null}
-                </article>
-              );
-            })
-          )}
-        </div>
-      </section>
     </>
   );
 
