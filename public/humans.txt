@@ -1,0 +1,8 @@
+/* TEAM */
+Product: 웹사이트 견적 자동 생성기
+URL: https://webbrief.co.kr
+Focus: 웹사이트 견적 생성, 요구사항 문서 자동 생성, 전문가 매칭
+
+/* SITE */
+Standards: HTML5, CSS3, TypeScript, React, Vite
+Language: Korean

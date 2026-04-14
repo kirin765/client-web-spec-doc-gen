@@ -5,6 +5,7 @@ import { Seo } from '@/components/seo/Seo';
 import { LoadingButton } from '@/components/common/LoadingButton';
 import { RegionSelector } from '@/components/regions/RegionSelector';
 import { listDevelopers } from '@/lib/api';
+import { getSiteOrigin } from '@/lib/site';
 import type { DeveloperProfileApi, ListDevelopersFilters } from '@/types/api';
 import { formatRange } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -49,6 +50,7 @@ function parseCareerYears(value: string) {
 
 export function ExpertDirectoryPage() {
   const user = useAuthStore((state) => state.user);
+  const siteOrigin = getSiteOrigin();
   const [developers, setDevelopers] = useState<DeveloperProfileApi[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -76,6 +78,24 @@ export function ExpertDirectoryPage() {
     void loadDevelopers(appliedFilters);
   }, [appliedFilters, loadDevelopers]);
 
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: '웹 개발 전문가 리스트',
+    description: '웹사이트 제작, 리뉴얼, 운영을 도와줄 검증된 전문가 목록입니다.',
+    url: `${siteOrigin}/experts`,
+    mainEntity: {
+      '@type': 'ItemList',
+      itemListElement: developers.slice(0, 12).map((developer, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${siteOrigin}/experts/${developer.id}`,
+        name: developer.displayName,
+        description: developer.headline,
+      })),
+    },
+  } satisfies Record<string, unknown>;
+
   const applyFilters = () => {
     const nextMinCareerYears = parseCareerYears(minCareerYears);
     const nextMaxCareerYears = parseCareerYears(maxCareerYears);
@@ -101,8 +121,9 @@ export function ExpertDirectoryPage() {
     <div className="bg-neutral-50 px-6 py-10">
       <Seo
         title="전문가 리스트 | 웹사이트 견적 자동 생성기"
-        description="등록된 전문가를 조회하고 상세 페이지에서 견적서를 보낼 수 있습니다."
-        noIndex
+        description="웹사이트 제작, 리뉴얼, 운영 경험이 있는 검증된 전문가를 경력과 지역별로 찾아보고 비교하세요."
+        keywords={['웹 개발자 찾기', '홈페이지 제작 전문가', '프리랜서 개발자', '웹 에이전시', '개발자 매칭']}
+        structuredData={structuredData}
       />
       <div className="mx-auto max-w-7xl space-y-8">
         <section className="rounded-2xl bg-navy-950 px-8 py-10 text-white shadow-2xl">
