@@ -21,6 +21,7 @@ import type {
 } from '@/types/api';
 import { formatRange } from '@/lib/utils';
 import { useAuthStore } from '@/store/useAuthStore';
+import { getSiteOrigin } from '@/lib/site';
 
 function getCareerLevelLabel(level: DeveloperProfileApi['careerLevel']) {
   switch (level) {
@@ -50,6 +51,7 @@ export function ExpertDetailPage() {
   const [isSendingQuote, setIsSendingQuote] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const siteOrigin = getSiteOrigin();
 
   useEffect(() => {
     if (!developerId) return;
@@ -96,12 +98,68 @@ export function ExpertDetailPage() {
     return <Navigate to="/experts" replace />;
   }
 
+  const structuredData = developer
+    ? [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'ProfilePage',
+          url: `${siteOrigin}/experts/${developer.id}`,
+          name: `${developer.displayName} 전문가 프로필`,
+          mainEntity:
+            developer.type === 'agency'
+              ? {
+                  '@type': 'Organization',
+                  name: developer.displayName,
+                  description: developer.headline,
+                  areaServed: developer.region?.name || '대한민국',
+                  knowsAbout: developer.specialties,
+                }
+              : {
+                  '@type': 'Person',
+                  name: developer.displayName,
+                  description: developer.headline,
+                  worksFor: { '@type': 'Organization', name: '웹사이트 견적 자동 생성기' },
+                  knowsAbout: developer.specialties,
+                  address: developer.region?.name || '대한민국',
+                },
+        },
+        ...(faqs.length > 0
+          ? [
+              {
+                '@context': 'https://schema.org',
+                '@type': 'FAQPage',
+                mainEntity: faqs.map((faq) => ({
+                  '@type': 'Question',
+                  name: faq.question,
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: faq.answer,
+                  },
+                })),
+              },
+            ]
+          : []),
+      ]
+    : undefined;
+
   return (
     <div className="bg-neutral-50 px-6 py-10">
       <Seo
         title={`${developer?.displayName || '전문가'} 상세 | 웹사이트 견적 자동 생성기`}
-        description="전문가 상세 정보를 확인하고 내 견적서를 보낼 수 있습니다."
-        noIndex
+        description={
+          developer
+            ? `${developer.displayName}의 전문 분야, 경력, 예산 범위, 리뷰와 FAQ를 확인하고 내 견적서를 보낼 수 있습니다.`
+            : '전문가 상세 정보를 확인하고 내 견적서를 보낼 수 있습니다.'
+        }
+        type="profile"
+        keywords={[
+          '전문가 프로필',
+          '웹 개발 전문가',
+          '홈페이지 제작 프리랜서',
+          '에이전시 포트폴리오',
+          '개발자 리뷰',
+        ]}
+        structuredData={structuredData}
       />
       <div className="mx-auto max-w-5xl space-y-8">
         <section className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-secondary-100">

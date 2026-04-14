@@ -69,18 +69,38 @@ export function LandingPage() {
   const setActiveMode = useAuthStore((state) => state.setActiveMode);
   const siteOrigin = getSiteOrigin();
 
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'WebApplication',
-    name: '웹사이트 견적 자동 생성기',
-    applicationCategory: 'BusinessApplication',
-    operatingSystem: 'Web',
-    description:
-      '프로젝트 의뢰를 생성하고 요구사항 문서와 예상 비용을 확인한 뒤, 전문가 매칭과 제안 비교까지 빠르게 진행할 수 있는 웹 애플리케이션입니다.',
-    url: `${siteOrigin}/`,
-    image: `${siteOrigin}/og-image.svg`,
-    offers: { '@type': 'Offer', price: '0', priceCurrency: 'KRW' },
-  };
+  const structuredData = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: '웹사이트 견적 자동 생성기',
+      url: `${siteOrigin}/`,
+      inLanguage: 'ko-KR',
+      description:
+        '프로젝트 의뢰를 생성하고 요구사항 문서와 예상 비용을 확인한 뒤, 전문가 매칭과 제안 비교까지 빠르게 진행할 수 있는 웹사이트 견적 플랫폼입니다.',
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: '웹사이트 견적 자동 생성기',
+      url: `${siteOrigin}/`,
+      logo: `${siteOrigin}/logo.svg`,
+      image: `${siteOrigin}/og-image.svg`,
+      areaServed: 'KR',
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: '웹사이트 견적 자동 생성기',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      description:
+        '프로젝트 의뢰를 생성하고 요구사항 문서와 예상 비용을 확인한 뒤, 전문가 매칭과 제안 비교까지 빠르게 진행할 수 있는 웹 애플리케이션입니다.',
+      url: `${siteOrigin}/`,
+      image: `${siteOrigin}/og-image.svg`,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'KRW' },
+    },
+  ] satisfies Array<Record<string, unknown>>;
 
   const handleStartQuote = () => {
     if (activeMode === 'expert') {
@@ -110,8 +130,16 @@ export function LandingPage() {
       <Seo
         title="웹사이트 견적 자동 생성기 | 프로젝트 의뢰·비용 계산·전문가 매칭"
         description="프로젝트 의뢰를 생성하고 요구사항 문서와 예상 비용을 확인한 뒤, 전문가 매칭과 제안 비교까지 빠르게 진행하세요."
+        keywords={[
+          '웹사이트 견적',
+          '웹 개발 견적',
+          '프로젝트 명세서',
+          '웹사이트 제작 비용',
+          '개발자 매칭',
+          '홈페이지 제작 견적',
+        ]}
+        structuredData={structuredData}
       />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
 
       {/* ── 히어로 섹션 ── */}
       <section className="relative overflow-hidden bg-navy-950 px-6 py-24 sm:py-36">
@@ -319,4 +347,3 @@ export function LandingPage() {
     </div>
   );
 }
-

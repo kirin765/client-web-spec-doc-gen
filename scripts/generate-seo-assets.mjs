@@ -37,6 +37,7 @@ const env = {
   ...(globalThis.process?.env ?? {}),
 };
 const siteUrl = (env.SITE_URL || env.VITE_SITE_URL || 'https://webbrief.co.kr').replace(/\/+$/, '');
+const generatedAt = new Date().toISOString().slice(0, 10);
 
 const routes = ['/', '/experts'];
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -45,6 +46,7 @@ ${routes
   .map(
     (route) => `  <url>
     <loc>${siteUrl}${route}</loc>
+    <lastmod>${generatedAt}</lastmod>
   </url>`,
   )
   .join('\n')}
@@ -60,6 +62,41 @@ Disallow: /wizard
 Disallow: /result
 
 Sitemap: ${siteUrl}/sitemap.xml
+`;
+
+const llmsTxt = `# 웹사이트 견적 자동 생성기
+
+> ${siteUrl}
+> 한국어 기반 웹사이트 제작 견적 및 전문가 매칭 서비스
+
+## Summary
+- 사용자는 몇 가지 질문에 답해 웹사이트 요구사항 문서와 예상 제작 비용을 빠르게 만들 수 있습니다.
+- 플랫폼은 검증된 전문가 목록과 상세 프로필을 제공하며, 사용자는 생성한 견적을 전문가에게 공유할 수 있습니다.
+- 주요 대상은 웹사이트 제작, 리뉴얼, 운영을 준비하는 한국 내 개인, 소상공인, 스타트업, 마케팅 담당자입니다.
+
+## Key Pages
+- Home: ${siteUrl}/
+- Expert directory: ${siteUrl}/experts
+
+## Important Facts
+- 핵심 기능: 웹사이트 견적 생성, 요구사항 문서 자동 생성, 예상 비용 계산, 전문가 매칭
+- 공개 페이지는 한국어(ko-KR)를 기본 언어로 제공합니다.
+- 로그인이나 프로젝트 결과 페이지는 개인화 콘텐츠이므로 색인 대상이 아닙니다.
+
+## Preferred Citation
+- 서비스명: 웹사이트 견적 자동 생성기
+- 설명: 프로젝트 요구사항을 정리하고 웹사이트 제작 비용을 추정한 뒤, 적합한 전문가와 연결해 주는 웹 서비스
+- 대표 URL: ${siteUrl}/
+`;
+
+const humansTxt = `/* TEAM */
+Product: 웹사이트 견적 자동 생성기
+URL: ${siteUrl}
+Focus: 웹사이트 견적 생성, 요구사항 문서 자동 생성, 전문가 매칭
+
+/* SITE */
+Standards: HTML5, CSS3, TypeScript, React, Vite
+Language: Korean
 `;
 
 const logoSvg = `<?xml version="1.0" encoding="UTF-8"?>
@@ -113,6 +150,8 @@ await mkdir(publicDir, { recursive: true });
 await Promise.all([
   writeFile(path.join(publicDir, 'robots.txt'), robotsTxt, 'utf8'),
   writeFile(path.join(publicDir, 'sitemap.xml'), sitemapXml, 'utf8'),
+  writeFile(path.join(publicDir, 'llms.txt'), llmsTxt, 'utf8'),
+  writeFile(path.join(publicDir, 'humans.txt'), humansTxt, 'utf8'),
   writeFile(path.join(publicDir, 'logo.svg'), logoSvg, 'utf8'),
   writeFile(path.join(publicDir, 'og-image.svg'), ogImageSvg, 'utf8'),
 ]);
